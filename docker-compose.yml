@@ -1,0 +1,75 @@
+version: "3"
+services:
+    laravel.test:
+        build:
+            context: "./vendor/laravel/sail/runtimes/8.4"
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: "${WWWGROUP}"
+        image: "sail-8.4/app"
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+            - "api.koricha-ecommerce.com:127.0.0.1" # Add this line
+        ports:
+            - "80:80" # Run Laravel on port 80
+            - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
+        environment:
+            WWWUSER: "${WWWUSER}"
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: "${SAIL_XDEBUG_MODE:-off}"
+            XDEBUG_CONFIG: "${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}"
+            IGNITION_LOCAL_SITES_PATH: "${PWD}"
+            APP_URL: "http://api.koricha-ecommerce.com" # Add this line
+        volumes:
+            - ".:/var/www/html"
+        networks:
+            - sail
+        depends_on:
+            - mysql
+
+    mysql:
+        image: "mysql/mysql-server:8.0"
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: "saddle" # Matches DB_PASSWORD in .env
+            MYSQL_DATABASE: "koricha_ecommerce_db"
+            MYSQL_USER: "koricha"
+            MYSQL_PASSWORD: "saddle"
+            MYSQL_ALLOW_EMPTY_PASSWORD: 0
+        volumes:
+            - "sail-mysql:/var/lib/mysql"
+            - "./vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh"
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - mysqladmin
+                - ping
+                - "-psaddle"
+            retries: 3
+            timeout: 5s
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:latest
+        container_name: phpmyadmin
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+            PMA_USER: koricha
+            PMA_PASSWORD: saddle
+        ports:
+            - "8082:80"
+        networks:
+            - sail
+        depends_on:
+            - mysql
+
+networks:
+    sail:
+        driver: bridge
+
+volumes:
+    sail-mysql:
+        driver: local
