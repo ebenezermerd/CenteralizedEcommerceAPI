@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Traits\ApiResponses;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
@@ -25,41 +26,47 @@ class AuthController extends Controller
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string"),
-     *         description="User first name"
+     *         example="John"
      *     ),
      *     @OA\Parameter(
      *         name="lastName",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string"),
-     *         description="User last name"
+     *         example="Doe"
      *     ),
      *     @OA\Parameter(
      *         name="email",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string", format="email"),
-     *         description="User email"
+     *         example="user@example.com"
      *     ),
      *     @OA\Parameter(
      *         name="password",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string", format="password"),
-     *         description="User password"
+     *         example="password123"
      *     ),
      *     @OA\Parameter(
      *         name="password_confirmation",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string", format="password"),
-     *         description="Password confirmation"
+     *         example="password123"
      *     ),
      *     @OA\Response(
      *         response=201,
      *         description="Successful registration",
      *         @OA\JsonContent(
      *             type="object",
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="firstName", type="string", example="John"),
+     *                 @OA\Property(property="lastName", type="string", example="Doe"),
+     *                 @OA\Property(property="email", type="string", example="user@example.com")
+     *             ),
      *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
      *         )
      *     )
@@ -78,7 +85,7 @@ class AuthController extends Controller
 
         $token = JWTAuth::fromUser($user);
 
-        return response()->json(['token' => $token], 201);
+        return response()->json(compact('user', 'token'), 201);
     }
 
     /**
@@ -91,21 +98,20 @@ class AuthController extends Controller
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string", format="email"),
-     *         description="User email"
+     *         example="user@example.com"
      *     ),
      *     @OA\Parameter(
      *         name="password",
      *         in="query",
      *         required=true,
      *         @OA\Schema(type="string", format="password"),
-     *         description="User password"
+     *         example="password123"
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful login",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="successful login"),
      *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
      *         )
      *     ),
@@ -123,21 +129,19 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
 
-        if (!$token = Auth::attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        if (!$token = JWTAuth::attempt($credentials)) {
+            return response()->json(['error' => 'Invalid email or password'], 401);
         }
 
-        return response()->json([
-            'message' => 'successful login',
-            'token' => $token
-        ], 200);
+        return response()->json(['token' => $token]);
     }
 
     /**
      * @OA\Get(
-     *     path="/api/auth/me",
+     *     path="/api/auth/user",
      *     summary="Get authenticated user",
      *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Authenticated user data",
@@ -151,8 +155,41 @@ class AuthController extends Controller
      *     )
      * )
      */
-    public function me()
+    public function getUser()
     {
-        return response()->json(Auth::user(), 200);
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Invalid token'], 400);
+        }
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        return response()->json($user);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/auth/logout",
+     *     summary="Logout user",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successfully logged out",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Successfully logged out")
+     *         )
+     *     )
+     * )
+     */
+    public function logout()
+    {
+        JWTAuth::invalidate(JWTAuth::getToken());
+
+        return response()->json(['message' => 'Successfully logged out']);
     }
 }

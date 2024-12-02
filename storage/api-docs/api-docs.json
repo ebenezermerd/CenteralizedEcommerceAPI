@@ -35,50 +35,50 @@
                     {
                         "name": "firstName",
                         "in": "query",
-                        "description": "User first name",
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "John"
                     },
                     {
                         "name": "lastName",
                         "in": "query",
-                        "description": "User last name",
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "Doe"
                     },
                     {
                         "name": "email",
                         "in": "query",
-                        "description": "User email",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "format": "email"
-                        }
+                        },
+                        "example": "user@example.com"
                     },
                     {
                         "name": "password",
                         "in": "query",
-                        "description": "User password",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "format": "password"
-                        }
+                        },
+                        "example": "password123"
                     },
                     {
                         "name": "password_confirmation",
                         "in": "query",
-                        "description": "Password confirmation",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "format": "password"
-                        }
+                        },
+                        "example": "password123"
                     }
                 ],
                 "responses": {
@@ -88,6 +88,27 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "firstName": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "lastName": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "user@example.com"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
                                         "token": {
                                             "type": "string",
                                             "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -112,22 +133,22 @@
                     {
                         "name": "email",
                         "in": "query",
-                        "description": "User email",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "format": "email"
-                        }
+                        },
+                        "example": "user@example.com"
                     },
                     {
                         "name": "password",
                         "in": "query",
-                        "description": "User password",
                         "required": true,
                         "schema": {
                             "type": "string",
                             "format": "password"
-                        }
+                        },
+                        "example": "password123"
                     }
                 ],
                 "responses": {
@@ -137,10 +158,6 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "successful login"
-                                        },
                                         "token": {
                                             "type": "string",
                                             "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -170,13 +187,13 @@
                 }
             }
         },
-        "/api/auth/me": {
+        "/api/auth/user": {
             "get": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "Get authenticated user",
-                "operationId": "b9abb1a7a74670a19c215c2c133f14d8",
+                "operationId": "b3c2811c57c1ffa70c76a938f23f36a6",
                 "responses": {
                     "200": {
                         "description": "Authenticated user data",
@@ -206,7 +223,44 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "operationId": "69281b12abb272c76871f19cb17ca563",
+                "responses": {
+                    "200": {
+                        "description": "Successfully logged out",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Successfully logged out"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         }
     },
@@ -252,10 +306,9 @@
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
-                "name": "Authorization",
-                "in": "header",
+                "scheme": "bearer",
                 "bearerFormat": "JWT",
-                "scheme": "bearer"
+                "description": "Enter your Bearer token in the format: Bearer <token>"
             }
         }
     },
@@ -263,6 +316,11 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
         }
     ]
 }
