@@ -2,74 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Traits\ApiResponses;
-use Illuminate\Http\Request;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterationRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Traits\ApiResponses;
 
 class AuthController extends Controller
 {
     use ApiResponses;
-
-    /**
-     * @OA\Post(
-     *     path="/api/auth/login",
-     *     summary="Login user",
-     *     tags={"Authentication"},
-     *     @OA\Parameter(
-     *         name="email",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", format="email"),
-     *         description="User email"
-     *     ),
-     *     @OA\Parameter(
-     *         name="password",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", format="password"),
-     *         description="User password"
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful login",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Login successful"),
-     *             @OA\Property(property="email", type="string", example="user@example.com"),
-     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Invalid credentials")
-     *         )
-     *     )
-     * )
-     */
-    public function login(LoginRequest $request)
-    {
-        $credentials = $request->only('email', 'password');
-
-        if (!Auth::attempt($credentials)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
-        $user = Auth::user();
-        $token = $user->createToken('authToken')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login successful',
-            'email' => $user->email,
-            'authToken' => $token,
-        ]);
-    }
 
     /**
      * @OA\Post(
@@ -104,13 +48,19 @@ class AuthController extends Controller
      *         @OA\Schema(type="string", format="password"),
      *         description="User password"
      *     ),
+     *     @OA\Parameter(
+     *         name="password_confirmation",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string", format="password"),
+     *         description="Password confirmation"
+     *     ),
      *     @OA\Response(
-     *         response=200,
+     *         response=201,
      *         description="Successful registration",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="User registered successfully"),
-     *             @OA\Property(property="user_id", type="integer", example=123)
+     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
      *         )
      *     )
      * )
@@ -126,9 +76,83 @@ class AuthController extends Controller
             'password' => Hash::make($validatedData['password']),
         ]);
 
+        $token = JWTAuth::fromUser($user);
+
+        return response()->json(['token' => $token], 201);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     summary="Login user",
+     *     tags={"Authentication"},
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string", format="email"),
+     *         description="User email"
+     *     ),
+     *     @OA\Parameter(
+     *         name="password",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string", format="password"),
+     *         description="User password"
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful login",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="successful login"),
+     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Unauthorized")
+     *         )
+     *     )
+     * )
+     */
+    public function login(LoginRequest $request)
+    {
+        $credentials = $request->validated();
+
+        if (!$token = Auth::attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         return response()->json([
-            'message' => 'User registered successfully',
-            'user_id' => $user->id,
-        ]);
+            'message' => 'successful login',
+            'token' => $token
+        ], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/auth/me",
+     *     summary="Get authenticated user",
+     *     tags={"Authentication"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Authenticated user data",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="firstName", type="string", example="John"),
+     *             @OA\Property(property="lastName", type="string", example="Doe"),
+     *             @OA\Property(property="email", type="string", example="user@example.com")
+     *         )
+     *     )
+     * )
+     */
+    public function me()
+    {
+        return response()->json(Auth::user(), 200);
     }
 }

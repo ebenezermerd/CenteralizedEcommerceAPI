@@ -22,11 +22,11 @@ use Illuminate\Routing\Controller as BaseController;
  *   )
  * ),
  * @OA\Server(
- *   url="https://api.koricha-ecommerce.com",
+ *   url="http://api.koricha-ecommerce.com",
  *   description="Production Server"
  * ),
  * @OA\Server(
- *   url="https://staging-api.koricha-ecommerce.com",
+ *   url="http://staging-api.koricha-ecommerce.com",
  *   description="Staging Server"
  * ),
  * @OA\SecurityScheme(
