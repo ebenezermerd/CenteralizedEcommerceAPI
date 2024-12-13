@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\Models\Role;
+use App\Models\Company;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -20,23 +22,26 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
-            'email' => $this->faker->unique()->safeEmail(),
-            'role' => $this->faker->randomElement(['admin', 'user', 'vendor']),
-            'status' => $this->faker->randomElement(['active', 'inactive']),
-            'address' => $this->faker->address(),
-            'city' => $this->faker->city(),
-            'state' => $this->faker->state(),
-            'country' => $this->faker->country(),
-            'zip_code' => $this->faker->postcode(),
-            'phone_number' => $this->faker->phoneNumber(),
-            'is_verified' => $this->faker->boolean(),
-            'avatar_url' => $this->faker->optional()->imageUrl(),
-            'company' => $this->faker->optional()->company(),
-            'email_verified_at' => now(),
-            'password' => Hash::make('password'), // Fixed default password directly
-            'remember_token' => Str::random(10),
+            'role_id' => Role::inRandomOrder()->first()->id,
+            'firstName' => $this->faker->firstName,
+            'lastName' => $this->faker->lastName,
+            'email' => $this->faker->unique()->safeEmail,
+            'phone' => $this->faker->phoneNumber,
+            'sex' => $this->faker->randomElement(['male', 'female']),
+            'address' => $this->faker->address,
+            'password' => bcrypt('password'),
+            'company_id' => null,
         ];
+    }
+
+    public function supplier(): static
+    {
+        return $this->state(function (array $attributes) {
+            $company = Company::factory()->create();
+            return [
+                'company_id' => $company->id,
+            ];
+        });
     }
 
     /**

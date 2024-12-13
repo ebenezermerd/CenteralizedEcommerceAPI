@@ -21,11 +21,31 @@ class RegisterationRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8',
+        $rules = [
+            'role' => 'required|string|in:customer,supplier',
             'firstName' => 'required|string|max:255',
             'lastName' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|max:255',
+            'sex' => 'required|string|max:255',
+            'address' => 'required|string|max:255',
+            'password' => 'required|string|min:6|confirmed',
+            'verified' => 'boolean',
         ];
+
+        if ($this->role === 'supplier') {
+            $rules = array_merge($rules, [
+                'companyName' => 'required|string|max:255',
+                'description' => 'required|string|max:1000',
+                'companyEmail' => 'required|email|max:255',
+                'companyPhone' => 'required|string|max:255',
+                'country' => 'required|string|max:255',
+                'city' => 'required|string|max:255',
+                'companyAddress' => 'required|string|max:255',
+                'agreement' => 'required|boolean',
+            ]);
+        }
+
+        return $rules;
     }
 }

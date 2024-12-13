@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::middleware('api')->group(function () {
-    Route::post('/auth/register', [AuthController::class, 'register']);
-    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/sign-up', [AuthController::class, 'register']);
+    Route::post('/auth/sign-in', [AuthController::class, 'login']);
 });
 
 Route::middleware(['jwt'])->group(function () {
-    Route::get('/auth/user', [AuthController::class, 'getUser']);
+    Route::get('/auth/me', [AuthController::class, 'getUser']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 });

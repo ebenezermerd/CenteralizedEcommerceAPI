@@ -24,14 +24,28 @@
         }
     ],
     "paths": {
-        "/api/auth/register": {
+        "/api/auth/sign-up": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "Register user",
-                "operationId": "d764dd091cc4494ae0baf360b03319f3",
+                "operationId": "c0872f8f652a5f05f5bc5ecd7eb1d4a0",
                 "parameters": [
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "Role of the user. If 'supplier' is selected, additional company information fields are required.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "customer",
+                                "supplier"
+                            ]
+                        },
+                        "example": "customer"
+                    },
                     {
                         "name": "firstName",
                         "in": "query",
@@ -61,6 +75,37 @@
                         "example": "user@example.com"
                     },
                     {
+                        "name": "phone",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "123-456-7890"
+                    },
+                    {
+                        "name": "sex",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "male",
+                                "female"
+                            ]
+                        },
+                        "example": "male"
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "123 Main St"
+                    },
+                    {
                         "name": "password",
                         "in": "query",
                         "required": true,
@@ -79,6 +124,87 @@
                             "format": "password"
                         },
                         "example": "password123"
+                    },
+                    {
+                        "name": "companyName",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Example Company"
+                    },
+                    {
+                        "name": "description",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Company description"
+                    },
+                    {
+                        "name": "companyEmail",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "email"
+                        },
+                        "example": "company@example.com"
+                    },
+                    {
+                        "name": "companyPhone",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "123-456-7890"
+                    },
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "USA"
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "New York"
+                    },
+                    {
+                        "name": "companyAddress",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "456 Business Rd"
+                    },
+                    {
+                        "name": "agreement",
+                        "in": "query",
+                        "description": "Required if role is 'supplier'.",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "example": true
                     }
                 ],
                 "responses": {
@@ -122,13 +248,13 @@
                 }
             }
         },
-        "/api/auth/login": {
+        "/api/auth/sign-in": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "Login user",
-                "operationId": "8dcb70df1020986038d098cc08d05dae",
+                "operationId": "a7d8eb56b2d191fc23e7f346f4d0dd2f",
                 "parameters": [
                     {
                         "name": "email",
@@ -187,13 +313,13 @@
                 }
             }
         },
-        "/api/auth/user": {
+        "/api/auth/me": {
             "get": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "Get authenticated user",
-                "operationId": "b3c2811c57c1ffa70c76a938f23f36a6",
+                "operationId": "9392fee05bff1ebdef7215807a1796aa",
                 "responses": {
                     "200": {
                         "description": "Authenticated user data",

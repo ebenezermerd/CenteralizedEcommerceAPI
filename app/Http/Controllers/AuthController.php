@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterationRequest;
+use App\Models\Company;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -18,9 +20,17 @@ class AuthController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/auth/register",
+     *     path="/api/auth/sign-up",
      *     summary="Register user",
      *     tags={"Authentication"},
+     *     @OA\Parameter(
+     *         name="role",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string", enum={"customer", "supplier"}),
+     *         example="customer",
+     *         description="Role of the user. If 'supplier' is selected, additional company information fields are required."
+     *     ),
      *     @OA\Parameter(
      *         name="firstName",
      *         in="query",
@@ -43,6 +53,27 @@ class AuthController extends Controller
      *         example="user@example.com"
      *     ),
      *     @OA\Parameter(
+     *         name="phone",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         example="123-456-7890"
+     *     ),
+     *     @OA\Parameter(
+     *         name="sex",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string", enum={"male", "female"}),
+     *         example="male"
+     *     ),
+     *     @OA\Parameter(
+     *         name="address",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         example="123 Main St"
+     *     ),
+     *     @OA\Parameter(
      *         name="password",
      *         in="query",
      *         required=true,
@@ -55,6 +86,70 @@ class AuthController extends Controller
      *         required=true,
      *         @OA\Schema(type="string", format="password"),
      *         example="password123"
+     *     ),
+     *     @OA\Parameter(
+     *         name="companyName",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         example="Example Company",
+     *         description="Required if role is 'supplier'."
+     *     ),
+     *     @OA\Parameter(
+     *         name="description",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         example="Company description",
+     *         description="Required if role is 'supplier'."
+     *     ),
+     *     @OA\Parameter(
+     *         name="companyEmail",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string", format="email"),
+     *         example="company@example.com",
+     *         description="Required if role is 'supplier'."
+     *     ),
+     *     @OA\Parameter(
+     *         name="companyPhone",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         example="123-456-7890",
+     *         description="Required if role is 'supplier'."
+     *     ),
+     *     @OA\Parameter(
+     *         name="country",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         example="USA",
+     *         description="Required if role is 'supplier'."
+     *     ),
+     *     @OA\Parameter(
+     *         name="city",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         example="New York",
+     *         description="Required if role is 'supplier'."
+     *     ),
+     *     @OA\Parameter(
+     *         name="companyAddress",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string"),
+     *         example="456 Business Rd",
+     *         description="Required if role is 'supplier'."
+     *     ),
+     *     @OA\Parameter(
+     *         name="agreement",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="boolean"),
+     *         example=true,
+     *         description="Required if role is 'supplier'."
      *     ),
      *     @OA\Response(
      *         response=201,
@@ -76,21 +171,47 @@ class AuthController extends Controller
     {
         $validatedData = $request->validated();
 
+        $role = Role::where('name', $validatedData['role'])->firstOrFail();
+
         $user = User::create([
+            'role_id' => $role->id,
             'firstName' => $validatedData['firstName'],
             'lastName' => $validatedData['lastName'],
             'email' => $validatedData['email'],
+            'phone' => $validatedData['phone'],
+            'sex' => $validatedData['sex'],
+            'address' => $validatedData['address'],
             'password' => Hash::make($validatedData['password']),
+            'verified' => $validatedData['verified'] ?? false,
         ]);
 
-        $token = JWTAuth::fromUser($user);
+        if ($role->name === 'supplier') {
+            if (!$validatedData['agreement']) {
+                return response()->json(['error' => 'You must agree to the terms!'], 400);
+            }
 
-        return response()->json(compact('user', 'token'), 201);
+            $company = Company::create([
+                'name' => $validatedData['companyName'],
+                'description' => $validatedData['description'],
+                'email' => $validatedData['companyEmail'],
+                'phone' => $validatedData['companyPhone'],
+                'country' => $validatedData['country'],
+                'city' => $validatedData['city'],
+                'address' => $validatedData['companyAddress'],
+                'agreement' => $validatedData['agreement'],
+            ]);
+            $user->company_id = $company->id;
+            $user->save();
+        }
+
+        $accessToken = JWTAuth::fromUser($user);
+
+        return response()->json(compact('accessToken'), 201);
     }
 
     /**
      * @OA\Post(
-     *     path="/api/auth/login",
+     *     path="/api/auth/sign-in",
      *     summary="Login user",
      *     tags={"Authentication"},
      *     @OA\Parameter(
@@ -133,12 +254,12 @@ class AuthController extends Controller
             return response()->json(['error' => 'Invalid email or password'], 401);
         }
 
-        return response()->json(['token' => $token]);
+        return response()->json(['accessToken' => $token]);
     }
 
     /**
      * @OA\Get(
-     *     path="/api/auth/user",
+     *     path="/api/auth/me",
      *     summary="Get authenticated user",
      *     tags={"Authentication"},
      *     security={{"bearerAuth":{}}},
@@ -166,6 +287,10 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json(['error' => 'User not found'], 404);
         }
+
+        $role = Role::find($user->role_id);
+        $user->role = $role ? $role->name : null;
+        unset($user->role_id);
 
         return response()->json($user);
     }

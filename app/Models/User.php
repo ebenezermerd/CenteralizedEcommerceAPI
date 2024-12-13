@@ -19,21 +19,7 @@ class User extends Authenticatable implements JWTSubject
      * @var array<int, string>
      */
     protected $fillable = [
-        'firstName',
-        'lastName',
-        'email',
-        'password',
-        'role',
-        'status',
-        'address',
-        'city',
-        'state',
-        'country',
-        'zip_code',
-        'phone_number',
-        'is_verified',
-        'avatar_url',
-        'company',
+        'role_id', 'firstName', 'lastName', 'email', 'phone', 'sex', 'address', 'password', 'company_id', 'country', 'region', 'verified', 'image',
     ];
 
     public function getJWTIdentifier()
@@ -50,6 +36,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -69,5 +56,21 @@ class User extends Authenticatable implements JWTSubject
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_verified' => 'boolean',
+        'verified' => 'boolean',
     ];
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
 }
