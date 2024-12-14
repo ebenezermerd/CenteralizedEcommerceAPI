@@ -205,8 +205,9 @@ class AuthController extends Controller
         }
 
         $accessToken = JWTAuth::fromUser($user);
+        $userRole = $role->name;
 
-        return response()->json(compact('accessToken'), 201);
+        return response()->json(compact('accessToken', 'userRole'), 201);
     }
 
     /**
@@ -254,7 +255,11 @@ class AuthController extends Controller
             return response()->json(['error' => 'Invalid email or password'], 401);
         }
 
-        return response()->json(['accessToken' => $token]);
+        $user = Auth::user();
+        $role = Role::find($user->role_id);
+        $user->role = $role ? $role->name : null;
+
+        return response()->json(['accessToken' => $token, 'role' => $user->role]);
     }
 
     /**
