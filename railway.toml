@@ -1,6 +1,11 @@
 [build]
 builder = "nixpacks"
-buildCommand = "composer install --no-dev --optimize-autoloader && php artisan optimize"
+buildCommand = """
+composer install --no-dev --optimize-autoloader && \
+mkdir -p storage/app/public storage/framework/{sessions,views,cache} && \
+chmod -R 775 storage bootstrap/cache && \
+php artisan optimize
+"""
 
 [deploy]
 startCommand = "php artisan migrate --force && php artisan config:cache && php artisan route:cache && heroku-php-apache2 public/"
