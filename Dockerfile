@@ -1,8 +1,12 @@
 # Stage 1: Composer dependencies
 FROM composer:2 as composer
 WORKDIR /app
+
+# Copy only dependency files first
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Install dependencies with proper flags
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-progress --optimize-autoloader
 
 # Stage 2: Production image
 FROM php:8.2-fpm
@@ -28,22 +32,28 @@ COPY docker/nginx.conf /etc/nginx/nginx.conf
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer dependencies
-COPY --from=composer /app/vendor ./vendor
-
-# Copy application files
+# Copy application files first
 COPY . .
 
-# Copy example env file
-RUN cp .env.example .env
+# Copy vendor files from composer stage
+COPY --from=composer /app/vendor ./vendor
 
-# Generate optimized autoload files
-RUN composer dump-autoload --optimize
+# Copy example env file and optimize
+RUN cp .env.example .env && \
+    composer dump-autoload --optimize && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+# Create storage directories and set permissions
+RUN mkdir -p storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
+    storage/logs \
+    bootstrap/cache && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 storage bootstrap/cache && \
+    chmod -R ugo+rw storage/logs
 
 # Expose port
 EXPOSE 80
