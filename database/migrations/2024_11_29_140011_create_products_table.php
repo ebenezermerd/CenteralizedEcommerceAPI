@@ -6,45 +6,52 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('sku');
+            $table->uuid('id')->primary();
+            $table->foreignId('categoryId')->constrained('categories');
+            
+            // Basic information
             $table->string('name');
-            $table->string('code');
-            $table->decimal('price', 8, 2);
-            $table->decimal('taxes', 8, 2);
-            $table->json('tags');
-            $table->json('sizes');
-            $table->string('publish');
-            $table->json('gender');
-            $table->string('cover_url');
-            $table->json('images');
-            $table->json('colors');
-            $table->integer('quantity');
-            $table->string('category');
-            $table->integer('available');
-            $table->integer('total_sold');
+            $table->string('sku')->unique();
+            $table->string('code')->unique();
             $table->text('description');
-            $table->integer('total_ratings');
-            $table->integer('total_reviews');
-            $table->timestamp('created_at')->useCurrent();
-            $table->string('inventory_type');
-            $table->text('sub_description');
-            $table->decimal('price_sale', 8, 2)->nullable();
-            $table->json('sale_label');
-            $table->json('new_label');
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->text('subDescription');
+            $table->enum('publish', ['draft', 'published']);
+            
+            // Pricing
+            $table->decimal('price', 10, 2);
+            $table->decimal('priceSale', 10, 2)->nullable();
+            $table->decimal('taxes', 10, 2)->default(0);
+            
+            // Media
+            $table->string('coverUrl')->nullable(); // Make it nullable
+            
+            // Attributes
+            $table->json('tags')->nullable();
+            $table->json('sizes')->nullable();
+            $table->json('colors')->nullable();
+            $table->json('gender')->nullable();
+            
+            // Inventory
+            $table->string('inventoryType')->default('In Stock');
+            $table->integer('quantity')->default(0);
+            $table->integer('available')->default(0);
+            $table->integer('totalSold')->default(0);
+            
+            // Ratings and Reviews
+            $table->float('totalRatings')->default(0);
+            $table->integer('totalReviews')->default(0);
+            
+            // Labels
+            $table->json('newLabel')->nullable();
+            $table->json('saleLabel')->nullable();
+            
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('products');

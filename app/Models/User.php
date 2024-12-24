@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -19,7 +21,9 @@ class User extends Authenticatable implements JWTSubject
      * @var array<int, string>
      */
     protected $fillable = [
-        'role_id', 'firstName', 'lastName', 'email', 'phone', 'sex', 'address', 'password', 'company_id', 'country', 'region', 'verified', 'image',
+        'role_id', 'firstName', 'lastName', 'email', 'phone', 'sex', 
+        'address', 'password', 'company_id', 'country', 'region', 
+        'verified', 'image', 'status', 'city', 'zip_code'
     ];
 
     public function getJWTIdentifier()
@@ -58,6 +62,22 @@ class User extends Authenticatable implements JWTSubject
         'is_verified' => 'boolean',
         'verified' => 'boolean',
     ];
+
+    // Add accessor for name
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->firstName . ' ' . $this->lastName
+        );
+    }
+
+    // Add accessor for avatarUrl
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->image ? url(Storage::url($this->image)) : null
+        );
+    }
 
     public function orders()
     {

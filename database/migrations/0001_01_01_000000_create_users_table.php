@@ -29,6 +29,9 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->enum('status', ['active', 'banned', 'pending', 'rejected'])->default('pending');
+            $table->string('city')->nullable();
+            $table->string('zip_code')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

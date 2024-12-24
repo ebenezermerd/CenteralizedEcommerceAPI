@@ -17,7 +17,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(RoleSeeder::class);
+        $this->call([
+            RoleSeeder::class,
+            CategorySeeder::class,
+            ProductSeeder::class,
+        ]);
 
         $roles = Role::all();
 
@@ -47,17 +51,10 @@ class DatabaseSeeder extends Seeder
             $user->save();
         });
 
-        Order::factory(50)
-            ->recycle($users)
-            ->create();
-        
+      
         // Create 10 products
         $products = Product::factory(10)->create();
 
-        // Create 50 orders, reusing the created users and products
-        Order::factory(50)
-            ->recycle($users)
-            ->recycle($products)
-            ->create();
     }
+
 }

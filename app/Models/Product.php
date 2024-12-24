@@ -4,48 +4,141 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
     use HasFactory;
 
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
+
     protected $fillable = [
-        'sku',
+        'categoryId',
         'name',
+        'sku',
         'code',
+        'description',
+        'subDescription',
+        'publish',
         'price',
+        'priceSale',
         'taxes',
+        'coverUrl',
         'tags',
         'sizes',
-        'publish',
-        'gender',
-        'cover_url',
-        'images',
         'colors',
+        'gender',
+        'inventoryType',
         'quantity',
-        'category',
         'available',
-        'total_sold',
-        'description',
-        'total_ratings',
-        'total_reviews',
-        'inventory_type',
-        'sub_description',
-        'price_sale',
-        'sale_label',
-        'new_label',
+        'totalSold',
+        'totalRatings',
+        'totalReviews',
+        'newLabel',
+        'saleLabel'
     ];
 
     protected $casts = [
+        'id' => 'string',
+        'categoryId' => 'integer',
+        'price' => 'decimal:2',
+        'priceSale' => 'decimal:2',
+        'taxes' => 'decimal:2',
         'tags' => 'array',
         'sizes' => 'array',
-        'gender' => 'array',
-        'images' => 'array',
         'colors' => 'array',
-        'sale_label' => 'array',
-        'new_label' => 'array',
-        'price' => 'decimal:2',
-        'taxes' => 'decimal:2',
-        'price_sale' => 'decimal:2',
+        'gender' => 'array',
+        'quantity' => 'integer',
+        'available' => 'integer',
+        'totalSold' => 'integer',
+        'totalRatings' => 'float',
+        'totalReviews' => 'integer',
+        'newLabel' => 'array',
+        'saleLabel' => 'array'
     ];
+
+    protected $attributes = [
+        'publish' => 'draft',
+        'inventoryType' => 'in_stock',
+        'quantity' => 0,
+        'available' => 0,
+        'totalSold' => 0,
+        'totalRatings' => 0,
+        'totalReviews' => 0,
+        'taxes' => 0,
+        'coverUrl' => 'products/default-cover.png' // Add default cover URL
+    ];
+
+    protected $with = ['category', 'images']; // eager load relationships by default
+
+    protected $withCount = ['reviews']; // always count reviews
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'categoryId');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('is_primary', 'desc');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function getCoverImageAttribute()
+    {
+        return $this->images()->where('is_primary', true)->first()?->image_path;
+    }
+
+    // For frequently accessed products, use caching:
+    public function getTotalReviewsAttribute()
+    {
+        return cache()->remember("product.{$this->id}.reviews_count", 3600, function() {
+            return $this->reviews()->count();
+        });
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return cache()->remember("product.{$this->id}.avg_rating", 3600, function() {
+            return $this->reviews()->avg('rating') ?? 0;
+        });
+    }
+
+    // Add accessor for inventory status
+    public function getInventoryStatusAttribute(): string
+    {
+        if ($this->quantity <= 0) {
+            return 'out_of_stock';
+        }
+        if ($this->quantity <= 10) {
+            return 'low_stock';
+        }
+        return 'in_stock';
+    }
+
+    // Add accessor for price with taxes
+    public function getPriceWithTaxAttribute(): float
+    {
+        return $this->price * (1 + ($this->taxes / 100));
+    }
+
+    // Add scope for published products
+    public function scopePublished($query)
+    {
+        return $query->where('publish', 'published');
+    }
 }

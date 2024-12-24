@@ -297,7 +297,7 @@ class AuthController extends Controller
         $user->role = $role ? $role->name : null;
         unset($user->role_id);
 
-        return response()->json($user);
+        return response()->json(['user' => $user]);
     }
 
     /**
