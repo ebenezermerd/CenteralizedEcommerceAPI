@@ -1,0 +1,24 @@
+[build]
+builder = "nixpacks"
+buildCommand = "composer install --no-dev --optimize-autoloader && php artisan optimize"
+
+[deploy]
+startCommand = "php artisan migrate --force && php artisan config:cache && php artisan route:cache && heroku-php-apache2 public/"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+
+[service]
+persistent_storage = false
+port = "80"
+
+[variables]
+PHP_VERSION = "8.3"
+APP_ENV = "production"
+APP_DEBUG = "false"
+QUEUE_CONNECTION = "database"
+
+[[services]]
+name = "mysql"
+type = "mysql"
+version = "8.0"

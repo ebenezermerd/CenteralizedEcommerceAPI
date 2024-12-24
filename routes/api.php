@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Carbon;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
@@ -9,6 +10,13 @@ use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Health Check
+Route::get('/health', function() {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => Carbon::now(),
+    ]);
+});
 
 // Public routes
 Route::middleware('api')->group(function () {
