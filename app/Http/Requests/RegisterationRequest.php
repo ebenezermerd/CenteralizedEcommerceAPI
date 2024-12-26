@@ -31,6 +31,7 @@ class RegisterationRequest extends FormRequest
             'address' => 'required|string|max:255',
             'password' => 'required|string|min:6|confirmed',
             'verified' => 'boolean',
+            'recaptchaToken' => 'required|captcha', // Validate reCAPTCHA
         ];
 
         if ($this->role === 'supplier') {
@@ -40,6 +41,7 @@ class RegisterationRequest extends FormRequest
                 'companyEmail' => 'required|email|max:255',
                 'companyPhone' => 'required|string|max:255',
                 'country' => 'required|string|max:255',
+                'city' => 'required|string|max:255',
                 'companyAddress' => 'required|string|max:255',
                 'agreement' => 'required|boolean',
             ]);

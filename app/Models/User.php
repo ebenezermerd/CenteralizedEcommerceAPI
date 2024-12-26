@@ -9,11 +9,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -21,9 +22,9 @@ class User extends Authenticatable implements JWTSubject
      * @var array<int, string>
      */
     protected $fillable = [
-        'role_id', 'firstName', 'lastName', 'email', 'phone', 'sex', 
-        'address', 'password', 'company_id', 'country', 'region', 
-        'verified', 'image', 'status', 'city', 'zip_code'
+        'firstName', 'lastName', 'email', 'phone', 'sex', 
+        'address', 'password',  'google2fa_secret', 'company_id', 'country', 'region', 'city',
+        'verified', 'image', 'status', 'zip_code'
     ];
 
     public function getJWTIdentifier()
@@ -33,7 +34,10 @@ class User extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims()
     {
-        return [];
+        return [
+            'userId' => $this->id,
+            'role' => $this->getRoleNames()->first(),
+        ];
     }
 
     public function getJWTClaims()
@@ -49,6 +53,7 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'google2fa_secret'
     ];
 
     /**
@@ -61,7 +66,22 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
         'is_verified' => 'boolean',
         'verified' => 'boolean',
+        'backup_codes' => 'array',
     ];
+
+    public function generateBackupCodes()
+{
+    $codes = [];
+    for ($i = 0; $i < 8; $i++) {
+        $codes[] = Str::random(10);
+    }
+    $this->backup_codes = array_map(function($code) {
+        return Hash::make($code);
+    }, $codes);
+    $this->save();
+    
+    return $codes; // Return plain codes for one-time display
+}
 
     // Add accessor for name
     protected function name(): Attribute
@@ -84,13 +104,10 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Order::class);
     }
 
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
-    }
-
     public function company()
     {
         return $this->belongsTo(Company::class);
     }
+
+
 }

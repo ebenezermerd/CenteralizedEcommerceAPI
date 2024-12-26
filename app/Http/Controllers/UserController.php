@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+
 
 class UserController extends Controller
 {
@@ -90,8 +92,70 @@ class UserController extends Controller
 
     public function destroy(string $id)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
-        return response()->json(['message' => 'User deleted successfully']);
+        try {
+            $user = User::findOrFail($id);
+            $user->delete();
+            
+            Log::info('User deleted', [
+                'admin_id' => Auth::id(),
+                'deleted_user_id' => $id,
+                'ip' => request()->ip()
+            ]);
+
+            return response()->json(['message' => 'User deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('User deletion failed', [
+                'error' => $e->getMessage(),
+                'user_id' => $id,
+                'ip' => request()->ip()
+            ]);
+            return response()->json(['error' => 'User deletion failed'], 500);
+        }
+    }
+
+    public function updateRole(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'role' => 'required|string|exists:roles,name',
+            ]);
+
+            $user = User::findOrFail($id);
+            $oldRole = $user->roles->pluck('name')->first();
+            $newRole = $request->input('role');
+
+            $user->syncRoles([$newRole]);
+
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($user)
+                ->withProperties([
+                    'old_role' => $oldRole,
+                    'new_role' => $newRole,
+                    'ip' => $request->ip()
+                ])
+                ->log('User role updated');
+
+            Log::info('User role updated', [
+                'admin_id' => Auth::id(),
+                'user_id' => $user->id,
+                'old_role' => $oldRole,
+                'new_role' => $newRole,
+                'ip' => $request->ip()
+            ]);
+
+            return response()->json([
+                'message' => 'User role updated successfully',
+                'user' => $user,
+                'role' => $newRole,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Role update failed', [
+                'error' => $e->getMessage(),
+                'user_id' => $id,
+                'ip' => $request->ip()
+            ]);
+            return response()->json(['error' => 'Role update failed'], 500);
+        }
     }
 }

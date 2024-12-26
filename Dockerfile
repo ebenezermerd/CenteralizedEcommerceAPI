@@ -1,5 +1,6 @@
 # Stage 1: Composer dependencies
 FROM composer:2 as composer
+
 WORKDIR /app
 
 # Copy only dependency files first
@@ -11,56 +12,85 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-pr
 # Stage 2: Production image
 FROM php:8.2-fpm
 
-# Install dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     nginx \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libzip-dev \
+    libmcrypt-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libmagickwand-dev \
+    libmemcached-dev \
+    libssl-dev \
+    libwebp-dev \
     zip \
-    curl \
     unzip \
+    supervisor \
+    git \
+    curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
+    docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \
+    opcache \
+    intl \
+    && docker-php-ext-enable opcache
+
+# Install additional PHP extensions
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Configure PHP
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Configure nginx
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# Configure supervisor
+COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files first
+# Copy application files
 COPY . .
-
-# Copy vendor files from composer stage
 COPY --from=composer /app/vendor ./vendor
 
-# Copy example env file and optimize
-RUN cp .env.example .env && \
-    composer dump-autoload --optimize && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache
+# Copy environment file
+COPY .env.production .env
 
-# Create storage directories and set permissions
-RUN mkdir -p storage/framework/sessions \
-    storage/framework/views \
-    storage/framework/cache \
-    storage/logs \
-    bootstrap/cache && \
-    chown -R www-data:www-data /var/www/html && \
-    chmod -R 775 storage bootstrap/cache && \
-    chmod -R ugo+rw storage/logs
+# Set file permissions
+RUN chown -R www-data:www-data \
+    /var/www/html/storage \
+    /var/www/html/bootstrap/cache && \
+    chmod -R 775 \
+    /var/www/html/storage \
+    /var/www/html/bootstrap/cache
+
+# Create storage link
+RUN php artisan storage:link
+
+# Optimize Laravel for production
+RUN php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    composer dump-autoload --optimize
 
 # Expose port
 EXPOSE 80
 
-# Start script
-COPY docker/start.sh /usr/local/bin/start
-RUN chmod +x /usr/local/bin/start
-
-CMD ["/usr/local/bin/start"]
-
+# Start supervisor
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

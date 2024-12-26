@@ -3,48 +3,65 @@
 use Illuminate\Support\Carbon;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\JwtMiddleware;
-use Illuminate\Container\Attributes\Auth;
-use Illuminate\Http\Request;
+use App\Http\Controllers\MFAController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HealthController;
 
 // Health Check
-Route::get('/health', function() {
-    return response()->json([
-        'status' => 'ok',
-        'timestamp' => Carbon::now(),
-    ]);
-});
+Route::get('/health', [HealthController::class, 'check']);
 
 // Public routes
-Route::middleware('api')->group(function () {
-    Route::post('/auth/sign-up', [AuthController::class, 'register']);
-    Route::post('/auth/sign-in', [AuthController::class, 'login']);
-});
+Route::post('/auth/sign-up', [AuthController::class, 'register']);
+Route::post('/auth/sign-in', [AuthController::class, 'login']);
+Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
+// Protected routes
 Route::middleware(['jwt'])->group(function () {
+    // Auth routes
     Route::get('/auth/me', [AuthController::class, 'getUser']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     
-    // User routes
-    Route::get('users/list', [UserController::class, 'index']);
-    Route::get('user/details/{id}', [UserController::class, 'show']);
-    Route::post('users/create', [UserController::class, 'store']);
+    // MFA routes
+    Route::post('/auth/mfa/setup', [MFAController::class, 'setup']);
+    Route::post('/auth/mfa/verify', [MFAController::class, 'verify'])->middleware('throttle:5,10');
+    Route::get('/auth/mfa/download-qr', [MFAController::class, 'downloadQr']);
+    Route::post('/auth/mfa/regenerate-backup-codes', [MFAController::class, 'regenerateBackupCodes']);
+
     
-    // Product routes
-    Route::post('products/create', [ProductController::class, 'store']);
+    // Admin only routes
+    Route::middleware(['role:admin'])->group(function () {
+        // User management
+        Route::get('users/list', [UserController::class, 'index']);
+        Route::get('user/details/{id}', [UserController::class, 'show']);
+        Route::post('users/create', [UserController::class, 'store']);
+        Route::put('users/{id}', [UserController::class, 'update']);
+        Route::delete('users/{id}', [UserController::class, 'destroy']);
+        Route::put('users/{id}/role', [UserController::class, 'updateRole']);
+        
+        // Admin product management
+        Route::delete('products/{id}', [ProductController::class, 'destroy']);
+    });
+
+    // Admin and Supplier routes
+    Route::middleware(['role:admin|supplier'])->group(function () {
+        Route::post('products/create', [ProductController::class, 'store']);
+        Route::get('products/list', [ProductController::class, 'index']);
+        Route::put('products/{id}', [ProductController::class, 'update']);
+        Route::get('product/details', [ProductController::class, 'show']);
+    });
+
+    // Customer specific routes
+    Route::middleware(['role:customer'])->group(function () {
+        Route::post('reviews', [ReviewController::class, 'store']);
+        Route::put('reviews/{id}', [ReviewController::class, 'update']);
+        Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
+        
+        Route::post('orders', [OrderController::class, 'store']);
+        Route::get('orders/my-orders', [OrderController::class, 'myOrders']);
+    });
+
+    // Routes accessible by all authenticated users
     Route::get('products/list', [ProductController::class, 'index']);
     Route::get('products/{id}', [ProductController::class, 'show']);
-    Route::get('product/details', [ProductController::class, 'show']);
-    // Category routes
-    Route::prefix('categories')->group(function () {
-        Route::get('/', [CategoryController::class, 'index']);
-        Route::get('/all', [CategoryController::class, 'all']);
-        Route::get('/group/{group}', [CategoryController::class, 'subcategories']);
-        Route::get('/name/{name}', [CategoryController::class, 'findByName']);
-        Route::get('/{name}', [CategoryController::class, 'show']);
-        Route::get('/product/{name}', [CategoryController::class, 'findProductCategory']);
-    });
 });

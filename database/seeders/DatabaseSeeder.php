@@ -2,32 +2,31 @@
 
 namespace Database\Seeders;
 
-use App\Models\Order;
-use App\Models\Product;
 use App\Models\User;
 use App\Models\Company;
-use App\Models\Role;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
+        // Run seeders in correct order
         $this->call([
-            RoleSeeder::class,
+            RoleSeeder::class,     // Create roles and permissions first
             CategorySeeder::class,
             ProductSeeder::class,
         ]);
 
-        $roles = Role::all();
-
-        $users = User::factory(10)->create()->each(function ($user) use ($roles) {
+        // Create users with proper role assignments
+        User::factory(10)->create()->each(function ($user) {
             $faker = \Faker\Factory::create();
-            $user->role_id = $roles->random()->id;
+            
+            // Randomly assign one role to each user
+            $role = Role::inRandomOrder()->first();
+            $user->assignRole($role->name);
+            
+            // Set basic user data
             $user->firstName = $faker->firstName;
             $user->lastName = $faker->lastName;
             $user->email = $faker->unique()->safeEmail;
@@ -35,7 +34,9 @@ class DatabaseSeeder extends Seeder
             $user->sex = $faker->randomElement(['male', 'female']);
             $user->address = $faker->address;
             $user->password = bcrypt('password');
-            if ($user->role->name === 'supplier') {
+            
+            // Create company for suppliers
+            if ($role->name === 'supplier') {
                 $company = Company::create([
                     'name' => $faker->company,
                     'description' => $faker->text,
@@ -48,13 +49,9 @@ class DatabaseSeeder extends Seeder
                 ]);
                 $user->company_id = $company->id;
             }
+            
             $user->save();
         });
 
-      
-        // Create 10 products
-        $products = Product::factory(10)->create();
-
     }
-
 }

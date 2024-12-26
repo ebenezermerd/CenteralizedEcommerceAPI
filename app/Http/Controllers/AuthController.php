@@ -9,10 +9,16 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Traits\ApiResponses;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Illuminate\Support\Facades\Log;
+use Spatie\Activitylog\Facades\LogActivity;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class AuthController extends Controller
 {
@@ -169,44 +175,65 @@ class AuthController extends Controller
      */
     public function register(RegisterationRequest $request)
     {
-        $validatedData = $request->validated();
+        try {
+            $validatedData = $request->validated();
 
-        $role = Role::where('name', $validatedData['role'])->firstOrFail();
+            $user = User::create([
+                'firstName' => $validatedData['firstName'],
+                'lastName' => $validatedData['lastName'],
+                'email' => $validatedData['email'],
+                'phone' => $validatedData['phone'],
+                'sex' => $validatedData['sex'],
+                'address' => $validatedData['address'],
+                'password' => Hash::make($validatedData['password']),
+                'verified' => $validatedData['verified'] ?? false,
+                'status' => 'pending'
+            ]);
 
-        $user = User::create([
-            'role_id' => $role->id,
-            'firstName' => $validatedData['firstName'],
-            'lastName' => $validatedData['lastName'],
-            'email' => $validatedData['email'],
-            'phone' => $validatedData['phone'],
-            'sex' => $validatedData['sex'],
-            'address' => $validatedData['address'],
-            'password' => Hash::make($validatedData['password']),
-            'verified' => $validatedData['verified'] ?? false,
-        ]);
+            // Assign role and its permissions using Spatie
+            $user->assignRole($validatedData['role']);
 
-        if ($role->name === 'supplier') {
-            if (!$validatedData['agreement']) {
-                return response()->json(['error' => 'You must agree to the terms!'], 400);
+            if ($validatedData['role'] === 'supplier') {
+                if (!$validatedData['agreement']) {
+                    return response()->json(['error' => 'You must agree to the terms!'], 400);
+                }
+
+                $company = Company::create([
+                    'name' => $validatedData['companyName'],
+                    'description' => $validatedData['description'],
+                    'email' => $validatedData['companyEmail'],
+                    'phone' => $validatedData['companyPhone'],
+                    'country' => $validatedData['country'],
+                    'city' => $validatedData['city'],
+                    'address' => $validatedData['companyAddress'],
+                    'agreement' => $validatedData['agreement'],
+                ]);
+                $user->company_id = $company->id;
+                $user->save();
             }
 
-            $company = Company::create([
-                'name' => $validatedData['companyName'],
-                'description' => $validatedData['description'],
-                'email' => $validatedData['companyEmail'],
-                'phone' => $validatedData['companyPhone'],
-                'country' => $validatedData['country'],
-                'city' => $validatedData['city'],
-                'address' => $validatedData['companyAddress'],
-                'agreement' => $validatedData['agreement'],
+            $accessToken = JWTAuth::fromUser($user);
+
+            Log::info('User registered successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $validatedData['role'],
+                'ip' => $request->ip()
             ]);
-            $user->company_id = $company->id;
-            $user->save();
+            
+            return response()->json([
+                'accessToken' => $accessToken,
+                'user' => new UserResource($user)
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Registration failed', [
+                'error' => $e->getMessage(),
+                'email' => $request->input('email'),
+                'ip' => $request->ip()
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        $accessToken = JWTAuth::fromUser($user);
-
-        return response()->json(compact('accessToken'), 201);
     }
 
     /**
@@ -245,16 +272,84 @@ class AuthController extends Controller
      *         )
      *     )
      * )
-     */
+    */
     public function login(LoginRequest $request)
     {
-        $credentials = $request->validated();
+        try {
+            $credentials = $request->validated();
 
-        if (!$token = JWTAuth::attempt($credentials)) {
-            return response()->json(['error' => 'Invalid email or password'], 401);
+            if (!$token = JWTAuth::attempt($credentials)) {
+                \Log::channel('telescope')->warning('Failed login attempt', [
+                    'email' => $request->input('email'),
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent()
+                ]);
+                
+                return response()->json(['error' => 'Invalid email or password'], 401);
+            }
+
+
+            $user = Auth::user();
+            
+            \Log::channel('telescope')->info('User logged in successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip()
+            ]);
+
+            
+            // If MFA is enabled, return a temporary token for MFA verification
+            if ($user->google2fa_enabled) {
+                return response()->json([
+                    'mfaRequired' => true,
+                    'message' => 'MFA verification required',
+                    'tempToken' => $token, // Send temporary token for MFA verification
+                    'user' => [
+                        'email' => $user->email,
+                        'id' => $user->id
+                    ]
+                ], 200);
+            }
+
+            // If no MFA, proceed with normal login
+            $refreshToken = JWTAuth::fromUser($user);
+            
+            return response()->json([
+                'accessToken' => $token,
+                'refreshToken' => $refreshToken,
+                'role' => $user->getRoleNames()->first(),
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'mfaRequired' => false
+            ], 200);
+
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not create token'], 500);
+        } catch (\Exception $e) {
+            Log::error('Login error', [
+                'message' => $e->getMessage(),
+                'ip' => $request->ip()
+            ]);
+            return response()->json(['error' => 'Login failed'], 500);
         }
+    }
 
-        return response()->json(['accessToken' => $token]);
+
+    public function refresh()
+    {
+        try {
+            // Setting the token TTL to 2 weeks (14 days)
+            JWTAuth::factory()->setTTL(20160); // 14 days * 24 hours * 60 minutes
+
+            $newToken = JWTAuth::refresh(JWTAuth::getToken());
+
+            return response()->json([
+                'accessToken' => $newToken,
+                'token_type' => 'bearer',
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            ]);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not refresh token'], 500);
+        }
     }
 
     /**
@@ -280,19 +375,20 @@ class AuthController extends Controller
     {
         try {
             $user = JWTAuth::parseToken()->authenticate();
+            if (!$user) {
+                return response()->json(['error' => 'User not found'], 404);
+            }
+
+            return response()->json([
+                'user' => new UserResource($user),
+                'mfaEnabled' => $user->google2fa_enabled
+            ]);
+            Log::info('Getting user data');
+
+
         } catch (JWTException $e) {
             return response()->json(['error' => 'Invalid token'], 400);
         }
-
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 404);
-        }
-
-        $role = Role::find($user->role_id);
-        $user->role = $role ? $role->name : null;
-        unset($user->role_id);
-
-        return response()->json(['user' => $user]);
     }
 
     /**
@@ -313,8 +409,18 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        JWTAuth::invalidate(JWTAuth::getToken());
+        try {
+            $user = Auth::user();
+            Log::info('User logged out', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
 
-        return response()->json(['message' => 'Successfully logged out']);
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json(['message' => 'Successfully logged out']);
+        } catch (\Exception $e) {
+            Log::error('Logout error', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Logout failed'], 500);
+        }
     }
 }

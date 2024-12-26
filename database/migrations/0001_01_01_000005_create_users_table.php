@@ -17,20 +17,21 @@ return new class extends Migration
             $table->string('lastName');
             $table->string('email')->unique();
             $table->string('password');
-            $table->foreignId('role_id')->constrained('roles');
+            $table->string('google2fa_secret')->nullable();
+            $table->boolean('google2fa_enabled')->default(false);
             $table->foreignId('company_id')->nullable()->constrained('companies');
             $table->string('phone');
             $table->string('image')->nullable();
             $table->string('sex');
-            $table->string('address');
             $table->string('country')->nullable();
             $table->string('region')->nullable();
+            $table->string('city')->nullable();
+            $table->string('address');
             $table->boolean('verified')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->enum('status', ['active', 'banned', 'pending', 'rejected'])->default('pending');
-            $table->string('city')->nullable();
             $table->string('zip_code')->nullable();
         });
 

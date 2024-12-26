@@ -1,12 +1,18 @@
 <?php
 
-use App\Http\Middleware\JwtMiddleware;
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Fruitcake\Cors\HandleCors;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Laravel\Telescope\TelescopeServiceProvider;
+use App\Providers\TelescopeServiceProvider as TelescopeAppServiceProvider;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withProviders([     
+        TelescopeServiceProvider::class,
+        TelescopeAppServiceProvider::class,
+        Illuminate\Validation\ValidationServiceProvider::class,
+        Anhskohbo\NoCaptcha\NoCaptchaServiceProvider::class,
+    ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php', 
@@ -14,15 +20,34 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->group('api', [
-        \Fruitcake\Cors\HandleCors::class,
-        \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        'throttle:api',
-        \Illuminate\Routing\Middleware\SubstituteBindings::class,
-             ]);
-        $middleware->alias(['jwt' => JwtMiddleware::class]);
-        
+        // Global middleware
+        $middleware->use([
+            \Illuminate\Http\Middleware\HandleCors::class, // Move CORS to global middleware
+        ]);
+
+        $middleware->web([
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
+
+        $middleware->api([
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
+
+        // Named middleware
+        $middleware->alias([
+            'jwt' => \App\Http\Middleware\JwtMiddleware::class,
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->create();
