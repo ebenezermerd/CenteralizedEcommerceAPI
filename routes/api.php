@@ -23,6 +23,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     
     // MFA routes
+    Route::get('/auth/mfa/status', [MFAController::class, 'getStatus']);
     Route::post('/auth/mfa/setup', [MFAController::class, 'setup']);
     Route::post('/auth/mfa/verify', [MFAController::class, 'verify'])->middleware('throttle:5,10');
     Route::get('/auth/mfa/download-qr', [MFAController::class, 'downloadQr']);

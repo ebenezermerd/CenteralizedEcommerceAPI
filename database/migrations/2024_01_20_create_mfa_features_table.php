@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('code');
+            $table->string('salt')->nullable(); // Make salt nullable
             $table->boolean('used')->default(false);
             $table->timestamps();
         });
@@ -20,7 +21,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('device_token');
-            $table->string('device_name');
+            $table->string('device_signature');  // Added device signature
             $table->string('ip_address');
             $table->timestamp('expires_at');
             $table->timestamps();

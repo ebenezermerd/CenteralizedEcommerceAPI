@@ -23,8 +23,8 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $fillable = [
         'firstName', 'lastName', 'email', 'phone', 'sex', 
-        'address', 'password',  'google2fa_secret', 'company_id', 'country', 'region', 'city',
-        'verified', 'image', 'status', 'zip_code'
+        'address', 'password', 'mfa_secret', 'is_mfa_enabled', 'mfa_verified_at', 'company_id', 'country', 'region', 'city',
+        'verified', 'email_verified_at', 'image', 'status', 'zip_code'
     ];
 
     public function getJWTIdentifier()

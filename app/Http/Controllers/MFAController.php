@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use PragmaRX\Google2FALaravel\Support\Authenticator;
 use Spatie\Activitylog\Facades\LogActivity;
@@ -12,11 +13,23 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Services\MFATokenService;
+use App\Services\BackupCodeService;
 
 class MFAController extends Controller
 {
     protected $maxAttempts = 5;
     protected $decayMinutes = 10;
+    protected $mfaTokenService;
+    protected $backupCodeService;
+
+    public function __construct(
+        MFATokenService $mfaTokenService,
+        BackupCodeService $backupCodeService
+    ) {
+        $this->mfaTokenService = $mfaTokenService;
+        $this->backupCodeService = $backupCodeService;
+    }
 
     public function setup(Request $request)
     {
@@ -27,8 +40,9 @@ class MFAController extends Controller
             // Generate new secret key
             $secretKey = $google2fa->generateSecretKey();
             
-            // Save secret key
-            $user->google2fa_secret = $secretKey;
+            // Save secret key and enable MFA
+            $user->mfa_secret = $secretKey;
+            $user->is_mfa_enabled = true;
             $user->save();
 
             // Generate QR code
@@ -83,7 +97,7 @@ class MFAController extends Controller
         $request->validate([
             'oneTimePassword' => 'required|string|size:6',
             'tempToken' => 'required|string',  // Require the temporary token
-            'rememberDevice' => 'boolean'
+            // 'rememberDevice' => 'boolean'
         ]);
 
         try {
@@ -109,11 +123,11 @@ class MFAController extends Controller
                 
                 Cache::forget($key);
                 
-                // Handle remember device
-                $deviceToken = null;
-                if ($request->rememberDevice) {
-                    $deviceToken = $this->rememberDevice($user, $request);
-                }
+                // // Handle remember device
+                // $deviceToken = null;
+                // if ($request->rememberDevice) {
+                //     $deviceToken = $this->rememberDevice($user, $request);
+                // }
 
                 // Generate new tokens after successful MFA
                 $newToken = JWTAuth::fromUser($user);
@@ -124,7 +138,7 @@ class MFAController extends Controller
 
                 return response()->json([
                     'message' => 'MFA verification successful',
-                    'deviceToken' => $deviceToken,
+                    // 'deviceToken' => $deviceToken,
                     'accessToken' => $newToken,
                     'refreshToken' => $refreshToken,
                     'role' => $user->getRoleNames()->first(),
@@ -161,20 +175,22 @@ class MFAController extends Controller
         }
     }
 
-    protected function generateBackupCodes($user)
+    protected function generateBackupCodes(User $user)
     {
-        $codes = [];
-        for ($i = 0; $i < 8; $i++) {
-            $code = strtoupper(Str::random(10));
-            $codes[] = $code;
-            
-            DB::table('mfa_backup_codes')->insert([
+        $backupCodes = [];
+        for ($i = 0; $i < 10; $i++) {
+            $code = Str::random(64);
+            $salt = Str::random(16); // Generate a salt value
+            $backupCodes[] = [
                 'user_id' => $user->id,
-                'code' => hash('sha256', $code),
-                'created_at' => now()
-            ]);
+                'code' => hash('sha256', $code . $salt),
+                'salt' => $salt, // Include the salt value
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
         }
-        return $codes;
+        DB::table('mfa_backup_codes')->insert($backupCodes);
+        return $backupCodes;
     }
 
     protected function verifyBackupCode($user, $code)
@@ -197,16 +213,33 @@ class MFAController extends Controller
 
     protected function rememberDevice($user, Request $request)
     {
+        // Validate device information
+        if (!$this->isValidDeviceSignature($request)) {
+            return null;
+        }
+
         $deviceToken = Str::random(64);
         DB::table('mfa_remembered_devices')->insert([
             'user_id' => $user->id,
-            'device_token' => hash('sha256', $deviceToken),
-            'device_name' => $request->userAgent(),
+            'device_token' => Hash::make($deviceToken),
+            'device_signature' => $this->generateDeviceSignature($request),
             'ip_address' => $request->ip(),
             'expires_at' => now()->addDays(30),
             'created_at' => now()
         ]);
         return $deviceToken;
+    }
+
+    protected function isValidDeviceSignature(Request $request): bool
+    {
+        // Add validation logic for user agent and IP
+        $userAgent = $request->userAgent();
+        $ipAddress = $request->ip();
+        
+        // Example validation rules
+        return !empty($userAgent) 
+            && strlen($userAgent) <= 255
+            && filter_var($ipAddress, FILTER_VALIDATE_IP);
     }
 
     public function regenerateBackupCodes(Request $request)
@@ -256,5 +289,18 @@ class MFAController extends Controller
             ->header('Content-Type', 'image/png')
             ->header('Content-Disposition', 'attachment; filename="mfa-qr-code.png"');
     }
+
+    /**
+ * Get MFA status for authenticated user
+ */
+public function getStatus()
+{
+    $user = Auth::user();
+    
+    return response()->json([
+        'mfaEnabled' => $user->is_mfa_enabled,
+        'mfaVerified' => !empty($user->mfa_verified_at)
+    ]);
+}
 
 }

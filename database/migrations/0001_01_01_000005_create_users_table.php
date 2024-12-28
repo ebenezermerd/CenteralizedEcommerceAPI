@@ -15,24 +15,25 @@ return new class extends Migration
             $table->id();
             $table->string('firstName');
             $table->string('lastName');
-            $table->string('email')->unique();
             $table->string('password');
-            $table->string('google2fa_secret')->nullable();
-            $table->boolean('google2fa_enabled')->default(false);
-            $table->foreignId('company_id')->nullable()->constrained('companies');
             $table->string('phone');
-            $table->string('image')->nullable();
             $table->string('sex');
+            $table->string('mfa_secret')->nullable();
+            $table->boolean('is_mfa_enabled')->default(false);
+            $table->timestamp('mfa_verified_at')->nullable();
             $table->string('country')->nullable();
             $table->string('region')->nullable();
+            $table->string('image')->nullable();
             $table->string('city')->nullable();
             $table->string('address');
-            $table->boolean('verified')->default(false);
-            $table->timestamp('email_verified_at')->nullable();
-            $table->rememberToken();
             $table->timestamps();
-            $table->enum('status', ['active', 'banned', 'pending', 'rejected'])->default('pending');
+            $table->rememberToken();
+            $table->string('email')->unique();
+            $table->boolean('verified')->default(false);
             $table->string('zip_code')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->foreignId('company_id')->nullable()->constrained('companies');
+            $table->enum('status', ['active', 'banned', 'pending', 'rejected'])->default('pending');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

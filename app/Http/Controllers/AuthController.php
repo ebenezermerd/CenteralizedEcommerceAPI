@@ -19,10 +19,18 @@ use Spatie\Activitylog\Facades\LogActivity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
+use App\Services\MFATokenService;
 
 class AuthController extends Controller
 {
     use ApiResponses;
+
+    protected $mfaTokenService;
+
+    public function __construct(MFATokenService $mfaTokenService)
+    {
+        $this->mfaTokenService = $mfaTokenService;
+    }
 
     /**
      * @OA\Post(
@@ -279,7 +287,7 @@ class AuthController extends Controller
             $credentials = $request->validated();
 
             if (!$token = JWTAuth::attempt($credentials)) {
-                \Log::channel('telescope')->warning('Failed login attempt', [
+                Log::channel('telescope')->warning('Failed login attempt', [
                     'email' => $request->input('email'),
                     'ip' => $request->ip(),
                     'user_agent' => $request->userAgent()
@@ -288,22 +296,21 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Invalid email or password'], 401);
             }
 
-
             $user = Auth::user();
             
-            \Log::channel('telescope')->info('User logged in successfully', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'ip' => $request->ip()
-            ]);
+            // Check if MFA is enabled
+            if ($user->is_mfa_enabled) {
+                // Generate temporary token for MFA verification
+                $tempToken = $this->mfaTokenService->generateTempToken($user->id);
+                
+                // Invalidate the main JWT token since MFA is pending
+                JWTAuth::setToken($token)->invalidate();
 
-            
-            // If MFA is enabled, return a temporary token for MFA verification
-            if ($user->google2fa_enabled) {
                 return response()->json([
+                    'status' => 'mfa_required',
                     'mfaRequired' => true,
                     'message' => 'MFA verification required',
-                    'tempToken' => $token, // Send temporary token for MFA verification
+                    'tempToken' => $tempToken,
                     'user' => [
                         'email' => $user->email,
                         'id' => $user->id
@@ -314,25 +321,39 @@ class AuthController extends Controller
             // If no MFA, proceed with normal login
             $refreshToken = JWTAuth::fromUser($user);
             
+            // Log successful login
+            Log::info('User logged in successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip()
+            ]);
+            
             return response()->json([
+                'status' => 'success',
                 'accessToken' => $token,
                 'refreshToken' => $refreshToken,
+                'user' => new UserResource($user),
                 'role' => $user->getRoleNames()->first(),
-                'expires_in' => JWTAuth::factory()->getTTL() * 60,
-                'mfaRequired' => false
+                'mfaRequired' => $user->is_mfa_enabled,
+
+
+                'expires_in' => JWTAuth::factory()->getTTL() * 60
             ], 200);
 
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
+            Log::error('JWT token creation failed', [
+                'error' => $e->getMessage(),
+                'ip' => $request->ip()
+            ]);
+            return response()->json(['message' => 'Authentication failed'], 500);
         } catch (\Exception $e) {
             Log::error('Login error', [
                 'message' => $e->getMessage(),
                 'ip' => $request->ip()
             ]);
-            return response()->json(['error' => 'Login failed'], 500);
+            return response()->json(['message' => 'Login failed'], 500);
         }
     }
-
 
     public function refresh()
     {
@@ -376,18 +397,18 @@ class AuthController extends Controller
         try {
             $user = JWTAuth::parseToken()->authenticate();
             if (!$user) {
-                return response()->json(['error' => 'User not found'], 404);
+                return response()->json(['message' => 'User not found'], 404);
             }
 
             return response()->json([
                 'user' => new UserResource($user),
-                'mfaEnabled' => $user->google2fa_enabled
+                'mfaEnabled' => $user->is_mfa_enabled,
+                'mfaVerified' => !empty($user->mfa_verified_at)
             ]);
-            Log::info('Getting user data');
-
 
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Invalid token'], 400);
+            Log::error('Token validation failed', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Invalid token'], 401);
         }
     }
 
