@@ -302,9 +302,16 @@ class AuthController extends Controller
             if ($user->is_mfa_enabled) {
                 // Generate temporary token for MFA verification
                 $tempToken = $this->mfaTokenService->generateTempToken($user->id);
-                
+
+                Log::info('MFA token generated', [
+                    'user_id' => $user->id,
+                    'temp_token' => $tempToken,
+                    'token' => $token,
+                    'role' => $user->getRoleNames()->first(),
+                    'timestamp' => now()
+                ]);
                 // Invalidate the main JWT token since MFA is pending
-                JWTAuth::setToken($token)->invalidate();
+                // JWTAuth::setToken($token)->invalidate();
 
                 return response()->json([
                     'status' => 'mfa_required',
@@ -313,7 +320,8 @@ class AuthController extends Controller
                     'tempToken' => $tempToken,
                     'user' => [
                         'email' => $user->email,
-                        'id' => $user->id
+                        'id' => $user->id,
+                        'role' => $user->getRoleNames()->first()
                     ]
                 ], 200);
             }

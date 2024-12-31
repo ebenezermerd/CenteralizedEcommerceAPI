@@ -52,17 +52,18 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('product/details', [ProductController::class, 'show']);
     });
 
-    // Customer specific routes
-    Route::middleware(['role:customer'])->group(function () {
-        Route::post('reviews', [ReviewController::class, 'store']);
-        Route::put('reviews/{id}', [ReviewController::class, 'update']);
-        Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
-        
-        Route::post('orders', [OrderController::class, 'store']);
-        Route::get('orders/my-orders', [OrderController::class, 'myOrders']);
-    });
-
+    
     // Routes accessible by all authenticated users
     Route::get('products/list', [ProductController::class, 'index']);
     Route::get('products/{id}', [ProductController::class, 'show']);
+});
+
+// Customer specific routes
+Route::middleware(['role:customer'])->group(function () {
+    Route::post('reviews', [ReviewController::class, 'store']);
+    Route::put('reviews/{id}', [ReviewController::class, 'update']);
+    Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
+    
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::get('orders/my-orders', [OrderController::class, 'myOrders']);
 });

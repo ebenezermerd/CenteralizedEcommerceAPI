@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\ImagickImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +19,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Services\MFATokenService;
 use App\Services\BackupCodeService;
+use Tymon\JWTAuth\Facades\JWTAuth;
+
 
 class MFAController extends Controller
 {
@@ -45,15 +51,22 @@ class MFAController extends Controller
             $user->is_mfa_enabled = true;
             $user->save();
 
-            // Generate QR code
-            $QRImage = $google2fa->getQRCodeInline(
-                config('app.name'),
-                $user->email,
-                $secretKey
-            );
+        // Generate QR code as PNG
+        $renderer = new ImageRenderer(
+            new RendererStyle(200),
+            new ImagickImageBackEnd('png')
+        );
+        $writer = new Writer($renderer);
+        $qrCodePng = $writer->writeString($google2fa->getQRCodeUrl(
+            config('app.name'),
+            $user->email,
+            $secretKey
+));
 
-            // Extract the actual base64 image data
-            $base64Image = preg_replace('/^data:image\/\w+;base64,/', '', $QRImage);
+            // Convert to base64
+        $base64QrCode = 'data:image/png;base64,' . base64_encode($qrCodePng);
+
+
 
             Activity::create([
                 'log_name' => 'mfa',
@@ -63,27 +76,28 @@ class MFAController extends Controller
                 'properties' => ['setup_completed' => true]
             ]);
 
-            Log::info('MFA setup completed', [
+            Log::info('MFA setup completed in MFA controller', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'ip' => $request->ip()
             ]);
 
-            // Generate backup codes
-            $backupCodes = $this->generateBackupCodes($user);
+           // Generate backup codes
+        $backupCodes = $this->generateBackupCodes($user);
 
-            return response()->json([
-                'secret' => $secretKey,
-                'qrImage' => [
-                    'dataUrl' => $QRImage,  // Full data URL for <img> src
-                    'base64' => $base64Image, // Raw base64 if needed
-                    'downloadUrl' => '/api/auth/mfa/download-qr?key=' . $secretKey
-                ],
-                'backupCodes' => $backupCodes,
-                'message' => 'MFA setup initialized successfully'
-            ], 200);
+
+        return response()->json([
+            'secret' => $secretKey,
+            'qrImage' => [
+                'dataUrl' => $base64QrCode,
+                'base64' => base64_encode($qrCodePng),
+                'downloadUrl' => '/api/auth/mfa/download-qr?key=' . $secretKey
+            ],
+            'backupCodes' => $backupCodes,
+            'message' => 'MFA setup initialized successfully'
+        ], 200);
         } catch (\Exception $e) {
-            Log::error('MFA setup failed', [
+            Log::error('MFA setup failed in MFA controller', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
                 'ip' => $request->ip()
@@ -94,85 +108,165 @@ class MFAController extends Controller
 
     public function verify(Request $request)
     {
+        Log::info('Starting MFA verification process in controller', [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent()
+        ]);
+
         $request->validate([
             'oneTimePassword' => 'required|string|size:6',
-            'tempToken' => 'required|string',  // Require the temporary token
-            // 'rememberDevice' => 'boolean'
+            'tempToken' => 'required|string'
         ]);
 
         try {
-            // Verify the temporary token
-            $user = JWTAuth::setToken($request->tempToken)->authenticate();
+            // Validate temp token and get user
+            Log::info('Validating temporary token in controller', [
+                'token_length' => strlen($request->tempToken)
+            ]);
+            
+            $userId = app(MFATokenService::class)->validateTempToken($request->tempToken);
+            if (!$userId) {
+                Log::warning('Invalid temporary token provided in controller', [
+                    'token_prefix' => substr($request->tempToken, 0, 10) . '...',
+                    'ip' => $request->ip()
+                ]);
+                return response()->json(['error' => 'Invalid temporary token'], 401);
+            }
+            
+            Log::info('Temporary token validated successfully in controller', ['user_id' => $userId]);
+            
+            $user = User::find($userId);
             if (!$user) {
-                return response()->json(['error' => 'Invalid token'], 401);
+                Log::error('User not found after token validation in controller', ['user_id' => $userId]);
+                return response()->json(['error' => 'User not found'], 404);
             }
 
-            // Rate limiting
+            // Rate limiting check
             $key = 'mfa_attempts_' . $user->id;
             $attempts = Cache::get($key, 0);
             
+            Log::info('Checking rate limiting', [
+                'user_id' => $userId,
+                'current_attempts' => $attempts,
+                'max_attempts' => $this->maxAttempts
+            ]);
+            
             if ($attempts >= $this->maxAttempts) {
+                Log::warning('Rate limit exceeded for MFA verification in controller', [
+                    'user_id' => $userId,
+                    'attempts' => $attempts
+                ]);
                 return response()->json([
                     'error' => 'Too many attempts',
                     'message' => "Please try again after {$this->decayMinutes} minutes"
                 ], 429);
             }
 
-            if ($this->verifyCode($user, $request->oneTimePassword) || 
-                $this->verifyBackupCode($user, $request->oneTimePassword)) {
+            // Verify OTP
+            Log::info('Attempting to verify OTP code', [
+                'user_id' => $userId,
+                'otp_length' => strlen($request->oneTimePassword)
+            ]);
+
+            $isValidOtp = $this->verifyCode($user, $request->oneTimePassword);
+            //  $isValidBackup = $this->verifyBackupCode($user, $request->oneTimePassword);
+
+            Log::info('OTP verification result', [
+                'user_id' => $userId,
+                'otp_valid' => $isValidOtp,
+                // 'backup_valid' => $isValidBackup
+            ]);
+
+            if ($isValidOtp) {
                 
                 Cache::forget($key);
-                
-                // // Handle remember device
-                // $deviceToken = null;
-                // if ($request->rememberDevice) {
-                //     $deviceToken = $this->rememberDevice($user, $request);
-                // }
-
-                // Generate new tokens after successful MFA
-                $newToken = JWTAuth::fromUser($user);
+                // Generate new JWT tokens
+                $token = JWTAuth::fromUser($user);
                 $refreshToken = JWTAuth::fromUser($user);
 
-                // Invalidate the temporary token
-                JWTAuth::setToken($request->tempToken)->invalidate();
+                // Update MFA verification timestamp
+                $user->mfa_verified_at = now();
+                $user->save();
 
                 return response()->json([
-                    'message' => 'MFA verification successful',
-                    // 'deviceToken' => $deviceToken,
-                    'accessToken' => $newToken,
-                    'refreshToken' => $refreshToken,
-                    'role' => $user->getRoleNames()->first(),
-                    'expires_in' => JWTAuth::factory()->getTTL() * 60
-                ], 200);
+                    'data' => [
+                        'status' => 'success',
+                        'message' => 'MFA verification successful',
+                        'accessToken' => $token,
+                        'refreshToken' => $refreshToken,
+                        'role' => $user->getRoleNames()->first(),
+                        'expires_in' => auth()->factory()->getTTL() * 60
+                    ]
+                ],201);
             }
 
-            // Increment attempts
+            // Log failed attempt
+            Log::warning('Failed MFA verification attempt', [
+                'user_id' => $userId,
+                'attempts' => $attempts + 1,
+                'remaining_attempts' => $this->maxAttempts - ($attempts + 1)
+            ]);
+
             Cache::put($key, $attempts + 1, now()->addMinutes($this->decayMinutes));
 
             return response()->json([
                 'error' => 'Invalid code',
                 'attemptsRemaining' => $this->maxAttempts - ($attempts + 1)
             ], 401);
-        } catch (\Exception $e) {
-            Activity::create([
-                'log_name' => 'mfa',
-                'description' => 'MFA verification error',
-                'properties' => [
-                    'error' => $e->getMessage(),
-                    'ip' => $request->ip()
-                ]
-            ]);
 
+        } catch (\Exception $e) {
             Log::error('MFA verification error', [
                 'error' => $e->getMessage(),
-                'ip' => $request->ip()
+                'user_id' => $userId ?? null,
+                'ip' => $request->ip(),
+                'stack_trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
-                'errorMessage' => 'MFA verification failed',
+                'error' => 'MFA verification failed',
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+       protected function verifyCode($user, $code)
+    {
+        $google2fa = app('pragmarx.google2fa');
+        $result = $google2fa->verifyKey($user->mfa_secret, $code);
+        
+        Log::info('Google2FA verification attempt', [
+            'user_id' => $user->id,
+            'success' => $result,
+            'code_length' => strlen($code)
+        ]);
+        
+        return $result;
+    }
+
+    protected function verifyBackupCode($user, $code)
+    {
+        // Retrieve all unused backup codes for the user
+        $backupCodes = DB::table('mfa_backup_codes')
+            ->where('user_id', $user->id)
+            ->where('used', false)
+            ->get();
+    
+        foreach ($backupCodes as $backupCode) {
+            // Hash the provided code with the stored salt
+            $hashedCode = hash('sha256', $code . $backupCode->salt);
+    
+            // Check if the hash matches the stored hash
+            if ($hashedCode === $backupCode->code) {
+                // Mark the backup code as used
+                DB::table('mfa_backup_codes')
+                    ->where('id', $backupCode->id)
+                    ->update(['used' => true]);
+    
+                return true; // Code is valid and marked as used
+            }
+        }
+    
+        return false; // No matching backup code found
     }
 
     protected function generateBackupCodes(User $user)
@@ -193,23 +287,6 @@ class MFAController extends Controller
         return $backupCodes;
     }
 
-    protected function verifyBackupCode($user, $code)
-    {
-        $hashedCode = hash('sha256', $code);
-        $backupCode = DB::table('mfa_backup_codes')
-            ->where('user_id', $user->id)
-            ->where('code', $hashedCode)
-            ->where('used', false)
-            ->first();
-
-        if ($backupCode) {
-            DB::table('mfa_backup_codes')
-                ->where('id', $backupCode->id)
-                ->update(['used' => true]);
-            return true;
-        }
-        return false;
-    }
 
     protected function rememberDevice($user, Request $request)
     {
@@ -302,5 +379,7 @@ public function getStatus()
         'mfaVerified' => !empty($user->mfa_verified_at)
     ]);
 }
+
+ 
 
 }

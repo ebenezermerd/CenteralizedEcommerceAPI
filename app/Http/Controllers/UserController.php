@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['role', 'company'])
+        $users = User::with(['roles', 'company'])  // Change 'role' to 'roles'
             ->latest()
             ->paginate(10);
             

@@ -109,5 +109,18 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * Scope a query to only include users of a given role.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $role
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeRole($query, $role)
+    {
+        return $query->whereHas('roles', function ($query) use ($role) {
+            $query->where('name', $role);
+        });
+    }
 
 }

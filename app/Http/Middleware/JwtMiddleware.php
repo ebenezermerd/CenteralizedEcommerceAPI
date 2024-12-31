@@ -45,9 +45,13 @@ class JwtMiddleware
                 if (!$userId) {
                     Log::warning('Invalid MFA temporary token attempt', [
                         'path' => $currentPath,
-                        'ip' => $request->ip()
-                    ]);
-                    return response()->json(['error' => 'Invalid temporary token'], 401);
+                        'ip' => $request->ip(),
+                        'userId' => $userId,
+                        'token_provided' => $token,
+                        'request_parameters' => $request, // Exclude sensitive data
+                        'referrer' => $request->header('referer'),
+                        ]);
+                    return response()->json(['error' => 'Invalid temporary token from the middleware'], 401);
                 }
                 // Set the authenticated user context
                 $user = User::find($userId);

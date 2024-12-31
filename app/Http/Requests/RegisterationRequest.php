@@ -29,7 +29,8 @@ class RegisterationRequest extends FormRequest
             'phone' => 'required|string|max:255',
             'sex' => 'required|string|max:255',
             'address' => 'required|string|max:255',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:6',
+            'confirmPassword' => 'required|same:password',
             'verified' => 'boolean',
             'recaptchaToken' => 'required|captcha', // Validate reCAPTCHA
         ];
