@@ -48,9 +48,6 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
     intl \
     && docker-php-ext-enable opcache
 
-# Install additional PHP extensions
-RUN pecl install redis && docker-php-ext-enable redis
-
 # Configure PHP
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
