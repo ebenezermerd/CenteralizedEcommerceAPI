@@ -18,9 +18,6 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone');
             $table->string('sex');
-            $table->string('mfa_secret')->nullable();
-            $table->boolean('is_mfa_enabled')->default(false);
-            $table->timestamp('mfa_verified_at')->nullable();
             $table->string('country')->nullable();
             $table->string('region')->nullable();
             $table->string('image')->nullable();
@@ -34,6 +31,11 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->foreignId('company_id')->nullable()->constrained('companies');
             $table->enum('status', ['active', 'banned', 'pending', 'rejected'])->default('pending');
+            $table->string('mfa_secret')->nullable(); // Add this line
+            $table->boolean('is_mfa_enabled')->default(false); // Add this line
+            $table->timestamp('mfa_verified_at')->nullable(); // Add this line
+            $table->string('email_otp')->nullable(); // Add this line
+            $table->timestamp('email_otp_expires_at')->nullable(); // Add this line
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

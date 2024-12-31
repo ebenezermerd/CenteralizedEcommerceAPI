@@ -17,7 +17,6 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         TelescopeServiceProvider::class;
-        $this->app->singleton(MFATokenService::class);
         $this->app->singleton(BackupCodeService::class);
     }
 

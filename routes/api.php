@@ -7,6 +7,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\MFAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HealthController;
+use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
+use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -23,13 +25,13 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     
     // MFA routes
-    Route::get('/auth/mfa/status', [MFAController::class, 'getStatus']);
-    Route::post('/auth/mfa/setup', [MFAController::class, 'setup']);
-    Route::post('/auth/mfa/verify', [MFAController::class, 'verify'])->middleware('throttle:5,10');
-    Route::get('/auth/mfa/download-qr', [MFAController::class, 'downloadQr']);
-    Route::post('/auth/mfa/regenerate-backup-codes', [MFAController::class, 'regenerateBackupCodes']);
+    Route::post('/auth/two-factor-challenge', [TwoFactorAuthenticationController::class, 'store']);
+    Route::post('/auth/two-factor-authentication', [TwoFactorAuthenticationController::class, 'enable']);
+    Route::delete('/auth/two-factor-authentication', [TwoFactorAuthenticationController::class, 'destroy']);
+    Route::get('/auth/two-factor-qr-code', [TwoFactorAuthenticationController::class, 'show']);
+    Route::get('/auth/two-factor-recovery-codes', [TwoFactorAuthenticatedSessionController::class, 'index']);
+    Route::post('/auth/two-factor-recovery-codes', [TwoFactorAuthenticatedSessionController::class, 'store']);
 
-    
     // Admin only routes
     Route::middleware(['role:admin'])->group(function () {
         // User management

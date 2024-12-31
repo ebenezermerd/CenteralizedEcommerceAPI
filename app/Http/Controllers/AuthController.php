@@ -19,17 +19,17 @@ use Spatie\Activitylog\Facades\LogActivity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
-use App\Services\MFATokenService;
+use App\Services\EmailVerificationService;
 
 class AuthController extends Controller
 {
     use ApiResponses;
 
-    protected $mfaTokenService;
+    protected $emailVerificationService;
 
-    public function __construct(MFATokenService $mfaTokenService)
+    public function __construct(EmailVerificationService $emailVerificationService)
     {
-        $this->mfaTokenService = $mfaTokenService;
+        $this->emailVerificationService = $emailVerificationService;
     }
 
     /**
@@ -300,8 +300,10 @@ class AuthController extends Controller
             
             // Check if MFA is enabled
             if ($user->is_mfa_enabled) {
-                // Generate temporary token for MFA verification
-                $tempToken = $this->mfaTokenService->generateTempToken($user->id);
+            $tempToken = JWTAuth::fromUser($user, ['exp' => now()->addMinutes(10)->timestamp]);
+
+            // Add this line to send the MFA OTP email
+             $this->emailVerificationService->sendMfaOtp($user);
 
                 Log::info('MFA token generated', [
                     'user_id' => $user->id,
@@ -420,6 +422,115 @@ class AuthController extends Controller
         }
     }
 
+
+    public function sendEmailVerificationOTP(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+        
+        try {
+            $this->emailVerificationService->sendVerificationEmail($user);
+            return response()->json(['message' => 'OTP sent successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to send OTP'], 500);
+        }
+    }
+
+    public function verifyEmailOTP(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string|size:6'
+        ]);
+
+        if ($this->emailVerificationService->verifyOTP($request->email, $request->otp)) {
+            $user = User::where('email', $request->email)->first();
+            $user->email_verified_at = now();
+            $user->save();
+
+            return response()->json(['message' => 'Email verified successfully']);
+        }
+
+        return response()->json(['error' => 'Invalid OTP'], 400);
+    }
+
+    public function enableMfa(Request $request)
+    {
+        $user = Auth::user();
+        $user->is_mfa_enabled = true;
+        $user->save();
+
+        $this->emailVerificationService->sendMfaOtp($user);
+
+        return response()->json(['message' => 'MFA enabled and OTP sent']);
+    }
+
+    public function disableMfa(Request $request)
+    {
+        $user = Auth::user();
+        $user->is_mfa_enabled = false;
+        $user->mfa_verified_at = null;
+        $user->save();
+
+        return response()->json(['message' => 'MFA disabled']);
+    }
+
+    public function getMfaStatus(Request $request)
+    {
+        $user = Auth::user();
+        return response()->json([
+            'is_mfa_enabled' => $user->is_mfa_enabled,
+            'mfa_verified_at' => $user->mfa_verified_at,
+        ]);
+    }
+
+    public function verifyMfa(Request $request)
+    {
+        $request->validate([
+            'otp' => 'required|string|size:6'
+        ]);
+
+        $user = Auth::user();
+
+        if ($this->emailVerificationService->verifyMfaOtp($user->email, $request->otp)) {
+            $user->mfa_verified_at = now();
+            $user->save();
+
+            $token = JWTAuth::fromUser($user);
+            $refreshToken = JWTAuth::fromUser($user);
+            
+            // Log successful login
+            Log::info('User logged in successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip()
+            ]);
+            
+            return response()->json([
+                'status' => 'success',
+                'accessToken' => $token,
+                'refreshToken' => $refreshToken,
+                'user' => new UserResource($user),
+                'role' => $user->getRoleNames()->first(),
+                'mfaRequired' => $user->is_mfa_enabled,
+                'expires_in' => JWTAuth::factory()->getTTL() * 60
+            ], 200);
+        }
+
+        return response()->json(['error' => 'Invalid OTP'], 400);
+    }
+
+    public function resendMfaOtp(Request $request)
+    {
+        $user = Auth::user();
+        $this->emailVerificationService->sendMfaOtp($user);
+
+        return response()->json(['message' => 'OTP resent successfully']);
+    }
+    
     /**
      * @OA\Post(
      *     path="/api/auth/logout",

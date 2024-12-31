@@ -24,7 +24,7 @@ class User extends Authenticatable implements JWTSubject
     protected $fillable = [
         'firstName', 'lastName', 'email', 'phone', 'sex', 
         'address', 'password', 'mfa_secret', 'is_mfa_enabled', 'mfa_verified_at', 'company_id', 'country', 'region', 'city',
-        'verified', 'email_verified_at', 'image', 'status', 'zip_code'
+        'verified', 'email_verified_at', 'image', 'status', 'zip_code', 'email_otp', 'email_otp_expires_at' // Add these fields
     ];
 
     public function getJWTIdentifier()
@@ -67,6 +67,7 @@ class User extends Authenticatable implements JWTSubject
         'is_verified' => 'boolean',
         'verified' => 'boolean',
         'backup_codes' => 'array',
+        'email_otp_expires_at' => 'datetime', // Add this line
     ];
 
     public function generateBackupCodes()
