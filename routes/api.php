@@ -25,12 +25,11 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     
     // MFA routes
-    Route::post('/auth/two-factor-challenge', [TwoFactorAuthenticationController::class, 'store']);
-    Route::post('/auth/two-factor-authentication', [TwoFactorAuthenticationController::class, 'enable']);
-    Route::delete('/auth/two-factor-authentication', [TwoFactorAuthenticationController::class, 'destroy']);
-    Route::get('/auth/two-factor-qr-code', [TwoFactorAuthenticationController::class, 'show']);
-    Route::get('/auth/two-factor-recovery-codes', [TwoFactorAuthenticatedSessionController::class, 'index']);
-    Route::post('/auth/two-factor-recovery-codes', [TwoFactorAuthenticatedSessionController::class, 'store']);
+    Route::post('/auth/mfa-enable', [AuthController::class, 'enableMfa']);
+    Route::post('/auth/mfa-disable', [AuthController::class, 'disableMfa']);
+    Route::get('/auth/mfa-status', [AuthController::class, 'getMfaStatus']);
+    Route::post('/auth/mfa-verify', [AuthController::class, 'verifyMfa']);
+    Route::post('/auth/mfa-resend', [AuthController::class, 'resendMfaOtp']);
 
     // Admin only routes
     Route::middleware(['role:admin'])->group(function () {
