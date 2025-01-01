@@ -286,6 +286,9 @@ class AuthController extends Controller
         try {
             $credentials = $request->validated();
 
+            // Set TTL for access token to 15 minutes
+            JWTAuth::factory()->setTTL(15);
+
             if (!$token = JWTAuth::attempt($credentials)) {
                 Log::channel('telescope')->warning('Failed login attempt', [
                     'email' => $request->input('email'),
@@ -300,20 +303,8 @@ class AuthController extends Controller
             
             // Check if MFA is enabled
             if ($user->is_mfa_enabled) {
-            $tempToken = JWTAuth::fromUser($user, ['exp' => now()->addMinutes(10)->timestamp]);
-
-            // Add this line to send the MFA OTP email
-             $this->emailVerificationService->sendMfaOtp($user);
-
-                Log::info('MFA token generated', [
-                    'user_id' => $user->id,
-                    'temp_token' => $tempToken,
-                    'token' => $token,
-                    'role' => $user->getRoleNames()->first(),
-                    'timestamp' => now()
-                ]);
-                // Invalidate the main JWT token since MFA is pending
-                // JWTAuth::setToken($token)->invalidate();
+                $tempToken = JWTAuth::fromUser($user, ['exp' => now()->addMinutes(10)->timestamp]);
+                $this->emailVerificationService->sendMfaOtp($user);
 
                 return response()->json([
                     'status' => 'mfa_required',
@@ -328,10 +319,10 @@ class AuthController extends Controller
                 ], 200);
             }
 
-            // If no MFA, proceed with normal login
+            // Generate refresh token with 1 week TTL
+            JWTAuth::factory()->setTTL(10080);
             $refreshToken = JWTAuth::fromUser($user);
             
-            // Log successful login
             Log::info('User logged in successfully', [
                 'user_id' => $user->id,
                 'email' => $user->email,
@@ -345,9 +336,8 @@ class AuthController extends Controller
                 'user' => new UserResource($user),
                 'role' => $user->getRoleNames()->first(),
                 'mfaRequired' => $user->is_mfa_enabled,
-
-
-                'expires_in' => JWTAuth::factory()->getTTL() * 60
+                'expires_in' => 15 * 60, // 15 minutes in seconds
+                'refresh_expires_in' => 10080 * 60 // 1 week in seconds
             ], 200);
 
         } catch (JWTException $e) {
@@ -368,15 +358,30 @@ class AuthController extends Controller
     public function refresh()
     {
         try {
-            // Setting the token TTL to 2 weeks (14 days)
-            JWTAuth::factory()->setTTL(20160); // 14 days * 24 hours * 60 minutes
+            $oldToken = JWTAuth::getToken();
+            
+            if (!$oldToken) {
+                return response()->json(['error' => 'Refresh token not provided'], 401);
+            }
 
-            $newToken = JWTAuth::refresh(JWTAuth::getToken());
+            // Verify the refresh token
+            $refreshToken = JWTAuth::setToken($oldToken);
+            $payload = $refreshToken->getPayload();
+            
+            // Check if the token is actually a refresh token
+            if (!isset($payload['refresh']) || !$payload['refresh']) {
+                return response()->json(['error' => 'Invalid refresh token'], 401);
+            }
+
+            // Generate new access token with 15 minutes TTL
+            JWTAuth::factory()->setTTL(15);
+            $newToken = JWTAuth::fromUser(Auth::user());
 
             return response()->json([
+                'status' => 'success',
                 'accessToken' => $newToken,
                 'token_type' => 'bearer',
-                'expires_in' => JWTAuth::factory()->getTTL() * 60,
+                'expires_in' => 15 * 60, // 15 minutes in seconds
             ]);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not refresh token'], 500);
@@ -499,15 +504,13 @@ class AuthController extends Controller
             $user->mfa_verified_at = now();
             $user->save();
 
+            // Generate access token with 15 minutes TTL
+            JWTAuth::factory()->setTTL(15);
             $token = JWTAuth::fromUser($user);
-            $refreshToken = JWTAuth::fromUser($user);
-            
-            // Log successful login
-            Log::info('User logged in successfully', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'ip' => $request->ip()
-            ]);
+
+            // Generate refresh token with 1 week TTL
+            JWTAuth::factory()->setTTL(10080);
+            $refreshToken = JWTAuth::fromUser($user, ['refresh' => true]);
             
             return response()->json([
                 'status' => 'success',
@@ -516,7 +519,8 @@ class AuthController extends Controller
                 'user' => new UserResource($user),
                 'role' => $user->getRoleNames()->first(),
                 'mfaRequired' => $user->is_mfa_enabled,
-                'expires_in' => JWTAuth::factory()->getTTL() * 60
+                'expires_in' => 15 * 60, // 15 minutes in seconds
+                'refresh_expires_in' => 10080 * 60 // 1 week in seconds
             ], 200);
         }
 
