@@ -11,8 +11,8 @@ WORKDIR /var/www/html
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
-ENV SUPERVISOR_PHP_USER=sail
 ENV SUPERVISOR_PHP_COMMAND="/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80"
+ENV SUPERVISOR_PHP_USER=sail
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -59,7 +59,8 @@ RUN apt-get update && apt-get upgrade -y \
 RUN setcap "cap_net_bind_service=+ep" /usr/bin/php8.4
 
 RUN userdel -r ubuntu
-RUN groupadd --force -g $WWWGROUP sail
+# RUN groupadd --force -g $WWWGROUP sail
+RUN groupadd --force -g $WWWGROUP sail || true
 RUN useradd -ms /bin/bash --no-user-group -g $WWWGROUP -u 1337 sail
 
 # Create the supervisor log directory and set permissions
@@ -70,9 +71,9 @@ RUN mkdir -p /var/log/supervisor && \
     chown sail:sail /var/log/supervisor/supervisord.log && \
     chmod 644 /var/log/supervisor/supervisord.log
 
-COPY docker/8.4/start-container /usr/local/bin/start-container
-COPY docker/8.4/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/8.4/php.ini /etc/php/8.4/cli/conf.d/99-sail.ini
+COPY start-container /usr/local/bin/start-container
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY php.ini /etc/php/8.4/cli/conf.d/99-sail.ini
 RUN chmod +x /usr/local/bin/start-container
 
 EXPOSE 80/tcp
