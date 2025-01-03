@@ -33,7 +33,9 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     protected function authorization()
     {
         Gate::define('viewTelescope', function ($user = null) {
-            return true; // Allow all access for testing
+            return app()->environment('local') || 
+                   app()->environment('development') || 
+                   request()->getHost() === 'api.koricha-ecommerce.com';
         });
     }
 }

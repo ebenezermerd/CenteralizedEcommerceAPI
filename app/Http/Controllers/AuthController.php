@@ -220,7 +220,9 @@ class AuthController extends Controller
                 $user->save();
             }
 
-            $accessToken = JWTAuth::fromUser($user);
+            // $accessToken = JWTAuth::fromUser($user);
+              // Send email verification
+             $user->sendEmailVerificationNotification();
 
             Log::info('User registered successfully', [
                 'user_id' => $user->id,
@@ -230,8 +232,8 @@ class AuthController extends Controller
             ]);
             
             return response()->json([
-                'accessToken' => $accessToken,
-                'user' => new UserResource($user)
+                'message' => 'Registration successful! Please verify your email.',
+                // 'user' => new UserResource($user)
             ], 201);
 
         } catch (\Exception $e) {
@@ -304,6 +306,11 @@ class AuthController extends Controller
             // Check if MFA is enabled
             if ($user->is_mfa_enabled) {
                 $tempToken = JWTAuth::fromUser($user, ['exp' => now()->addMinutes(10)->timestamp]);
+                Log::info('MFA required for user', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'ip' => $request->ip()
+                ]);
                 $this->emailVerificationService->sendMfaOtp($user);
 
                 return response()->json([
@@ -470,7 +477,7 @@ class AuthController extends Controller
 
         $this->emailVerificationService->sendMfaOtp($user);
 
-        return response()->json(['message' => 'MFA enabled and OTP sent']);
+        return response()->json(['message' => 'MFA enabled and OTP sent'], 201);
     }
 
     public function disableMfa(Request $request)
@@ -480,7 +487,7 @@ class AuthController extends Controller
         $user->mfa_verified_at = null;
         $user->save();
 
-        return response()->json(['message' => 'MFA disabled']);
+        return response()->json(['message' => 'MFA disabled'], 201);
     }
 
     public function getMfaStatus(Request $request)
