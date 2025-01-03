@@ -141,4 +141,14 @@ class Product extends Model
     {
         return $query->where('publish', 'published');
     }
+    
+    public function orderItems()
+    {
+        return $this->hasMany(OrderProductItem::class);
+    }
+
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
 }

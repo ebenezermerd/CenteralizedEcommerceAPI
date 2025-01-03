@@ -93,7 +93,7 @@ return [
 
     'middleware' => [
         'web',
-        Authorize::class,
+        // Authorize::class,
     ],
 
     /*
@@ -169,8 +169,8 @@ return [
         Watchers\JobWatcher::class => env('TELESCOPE_JOB_WATCHER', true),
 
         Watchers\LogWatcher::class => [
-            'enabled' => env('TELESCOPE_LOG_WATCHER', true),
-            'level' => 'info',
+            'enabled' => true,
+            'level' => 'debug',
         ],
         
         

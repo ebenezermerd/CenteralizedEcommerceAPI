@@ -10,8 +10,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
@@ -53,7 +54,6 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
-        'google2fa_secret'
     ];
 
     /**
@@ -66,23 +66,8 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
         'is_verified' => 'boolean',
         'verified' => 'boolean',
-        'backup_codes' => 'array',
         'email_otp_expires_at' => 'datetime', // Add this line
     ];
-
-    public function generateBackupCodes()
-{
-    $codes = [];
-    for ($i = 0; $i < 8; $i++) {
-        $codes[] = Str::random(10);
-    }
-    $this->backup_codes = array_map(function($code) {
-        return Hash::make($code);
-    }, $codes);
-    $this->save();
-    
-    return $codes; // Return plain codes for one-time display
-}
 
     // Add accessor for name
     protected function name(): Attribute
@@ -108,6 +93,15 @@ class User extends Authenticatable implements JWTSubject
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
     }
 
     /**

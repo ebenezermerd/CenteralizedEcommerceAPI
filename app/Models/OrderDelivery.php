@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class OrderDelivery extends Model
+{
+    use HasFactory;
+
+    protected $fillable = ['order_id', 'ship_by', 'speedy', 'tracking_number'];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+}

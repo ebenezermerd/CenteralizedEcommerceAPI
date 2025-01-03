@@ -7,6 +7,10 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\MFAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\CartController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 
@@ -53,10 +57,31 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('product/details', [ProductController::class, 'show']);
     });
 
-    
     // Routes accessible by all authenticated users
     Route::get('products/list', [ProductController::class, 'index']);
     Route::get('products/{id}', [ProductController::class, 'show']);
+    
+    // Review routes
+    Route::get('reviews', [ReviewController::class, 'index']);
+    Route::get('reviews/{id}', [ReviewController::class, 'show']);
+    
+    
+    // Invoice routes
+    Route::get('invoices', [InvoiceController::class, 'index']);
+    Route::get('invoices/{id}', [InvoiceController::class, 'show']);
+    
+    // Order routes
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::get('orders/{id}', [OrderController::class, 'show']);
+    Route::post('/checkout', [OrderController::class, 'checkout']);
+    Route::post('/order/{orderId}/payment-proof', [OrderController::class, 'uploadPaymentProof']);
+    
+    // Cart routes
+    Route::get('cart', [CartController::class, 'index']);
+    Route::post('cart', [CartController::class, 'store']);
+    Route::get('cart/{id}', [CartController::class, 'show']);
+    Route::put('cart/{id}', [CartController::class, 'update']);
+    Route::delete('cart/{id}', [CartController::class, 'destroy']);
 });
 
 // Customer specific routes
