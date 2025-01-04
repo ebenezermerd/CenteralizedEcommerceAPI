@@ -15,6 +15,12 @@ fi
 
 chmod -R ugo+rw /.composer
 
+# Ensure gosu is available
+if ! command -v gosu &>/dev/null; then
+    echo "gosu not found, installing..."
+    apt-get update && apt-get install -y gosu
+fi
+
 if [ $# -gt 0 ]; then
     if [ "$SUPERVISOR_PHP_USER" = "root" ]; then
         exec "$@"
