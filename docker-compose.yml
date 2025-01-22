@@ -2,11 +2,11 @@
 services:
     laravel.test:
         build:
-            context: "./docker/8.4"
+            context: "./docker/8.2"
             dockerfile: Dockerfile
             args:
                 WWWGROUP: "${WWWGROUP}"
-        image: "sail-8.4/app"
+        image: "sail-8.2/app"
         extra_hosts:
             - "host.docker.internal:host-gateway"
             - "api.koricha-ecommerce.com:127.0.0.1" # Add this line
@@ -15,6 +15,7 @@ services:
             - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
         environment:
             WWWUSER: "${WWWUSER}"
+            SUPERVISOR_PHP_USER: "sail"
             LARAVEL_SAIL: 1
             XDEBUG_MODE: "${SAIL_XDEBUG_MODE:-off}"
             XDEBUG_CONFIG: "${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}"
