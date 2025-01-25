@@ -125,7 +125,7 @@ class OrderController extends Controller
                     'amount' => $validated['payment']['amount'],
                     'first_name' => explode(' ', $validated['billing']['name'])[0],
                     'last_name' => explode(' ', $validated['billing']['name'])[1] ?? '',
-                    'phone_number' => $validated['billing']['phoneNumber'],
+                    'phone_number' => str_replace(' ', '', $validated['billing']['phoneNumber']),
                     'currency' => $validated['payment']['currency'],
                     'email' => $validated['billing']['email'],
                     'tx_ref' => $validated['payment']['tx_ref'],
@@ -214,7 +214,7 @@ class OrderController extends Controller
         ]);
 
         try {
-            $signature = $request->header('Chapa-Signature');
+            $signature = strtolower($request->header('X-Chapa-Signature'));
             $payload = $request->getContent();
             $secret = config('chapa.webhookSecret');
 
@@ -225,9 +225,12 @@ class OrderController extends Controller
                 'secret' => $secret
             ]);
 
-            $calculatedSignature = hash_hmac('sha256', $payload, $secret);
+            $calculatedSignature = strtolower(hash_hmac('sha256', $payload, $secret));
 
-            \Log::info('Calculated signature', [
+            \Log::info('Webhook Verification Debug', [
+                'secret' => $secret,
+                'payload' => $payload,
+                'received_signature' => $signature,
                 'calculated_signature' => $calculatedSignature
             ]);
 

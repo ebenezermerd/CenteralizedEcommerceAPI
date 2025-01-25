@@ -99,5 +99,5 @@ Route::middleware(['role:customer|admin'])->group(function () {
 });
 
 Route::post('chapa/callback', [ChapaController::class, 'handleCallback'])->name('chapa.callback');
-Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');
 Route::post('chapa/webhook', [OrderController::class, 'handleWebhook'])->name('chapa.webhook');
+Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');

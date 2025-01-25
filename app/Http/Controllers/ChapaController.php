@@ -90,7 +90,7 @@ class ChapaController extends Controller
         if ($payment->status === 'completed') {
             return redirect()->to(env('FRONTEND_URL') . '/product/checkout?step=3');
         } else {
-            return redirect()->to(env('FRONTEND_URL') . '/product/checkout?step=4');
+            return redirect()->to(env('FRONTEND_URL') . '/product/checkout?step=3');
         }
     }
 }
