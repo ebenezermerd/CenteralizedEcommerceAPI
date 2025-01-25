@@ -1,0 +1,107 @@
+# Stage 1: Composer dependencies
+FROM composer:2 as vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Stage 2: Final production image
+FROM php:8.2-fpm
+
+# Install system packages and PHP extensions
+RUN apt-get update && apt-get install -y \
+    default-mysql-server \
+    supervisor \
+    nginx \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    gosu \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql zip opcache
+
+# Create necessary directories and set permissions
+RUN mkdir -p /var/run/php-fpm /var/run/mysqld /var/lib/mysql /var/log/mysql /var/log/supervisor \
+    && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql /var/log/mysql \
+    && chmod 755 /var/run/mysqld \
+    && chmod 755 /var/lib/mysql \
+    && chown -R www-data:www-data /var/run/php-fpm \
+    && chmod 755 /var/log/supervisor
+
+# Copy application files
+COPY --from=vendor /app/vendor/ /var/www/html/vendor/
+COPY . /var/www/html/
+WORKDIR /var/www/html
+
+# Generate optimized autoload files
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && composer dump-autoload --optimize
+
+# Copy configuration files
+COPY docker/8.2/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/nginx.conf /etc/nginx/sites-available/default
+
+# Configure PHP and PHP-FPM
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && echo "memory_limit = 256M" >> "$PHP_INI_DIR/php.ini" \
+    && echo "max_execution_time = 60" >> "$PHP_INI_DIR/php.ini" \
+    && echo "upload_max_filesize = 64M" >> "$PHP_INI_DIR/php.ini" \
+    && echo "post_max_size = 64M" >> "$PHP_INI_DIR/php.ini"
+
+# Configure PHP-FPM
+# Configure PHP-FPM to use Unix socket
+RUN sed -i 's/listen = 9000/listen = \/var\/run\/php-fpm\/php-fpm.sock/g' /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "listen.owner = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "listen.group = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "listen.mode = 0660" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+
+# Configure Nginx
+RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/ \
+    && rm /etc/nginx/sites-enabled/default.conf 2>/dev/null || true
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Expose ports
+EXPOSE 80 3306
+
+# Configure MySQL
+# Configure MySQL with minimal settings
+RUN mkdir -p /etc/mysql/conf.d && \
+    echo '[mysqld]\n\
+    socket=/var/run/mysqld/mysqld.sock\n\
+    port=3306\n\
+    bind-address=127.0.0.1\n\
+    character-set-server=utf8mb4\n\
+    collation-server=utf8mb4_unicode_ci' > /etc/mysql/conf.d/custom.cnf
+
+# Set environment variables
+ENV PHP_FPM_USER=www-data \
+    PHP_FPM_GROUP=www-data \
+    APP_ENV=production \
+    APP_DEBUG=false \
+    NGINX_SERVER_NAME=_ \
+    MYSQL_DATABASE=koricha_ecommerce_db \
+    MYSQL_USER=koricha \
+    MYSQL_PASSWORD=saddle \
+    MYSQL_ROOT_PASSWORD=saddle \
+    DB_HOST=127.0.0.1 \
+    DB_PORT=3306 \
+    DB_DATABASE=koricha_ecommerce_db \
+    DB_USERNAME=koricha \
+    DB_PASSWORD=saddle
+
+# Add startup script
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD mysql -h127.0.0.1 -P${DB_PORT:-3306} -u${DB_USERNAME} -p${DB_PASSWORD} -e 'SELECT 1;' && \
+        curl -f http://localhost/health || exit 1
+
+# Start supervisor
+CMD ["/usr/local/bin/start.sh"]
