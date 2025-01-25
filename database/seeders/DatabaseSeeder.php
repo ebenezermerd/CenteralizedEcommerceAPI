@@ -21,11 +21,11 @@ class DatabaseSeeder extends Seeder
         // Create users with proper role assignments
         User::factory(10)->create()->each(function ($user) {
             $faker = \Faker\Factory::create();
-            
+
             // Randomly assign one role to each user
             $role = Role::inRandomOrder()->first();
             $user->assignRole($role->name);
-            
+
             // Set basic user data
             $user->firstName = $faker->firstName;
             $user->lastName = $faker->lastName;
@@ -33,8 +33,17 @@ class DatabaseSeeder extends Seeder
             $user->phone = $faker->phoneNumber;
             $user->sex = $faker->randomElement(['male', 'female']);
             $user->address = $faker->address;
+            $user->country = $faker->country;
+            $user->city = $faker->city;
+            $user->about = $faker->text;
+            $user->status = 'active';
+            $user->email_verified_at = now();
+            $user->verified = true;
+            $user->zip_code = $faker->postcode;
+            $user->image = $faker->imageUrl(640, 480, 'people');
+            $user->region = $faker->state;
             $user->password = bcrypt('password');
-            
+
             // Create company for suppliers
             if ($role->name === 'supplier') {
                 $company = Company::create([
@@ -49,7 +58,7 @@ class DatabaseSeeder extends Seeder
                 ]);
                 $user->company_id = $company->id;
             }
-            
+
             $user->save();
         });
 

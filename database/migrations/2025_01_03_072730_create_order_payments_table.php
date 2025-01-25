@@ -14,11 +14,14 @@ return new class extends Migration
         Schema::create('order_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->enum('payment_method', ['banking', 'mobile_banking', 'cash_on_delivery']);
+            $table->string('payment_method');
+            $table->decimal('amount', 8, 2);
+            $table->string('currency');
+            $table->string('tx_ref')->nullable();
+            $table->string('status')->default('pending');
             $table->string('bank_account')->nullable();
             $table->string('mobile_banking_number')->nullable();
             $table->string('proof_of_payment')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();
         });
     }

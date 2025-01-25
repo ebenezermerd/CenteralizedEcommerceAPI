@@ -20,7 +20,7 @@ class Order extends Model
 
     public function items()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(OrderProductItem::class);
     }
 
     public function histories()
@@ -55,5 +55,5 @@ class Order extends Model
         $this->total_amount = $this->subtotal + $this->taxes - $this->discount + $this->shipping;
         $this->save();
     }
-];
+
 }

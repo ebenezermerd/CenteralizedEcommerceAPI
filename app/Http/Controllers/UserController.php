@@ -16,7 +16,7 @@ class UserController extends Controller
         $users = User::with(['roles', 'company'])  // Change 'role' to 'roles'
             ->latest()
             ->paginate(10);
-            
+
         return response()->json([
             'users' => UserResource::collection($users)
         ]);
@@ -28,14 +28,15 @@ class UserController extends Controller
             'firstName' => 'required|string',
             'lastName' => 'required|string',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
             'phone' => 'required|string',
             'address' => 'required|string',
             'country' => 'nullable|string',
             'region' => 'nullable|string',
+            'sex' => 'nullable|string',
             'city' => 'nullable|string',
+            'about' => 'nullable|string',
             'zip_code' => 'nullable|string',
-            'role_id' => 'required|exists:roles,id',
+            'role' => 'required|string|in:admin,supplier,customer',
             'company_id' => 'nullable|exists:companies,id',
             'image' => 'nullable|image|max:2048',
         ]);
@@ -44,8 +45,18 @@ class UserController extends Controller
             $validated['image'] = $request->file('image')->store('avatars', 'public');
         }
 
-        $validated['password'] = Hash::make($validated['password']);
-        $user = User::create($validated);
+        // Remove role from validated data and add status and password
+        $role = $validated['role'];
+        unset($validated['role']);
+
+        $user = User::create([
+            ...$validated,
+            'status' => 'pending',
+            'password' => Hash::make('koricha123@account')
+        ]);
+
+        // Assign role to user
+        $user->assignRole($role);
 
         return response()->json([
             'users' => new UserResource($user)
@@ -62,40 +73,98 @@ class UserController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $user = User::findOrFail($id);
-        
-        $validated = $request->validate([
-            'firstName' => 'sometimes|string',
-            'lastName' => 'sometimes|string',
-            'email' => 'sometimes|email|unique:users,email,' . $id,
-            'phone' => 'sometimes|string',
-            'address' => 'sometimes|string',
-            'country' => 'nullable|string',
-            'region' => 'nullable|string',
-            'city' => 'nullable|string',
-            'zip_code' => 'nullable|string',
-            'role_id' => 'sometimes|exists:roles,id',
-            'company_id' => 'nullable|exists:companies,id',
-            'status' => 'sometimes|in:active,banned,pending,rejected',
-            'image' => 'nullable|image|max:2048',
-        ]);
+        try {
+            // Find user or fail
+            $user = User::findOrFail($id);
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('avatars', 'public');
+            // Validate incoming data
+            $validated = $request->validate([
+                'firstName' => 'sometimes|string|max:255',
+                'lastName' => 'sometimes|string|max:255',
+                'email' => 'sometimes|email|unique:users,email,' . $id,
+                'phone' => 'sometimes|string|max:15',
+                'status' => 'sometimes|string|in:active,pending,banned,rejected',
+                'address' => 'sometimes|string|max:500',
+                'country' => 'nullable|string|max:100',
+                'region' => 'nullable|string|max:100',
+                'city' => 'nullable|string|max:100',
+                'sex' => 'nullable|string|in:male,female,other',
+                'zip_code' => 'nullable|string|max:10',
+                'role' => 'sometimes|string|in:admin,supplier,customer',
+                'company_id' => 'nullable|exists:companies,id',
+                'about' => 'nullable|string|max:1000',
+                'image' => 'nullable|image|max:2048'
+            ]);
+
+            // Handle image update
+            if ($request->hasFile('image')) {
+                // Delete old image file if it exists
+                if ($user->image && Storage::disk('public')->exists($user->image)) {
+                    Storage::disk('public')->delete($user->image);
+                }
+                // Store new image
+                $validated['image'] = $request->file('image')->store('avatars', 'public');
+            }
+
+            // Handle role update
+            if (isset($validated['role'])) {
+                $role = $validated['role'];
+                unset($validated['role']);
+                $user->syncRoles([$role]); // Sync roles with Spatie's permission package
+            }
+
+            // Update user data
+            $user->update($validated);
+
+            // Log successful update
+            Log::info('User updated successfully', [
+                'user_id' => $user->id,
+                'updated_fields' => array_keys($validated),
+                'image_updated' => isset($validated['image']),
+                'ip' => $request->ip()
+            ]);
+
+            // Return updated user resource
+            return response()->json([
+                'success' => true,
+                'message' => 'User updated successfully.',
+                'data' => new UserResource($user)
+            ]);
+        } catch (ModelNotFoundException $e) {
+            Log::warning('User not found', [
+                'user_id' => $id,
+                'ip' => $request->ip()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.'
+            ], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('User update failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'ip' => $request->ip()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update user. Please try again later.'
+            ], 500);
         }
-
-        $user->update($validated);
-        return response()->json([
-            'users' => new UserResource($user)
-        ]);
     }
+
 
     public function destroy(string $id)
     {
         try {
             $user = User::findOrFail($id);
             $user->delete();
-            
+
             Log::info('User deleted', [
                 'admin_id' => Auth::id(),
                 'deleted_user_id' => $id,

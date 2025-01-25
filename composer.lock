@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4670276e0f838f12ec987ccbc7194723",
+    "content-hash": "96ecdcbbdbfa80653252dfc408d4fe16",
     "packages": [
         {
             "name": "anhskohbo/no-captcha",
@@ -308,6 +308,81 @@
                 }
             ],
             "time": "2024-02-09T16:56:22+00:00"
+        },
+        {
+            "name": "chapa/chapa-laravel",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Chapa-Et/chapa-laravel.git",
+                "reference": "ecc585adf3a8b3c847196544a14a795ba757cba3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Chapa-Et/chapa-laravel/zipball/ecc585adf3a8b3c847196544a14a795ba757cba3",
+                "reference": "ecc585adf3a8b3c847196544a14a795ba757cba3",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "~6|~7|~8|~9",
+                "illuminate/support": "^5.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
+                "php": "^7.2|^8.0|^8.1|^8.2"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^9.0",
+                "phpunit/phpunit": "^11.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Chapa": "Chapa\\Chapa\\Facades\\Chapa"
+                    },
+                    "providers": [
+                        "Chapa\\Chapa\\ChapaServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Chapa\\Chapa\\": "src/"
+                },
+                "classmap": [
+                    "src/Chapa.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Kidus Yared",
+                    "email": "kidusy@chapa.co",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Israel Goytom",
+                    "email": "myfirstname@chapa.co",
+                    "role": "CTO"
+                },
+                {
+                    "name": "Semeredin Nurgeba",
+                    "email": "semernur11@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A Laravel Package to Accept Payment through Chapa",
+            "homepage": "https://github.com/chapa-et/chapa-laravel",
+            "keywords": [
+                "chapa",
+                "chapa-laravel"
+            ],
+            "support": {
+                "source": "https://github.com/Chapa-Et/chapa-laravel/tree/main"
+            },
+            "time": "2024-10-23T21:03:04+00:00"
         },
         {
             "name": "darkaonline/l5-swagger",
@@ -8129,37 +8204,37 @@
         },
         {
             "name": "nunomaduro/collision",
-            "version": "v8.5.0",
+            "version": "v8.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nunomaduro/collision.git",
-                "reference": "f5c101b929c958e849a633283adff296ed5f38f5"
+                "reference": "86f003c132143d5a2ab214e19933946409e0cae7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nunomaduro/collision/zipball/f5c101b929c958e849a633283adff296ed5f38f5",
-                "reference": "f5c101b929c958e849a633283adff296ed5f38f5",
+                "url": "https://api.github.com/repos/nunomaduro/collision/zipball/86f003c132143d5a2ab214e19933946409e0cae7",
+                "reference": "86f003c132143d5a2ab214e19933946409e0cae7",
                 "shasum": ""
             },
             "require": {
                 "filp/whoops": "^2.16.0",
-                "nunomaduro/termwind": "^2.1.0",
+                "nunomaduro/termwind": "^2.3.0",
                 "php": "^8.2.0",
-                "symfony/console": "^7.1.5"
+                "symfony/console": "^7.2.1"
             },
             "conflict": {
-                "laravel/framework": "<11.0.0 || >=12.0.0",
-                "phpunit/phpunit": "<10.5.1 || >=12.0.0"
+                "laravel/framework": "<11.39.1 || >=13.0.0",
+                "phpunit/phpunit": "<11.5.3 || >=12.0.0"
             },
             "require-dev": {
-                "larastan/larastan": "^2.9.8",
-                "laravel/framework": "^11.28.0",
-                "laravel/pint": "^1.18.1",
-                "laravel/sail": "^1.36.0",
-                "laravel/sanctum": "^4.0.3",
+                "larastan/larastan": "^2.9.12",
+                "laravel/framework": "^11.39.1",
+                "laravel/pint": "^1.20.0",
+                "laravel/sail": "^1.40.0",
+                "laravel/sanctum": "^4.0.7",
                 "laravel/tinker": "^2.10.0",
-                "orchestra/testbench-core": "^9.5.3",
-                "pestphp/pest": "^2.36.0 || ^3.4.0",
+                "orchestra/testbench-core": "^9.9.2",
+                "pestphp/pest": "^3.7.3",
                 "sebastian/environment": "^6.1.0 || ^7.2.0"
             },
             "type": "library",
@@ -8197,6 +8272,7 @@
                 "cli",
                 "command-line",
                 "console",
+                "dev",
                 "error",
                 "handling",
                 "laravel",
@@ -8222,7 +8298,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2024-10-15T16:06:32+00:00"
+            "time": "2025-01-23T13:41:43+00:00"
         },
         {
             "name": "phar-io/manifest",
@@ -9797,7 +9873,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "chapa/chapa-laravel": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

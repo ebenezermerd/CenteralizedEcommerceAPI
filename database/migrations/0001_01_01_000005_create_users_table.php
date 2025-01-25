@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->string('city')->nullable();
             $table->string('address');
+            $table->text('about')->nullable();
             $table->timestamps();
             $table->rememberToken();
             $table->string('email')->unique();

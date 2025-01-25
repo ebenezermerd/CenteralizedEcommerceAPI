@@ -17,7 +17,11 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('avatar_url')->nullable();
-            $table->string('ip_address');
+            $table->string('ip_address')->nullable();
+            $table->string('full_address');
+            $table->string('phone_number');
+            $table->string('company')->nullable();
+            $table->string('address_type')->nullable();
             $table->timestamps();
         });
     }

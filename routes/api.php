@@ -11,6 +11,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ChapaController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 
@@ -22,12 +23,16 @@ Route::post('/auth/sign-up', [AuthController::class, 'register']);
 Route::post('/auth/sign-in', [AuthController::class, 'login']);
 Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
+// Routes accessible by all authenticated users
+Route::get('products/list', [ProductController::class, 'index']);
+Route::get('products/{id}', [ProductController::class, 'show']);
+
 // Protected routes
 Route::middleware(['jwt'])->group(function () {
     // Auth routes
     Route::get('/auth/me', [AuthController::class, 'getUser']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
-    
+
     // MFA routes
     Route::post('/auth/mfa-enable', [AuthController::class, 'enableMfa']);
     Route::post('/auth/mfa-disable', [AuthController::class, 'disableMfa']);
@@ -41,10 +46,10 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('users/list', [UserController::class, 'index']);
         Route::get('user/details/{id}', [UserController::class, 'show']);
         Route::post('users/create', [UserController::class, 'store']);
-        Route::put('users/{id}', [UserController::class, 'update']);
+        Route::put('users/update/{id}', [UserController::class, 'update']);
         Route::delete('users/{id}', [UserController::class, 'destroy']);
         Route::put('users/{id}/role', [UserController::class, 'updateRole']);
-        
+
         // Admin product management
         Route::delete('products/{id}', [ProductController::class, 'destroy']);
     });
@@ -55,27 +60,25 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('products/list', [ProductController::class, 'index']);
         Route::put('products/{id}', [ProductController::class, 'update']);
         Route::get('product/details', [ProductController::class, 'show']);
+        Route::put('users/update/{id}', [UserController::class, 'update']);
     });
 
-    // Routes accessible by all authenticated users
-    Route::get('products/list', [ProductController::class, 'index']);
-    Route::get('products/{id}', [ProductController::class, 'show']);
-    
+
     // Review routes
     Route::get('reviews', [ReviewController::class, 'index']);
     Route::get('reviews/{id}', [ReviewController::class, 'show']);
-    
-    
+
+
     // Invoice routes
     Route::get('invoices', [InvoiceController::class, 'index']);
     Route::get('invoices/{id}', [InvoiceController::class, 'show']);
-    
+
     // Order routes
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::post('/checkout', [OrderController::class, 'checkout']);
     Route::post('/order/{orderId}/payment-proof', [OrderController::class, 'uploadPaymentProof']);
-    
+
     // Cart routes
     Route::get('cart', [CartController::class, 'index']);
     Route::post('cart', [CartController::class, 'store']);
@@ -85,11 +88,16 @@ Route::middleware(['jwt'])->group(function () {
 });
 
 // Customer specific routes
-Route::middleware(['role:customer'])->group(function () {
+Route::middleware(['role:customer|admin'])->group(function () {
     Route::post('reviews', [ReviewController::class, 'store']);
     Route::put('reviews/{id}', [ReviewController::class, 'update']);
     Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
-    
-    Route::post('orders', [OrderController::class, 'store']);
+
+    Route::post('checkout/order', [OrderController::class, 'checkout']);
     Route::get('orders/my-orders', [OrderController::class, 'myOrders']);
+
 });
+
+Route::post('chapa/callback', [ChapaController::class, 'handleCallback'])->name('chapa.callback');
+Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');
+Route::post('chapa/webhook', [OrderController::class, 'handleWebhook'])->name('chapa.webhook');

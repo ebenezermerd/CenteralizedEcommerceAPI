@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->decimal('taxes', 8, 2);
-            $table->enum('status', ['Completed', 'To process', 'Cancelled', 'Return']);
+            $table->enum('status', ['pending', 'completed', 'cancelled', 'refunded']);
             $table->decimal('shipping', 8, 2)->default(0);
             $table->decimal('discount', 8, 2)->default(0);
             $table->decimal('subtotal', 8, 2);

@@ -30,7 +30,12 @@
         <section class="container mx-auto px-4 py-16">
             <div class="grid gap-8 md:grid-cols-2 md:items-center">
                 <div class="space-y-6">
-                    <h1 class="text-4xl font-bold text-saddle md:text-5xl">Discover Premium Leather Goods</h1>
+                    <div class="mb-4">
+                        <h1 class="animate-[pulse_3s_ease-in-out_infinite] bg-gradient-to-r from-coffee via-saddle to-latte bg-clip-text text-6xl font-extrabold text-transparent md:text-8xl">
+                            KORICHA
+                        </h1>
+                    </div>
+                    <h1 class="text-4xl font-bold text-saddle md:text-5xl">Discover Premium Products In Our Ecommerce</h1>
                     <p class="text-lg text-coffee">
                         Explore our collection of handcrafted leather products, inspired by the timeless elegance of horse saddles.
                     </p>
