@@ -221,8 +221,8 @@ class AuthController extends Controller
             }
 
             // $accessToken = JWTAuth::fromUser($user);
-              // Send email verification
-             $user->sendEmailVerificationNotification();
+            // Send email verification
+            $user->sendEmailVerificationNotification();
 
             Log::info('User registered successfully', [
                 'user_id' => $user->id,

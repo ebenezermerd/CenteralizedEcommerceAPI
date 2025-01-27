@@ -24,7 +24,7 @@ class RoleSeeder extends Seeder
                 $permissionName = "{$action}_{$module}";
                 DB::table('permissions')->insert([
                     'name' => $permissionName,
-                    'guard_name' => 'api' 
+                    'guard_name' => 'api'
                 ]);
                 $allPermissions[] = $permissionName;
             }
@@ -53,13 +53,13 @@ class RoleSeeder extends Seeder
                 'name' => $roleName,
                 'guard_name' => 'api' // Changed from 'web' to 'api'
             ]);
-            
+
             // Assign permissions to role
             foreach ($permissions as $permission) {
                 $permissionId = DB::table('permissions')
                     ->where('name', $permission)
                     ->value('id');
-                    
+
                 if ($permissionId) {
                     DB::table('role_has_permissions')->insert([
                         'role_id' => $roleId,

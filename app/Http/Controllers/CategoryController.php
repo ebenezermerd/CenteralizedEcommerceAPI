@@ -67,7 +67,7 @@ class CategoryController extends Controller
     {
         $category = Category::where('name', $name)->first();
 
-        if (!$category) {   
+        if (!$category) {
             return response()->json([
                 'message' => 'Invalid product category. Please select a valid subcategory.',
                 'validCategories' => Category::pluck('name')

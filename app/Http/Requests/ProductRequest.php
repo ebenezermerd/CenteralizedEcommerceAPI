@@ -37,7 +37,7 @@ class ProductRequest extends FormRequest
                 'string',
                 function ($attribute, $value, $fail) {
                     $existing = Product::where('sku', $value)->first();
-                    
+
                     // If we found a product and it's not the one we're updating
                     if ($existing && (!$this->getExistingProduct() || $existing->id !== $this->getExistingProduct()->id)) {
                         $fail('This SKU already exists!');
@@ -49,7 +49,7 @@ class ProductRequest extends FormRequest
                 'string',
                 function ($attribute, $value, $fail) {
                     $existing = Product::where('code', $value)->first();
-                    
+
                     // If we found a product and it's not the one we're updating
                     if ($existing && (!$this->getExistingProduct() || $existing->id !== $this->getExistingProduct()->id)) {
                         $fail('This code already exists!');
@@ -75,7 +75,7 @@ class ProductRequest extends FormRequest
                     if ($validator->fails()) {
                         $fail($validator->errors()->first());
                     }
-                } else if (is_string($value)) {
+                } elseif (is_string($value)) {
                     // Validate URL format if it's a string
                     if (!filter_var($value, FILTER_VALIDATE_URL)) {
                         $fail('Cover image URL must be a valid URL');
@@ -98,7 +98,7 @@ class ProductRequest extends FormRequest
                     if ($validator->fails()) {
                         $fail($validator->errors()->first());
                     }
-                } else if (is_string($value)) {
+                } elseif (is_string($value)) {
                     if (!filter_var($value, FILTER_VALIDATE_URL)) {
                         $fail('Image URL must be a valid URL');
                     }
@@ -122,7 +122,7 @@ class ProductRequest extends FormRequest
                     // Get the category name and remove any quotes
                     $selectedCategory = trim($value, '"');
                     if (!Category::findByName($selectedCategory)) {
-                        $fail("You selected '{$selectedCategory}'. This category is invalid. Available categories: " . 
+                        $fail("You selected '{$selectedCategory}'. This category is invalid. Available categories: " .
                             Category::pluck('name')->implode(', '));
                     }
                 }
@@ -209,7 +209,7 @@ class ProductRequest extends FormRequest
         }
 
         // Handle cover URL and images consistently
-        $processImageUrl = function($value) {
+        $processImageUrl = function ($value) {
             if (is_file($value)) {
                 return $value->store('products/covers', 'public');
             }
@@ -220,7 +220,7 @@ class ProductRequest extends FormRequest
 
         $saleLabel = is_string($this->saleLabel) ? json_decode($this->saleLabel, true) : ($this->saleLabel ?? ['enabled' => false]);
         $newLabel = is_string($this->newLabel) ? json_decode($this->newLabel, true) : ($this->newLabel ?? ['enabled' => false]);
-        
+
         $this->merge($this->mapToDatabase([
             'name' => $this->name,
             'sku' => $this->sku,

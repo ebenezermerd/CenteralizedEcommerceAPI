@@ -54,7 +54,7 @@ class OrderController extends Controller
         try {
             // Log calculation details
             $totalQuantity = collect($validated['items'])->sum('quantity');
-            $taxes = collect($validated['items'])->sum(function($item) {
+            $taxes = collect($validated['items'])->sum(function ($item) {
                 return ($item['price'] * $item['quantity']) * 0.15;
             });
 
@@ -70,11 +70,11 @@ class OrderController extends Controller
                 'status' => $validated['status'],
                 'shipping' => $validated['shipping']['method']['value'],
                 'discount' => $validated['discount'] ?? 0,
-                'subtotal' => collect($validated['items'])->sum(function($item) {
+                'subtotal' => collect($validated['items'])->sum(function ($item) {
                     return $item['price'] * $item['quantity'];
                 }),
                 'order_number' => strtoupper(uniqid('ORD-')),
-                'total_amount' => collect($validated['items'])->sum(function($item) {
+                'total_amount' => collect($validated['items'])->sum(function ($item) {
                     return ($item['price'] * $item['quantity']) * 1.15;
                 }) + $validated['shipping']['method']['value'],
                 'total_quantity' => $totalQuantity
@@ -150,51 +150,51 @@ class OrderController extends Controller
             $payment = $order->payments()->create($paymentData);
             \Log::info('Payment record created', ['payment' => $payment->toArray()]);
 
-             // Create invoice
-        $invoice = Invoice::create([
-            'order_id' => $order->id,
-            'sent' => 0,
-            'taxes' => $taxes,
-            'status' => 'pending',
-            'subtotal' => $order->subtotal,
-            'discount' => $order->discount,
-            'shipping' => $order->shipping,
-            'total_amount' => $order->total_amount,
-            'invoice_number' => strtoupper(uniqid('INV-')),
-            'create_date' => now(),
-            'due_date' => now()->addDays(30),
-        ]);
-
-        \Log::info('Invoice created', ['invoice' => $invoice->toArray()]);
-
-        // Create invoice items
-        foreach ($validated['items'] as $item) {
-            $invoiceItem = new InvoiceItem([
-                'invoice_id' => $invoice->id,
-                'title' => 'Product ' . $item['id'],
-                'price' => $item['price'],
-                'total' => $item['price'] * $item['quantity'],
-                'service' => 'product',
-                'quantity' => $item['quantity'],
-                'description' => 'Product description',
+            // Create invoice
+            $invoice = Invoice::create([
+                'order_id' => $order->id,
+                'sent' => 0,
+                'taxes' => $taxes,
+                'status' => 'pending',
+                'subtotal' => $order->subtotal,
+                'discount' => $order->discount,
+                'shipping' => $order->shipping,
+                'total_amount' => $order->total_amount,
+                'invoice_number' => strtoupper(uniqid('INV-')),
+                'create_date' => now(),
+                'due_date' => now()->addDays(30),
             ]);
-            $invoice->items()->save($invoiceItem);
-            \Log::info('Invoice item created', ['item' => $invoiceItem->toArray()]);
-        }
+
+            \Log::info('Invoice created', ['invoice' => $invoice->toArray()]);
+
+            // Create invoice items
+            foreach ($validated['items'] as $item) {
+                $invoiceItem = new InvoiceItem([
+                    'invoice_id' => $invoice->id,
+                    'title' => 'Product ' . $item['id'],
+                    'price' => $item['price'],
+                    'total' => $item['price'] * $item['quantity'],
+                    'service' => 'product',
+                    'quantity' => $item['quantity'],
+                    'description' => 'Product description',
+                ]);
+                $invoice->items()->save($invoiceItem);
+                \Log::info('Invoice item created', ['item' => $invoiceItem->toArray()]);
+            }
 
             DB::commit();
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);
-                if($validated['payment']['method'] === 'chapa') {
+            if($validated['payment']['method'] === 'chapa') {
 
-            return response()->json([
-                'order' => $order,
-                'checkout_url' => $chapaResponse['data']['checkout_url']
-            ], 201);
-        }else{
-            return response()->json([
-                'order' => $order,
-            ], 201);
-        }
+                return response()->json([
+                    'order' => $order,
+                    'checkout_url' => $chapaResponse['data']['checkout_url']
+                ], 201);
+            } else {
+                return response()->json([
+                    'order' => $order,
+                ], 201);
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Order processing failed', [
