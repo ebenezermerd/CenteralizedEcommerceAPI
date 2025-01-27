@@ -18,7 +18,7 @@ class EmailVerificationService
     public function sendVerificationEmail(User $user)
     {
         $otp = $this->generateOTP();
-        
+
         // Store OTP in cache for 10 minutes
         Cache::put('email_verify_' . $user->email, $otp, now()->addMinutes(10));
 
@@ -37,7 +37,7 @@ class EmailVerificationService
     public function sendMfaOtp(User $user)
     {
         $otp = $this->generateOTP();
-        
+
         // Store OTP in cache for 10 minutes
         Cache::put('mfa_otp_' . $user->email, $otp, now()->addMinutes(10));
 

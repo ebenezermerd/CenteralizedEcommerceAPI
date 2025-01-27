@@ -13,7 +13,6 @@ use App\Models\Category;
 
 class ProductController extends Controller
 {
-
     public function index()
     {
         $products = Product::with(['reviews', 'category', 'images'])
@@ -26,7 +25,7 @@ class ProductController extends Controller
             'products' => ProductResource::collection($products)
         ], 201);
     }
-    
+
     public function store(ProductRequest $request)
     {
         try {
@@ -37,12 +36,12 @@ class ProductController extends Controller
             if (!$category) {
                 throw new \Exception('Category not found');
             }
-            
+
             // Create or update the product
-            $product = $request->id 
-                ? Product::findOrFail($request->id) 
+            $product = $request->id
+                ? Product::findOrFail($request->id)
                 : new Product();
-                
+
             $product->fill(array_merge(
                 $request->except(['coverUrl', 'images', 'category', 'id']),
                 ['categoryId' => $category->id, 'available' => $request->quantity]
@@ -50,7 +49,7 @@ class ProductController extends Controller
             $product->save();
 
             // Handle both coverUrl and images
-            $processImage = function($image, $isPrimary = false) use ($product) {
+            $processImage = function ($image, $isPrimary = false) use ($product) {
                 if (is_file($image)) {
                     $path = $image->store('products', 'public');
                     ProductImage::updateOrCreate(
@@ -102,7 +101,7 @@ class ProductController extends Controller
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')
                 ->findOrFail($request->productId);
-                
+
             return response()->json([
                 'product' => new ProductResource($product)
             ], 201);

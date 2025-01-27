@@ -50,7 +50,7 @@ class Order extends Model
 
     public function calculateTotals()
     {
-        $this->subtotal = $this->items->sum(fn($item) => $item->subtotal);
+        $this->subtotal = $this->items->sum(fn ($item) => $item->subtotal);
         $this->taxes = $this->subtotal * 0.1; // Example tax calculation
         $this->total_amount = $this->subtotal + $this->taxes - $this->discount + $this->shipping;
         $this->save();

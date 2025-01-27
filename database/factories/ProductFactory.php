@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ProductFactory extends Factory
 {
     protected $model = Product::class;
-    
+
     protected static $productsByCategory = [
         'Clothing' => [
             'name' => ['Classic T-Shirt', 'Denim Jeans', 'Leather Jacket', 'Cotton Shirt', 'Wool Sweater'],
@@ -54,31 +54,31 @@ class ProductFactory extends Factory
             'description' => $this->generateDescription(),
             'subDescription' => $this->faker->sentence(),
             'publish' => $this->faker->randomElement(['draft', 'published']),
-            
+
             // Pricing
             'price' => $basePrice,
             'priceSale' => $isOnSale ? $basePrice * 0.8 : null,
             'taxes' => 10,
-            
+
             // Media
             'coverUrl' => 'products/default.jpg',
-            
+
             // Attributes
             'tags' => $this->faker->randomElements(['Technology', 'Marketing', 'Design', 'Photography', 'Art'], 2),
             'sizes' => $categoryData['sizes'],
             'colors' => $categoryData['colors'],
             'gender' => $categoryData['gender'],
-            
+
             // Inventory
             'inventoryType' => $quantity <= 0 ? 'out_of_stock' : ($quantity <= 10 ? 'low_stock' : 'in_stock'),
             'quantity' => $quantity,
             'available' => $quantity,
             'totalSold' => $totalSold,
-            
+
             // Ratings and Reviews
             'totalRatings' => $this->faker->randomFloat(1, 0, 5),
             'totalReviews' => $this->faker->numberBetween(0, 500),
-            
+
             // Labels
             'newLabel' => $this->faker->boolean(20) ? [
                 'enabled' => true,

@@ -25,16 +25,16 @@ class ProductSeeder extends Seeder
             ->each(function ($product) use ($placeholderImage) {
                 // Create 3-5 images per product
                 $imageCount = rand(3, 5);
-                
+
                 for ($i = 0; $i < $imageCount; $i++) {
                     $imagePath = "products/{$product->id}/image{$i}.png";
-                    
+
                     ProductImage::create([
                         'product_id' => $product->id,
                         'image_path' => $imagePath,
                         'is_primary' => $i === 0
                     ]);
-                    
+
                     Storage::disk('public')->put($imagePath, $placeholderImage);
                 }
             });

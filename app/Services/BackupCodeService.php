@@ -15,7 +15,7 @@ class BackupCodeService
             $code = strtoupper(Str::random(10));
             $salt = Str::random(16);
             $codes[] = $code;
-            
+
             DB::table('mfa_backup_codes')->insert([
                 'user_id' => $userId,
                 'code' => Hash::make($code . $salt),

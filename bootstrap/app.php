@@ -7,7 +7,7 @@ use Laravel\Telescope\TelescopeServiceProvider;
 use App\Providers\TelescopeServiceProvider as TelescopeAppServiceProvider;
 
 return Application::configure(basePath: dirname(__DIR__))
-    ->withProviders([     
+    ->withProviders([
         TelescopeServiceProvider::class,
         TelescopeAppServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php', 
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
