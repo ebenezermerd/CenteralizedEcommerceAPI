@@ -18,31 +18,31 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'subDescription' => $this->subDescription,
             'publish' => $this->publish ?? 'draft',
-            
+
             // Media (updated with full URLs)
-            'coverUrl' => $this->coverUrl ? url(Storage::url($this->coverUrl)) : null,
+            'coverUrl' => $this->coverUrl ? (str_starts_with($this->coverUrl, 'http') ? $this->coverUrl : url(Storage::url($this->coverUrl))) : null,
             'images' => $this->images->pluck('image_path')->map(fn($path) => url(Storage::url($path))),
-            
+
             // Pricing
             'price' => (float) $this->price,
             'priceSale' => (float) $this->priceSale,
             'taxes' => (float) $this->taxes,
-            
+
             // Attributes
             'tags' => $this->tags ?? [],
             'sizes' => $this->sizes ?? [],
             'colors' => $this->colors ?? [],
             'gender' => $this->gender ?? [],
-            
+
             // Inventory
             'inventoryType' => $this->inventoryType,
             'quantity' => $this->quantity,
             'available' => $this->available,
             'totalSold' => $this->totalSold,
-            
+
             // Category
             'category' => $this->category?->name,
-            
+
             // Reviews and Ratings
             'totalRatings' => (float) $this->average_rating,
             'totalReviews' => (int) $this->reviews_count,
@@ -67,7 +67,7 @@ class ProductResource extends JsonResource
                     'reviewCount' => $reviews->sum('helpful')
                 ];
             })->values(),
-            
+
             // Labels
             'newLabel' => [
                 'enabled' => !empty($this->newLabel),
@@ -77,7 +77,7 @@ class ProductResource extends JsonResource
                 'enabled' => !empty($this->saleLabel),
                 'content' => $this->saleLabel['content'] ?? 'SALE'
             ],
-            
+
             'createdAt' => $this->created_at
         ];
     }

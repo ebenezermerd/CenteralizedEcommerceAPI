@@ -37,7 +37,7 @@ class ProductRequest extends FormRequest
                 'string',
                 function ($attribute, $value, $fail) {
                     $existing = Product::where('sku', $value)->first();
-                    
+
                     // If we found a product and it's not the one we're updating
                     if ($existing && (!$this->getExistingProduct() || $existing->id !== $this->getExistingProduct()->id)) {
                         $fail('This SKU already exists!');
@@ -49,7 +49,7 @@ class ProductRequest extends FormRequest
                 'string',
                 function ($attribute, $value, $fail) {
                     $existing = Product::where('code', $value)->first();
-                    
+
                     // If we found a product and it's not the one we're updating
                     if ($existing && (!$this->getExistingProduct() || $existing->id !== $this->getExistingProduct()->id)) {
                         $fail('This code already exists!');
@@ -84,8 +84,11 @@ class ProductRequest extends FormRequest
             }],
             'images' => 'required|array',
             'images.*' => [function ($attribute, $value, $fail) {
+                \Log::info("Validating image: ", ['attribute' => $attribute, 'value' => $value]);
+
                 // Keep existing image validation
                 if (!is_string($value) && !is_file($value)) {
+                    \Log::error("Image validation failed: Not a string or file");
                     $fail('Image must be either a URL or a file');
                     return;
                 }
@@ -95,12 +98,22 @@ class ProductRequest extends FormRequest
                     $validator = validator([$attribute => $value], [
                         $attribute => 'file|mimes:' . implode(',', $mimes)
                     ]);
+
                     if ($validator->fails()) {
+                        \Log::error("Image file validation failed: " . $validator->errors()->first());
                         $fail($validator->errors()->first());
+                    } else {
+                        \Log::info("Image file validation passed", [
+                            'mime_type' => $value->getMimeType(),
+                            'size' => $value->getSize()
+                        ]);
                     }
                 } else if (is_string($value)) {
                     if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                        \Log::error("Image URL validation failed: Invalid URL format");
                         $fail('Image URL must be a valid URL');
+                    } else {
+                        \Log::info("Image URL validation passed", ['url' => $value]);
                     }
                 }
             }],
@@ -122,7 +135,7 @@ class ProductRequest extends FormRequest
                     // Get the category name and remove any quotes
                     $selectedCategory = trim($value, '"');
                     if (!Category::findByName($selectedCategory)) {
-                        $fail("You selected '{$selectedCategory}'. This category is invalid. Available categories: " . 
+                        $fail("You selected '{$selectedCategory}'. This category is invalid. Available categories: " .
                             Category::pluck('name')->implode(', '));
                     }
                 }
@@ -179,6 +192,8 @@ class ProductRequest extends FormRequest
                 $this->merge(['id' => $this->existingProduct->id]);
             }
         }
+        // Log raw request data
+        \Log::info('Raw product request data:', $this->all());
 
         // Clean up publish value if it exists
         if (isset($this->publish)) {
@@ -218,10 +233,35 @@ class ProductRequest extends FormRequest
 
         $coverUrl = $this->has('coverUrl') ? $processImageUrl($this->coverUrl) : null;
 
-        $saleLabel = is_string($this->saleLabel) ? json_decode($this->saleLabel, true) : ($this->saleLabel ?? ['enabled' => false]);
-        $newLabel = is_string($this->newLabel) ? json_decode($this->newLabel, true) : ($this->newLabel ?? ['enabled' => false]);
-        
-        $this->merge($this->mapToDatabase([
+        // Process images array
+        $processImagesPath = function ($images) {
+            $processedImages = [];
+            foreach ($images as $value) {
+                if (is_file($value)) {
+                    $path = $value->store('products/images', 'public');
+                    $processedImages[] = $path;
+                }
+                else if (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
+                    $processedImages[] = $value;
+                }
+                else {
+                    // Log the error and return a default image
+                    \Log::error('Invalid image provided', ['image' => $value]);
+                    $processedImages[] = 'products/default-image.png';
+                }
+            }
+            return $processedImages;
+        };
+
+       // Override only the 'images' key
+
+       $images = $this->has('images') ? $processImagesPath($this->images) : null;
+
+       $saleLabel = is_string($this->saleLabel) ? json_decode($this->saleLabel, true) : ($this->saleLabel ?? ['enabled' => false]);
+       $newLabel = is_string($this->newLabel) ? json_decode($this->newLabel, true) : ($this->newLabel ?? ['enabled' => false]);
+
+
+        $mappedData = $this->mapToDatabase([
             'name' => $this->name,
             'sku' => $this->sku,
             'code' => $this->code,
@@ -230,17 +270,20 @@ class ProductRequest extends FormRequest
             'priceSale' => $this->priceSale,
             'subDescription' => $this->subDescription,
             'coverUrl' => $coverUrl ?? (!$this->id ? 'products/default-cover.png' : null),
-            'images' => $this->images,
+            'images' => $images,
             'taxes' => $this->taxes,
             'tags' => is_string($this->tags) ? json_decode($this->tags, true) : $this->tags,
             'sizes' => is_string($this->sizes) ? json_decode($this->sizes, true) : $this->sizes,
             'colors' => is_string($this->colors) ? json_decode($this->colors, true) : $this->colors,
             'gender' => is_string($this->gender) ? json_decode($this->gender, true) : $this->gender,
-            'publish' => trim($this->publish ?? 'draft', '"'), // Ensure clean value here too
+            'publish' => trim($this->publish ?? 'draft', '"'),
             'newLabel' => $newLabel,
             'saleLabel' => $saleLabel,
             'quantity' => $this->quantity,
-            // 'available' will be set in the controller
-        ]));
+        ]);
+
+        \Log::info('Product request mapped  images path data:', $mappedData);
+
+        $this->merge($mappedData);
     }
 }
