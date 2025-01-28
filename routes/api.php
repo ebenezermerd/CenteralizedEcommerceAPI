@@ -47,7 +47,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('user/details/{id}', [UserController::class, 'show']);
         Route::post('users/create', [UserController::class, 'store']);
         Route::put('users/update/{id}', [UserController::class, 'update']);
-        Route::delete('users/{id}', [UserController::class, 'destroy']);
+        Route::delete('users/delete/{id}', [UserController::class, 'destroy']);
         Route::put('users/{id}/role', [UserController::class, 'updateRole']);
 
         // Admin product management
@@ -56,11 +56,12 @@ Route::middleware(['jwt'])->group(function () {
 
     // Admin and Supplier routes
     Route::middleware(['role:admin|supplier'])->group(function () {
+        Route::post('products/update', [ProductController::class, 'store']);
         Route::post('products/create', [ProductController::class, 'store']);
         Route::get('products/list', [ProductController::class, 'index']);
-        Route::put('products/{id}', [ProductController::class, 'update']);
-        Route::get('product/details', [ProductController::class, 'show']);
+        Route::get('products/details', [ProductController::class, 'show']);
         Route::put('users/update/{id}', [UserController::class, 'update']);
+        Route::delete('products/delete/{id}', [ProductController::class, 'destroy']);
     });
 
 

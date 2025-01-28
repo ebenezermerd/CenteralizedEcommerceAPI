@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\ProductImage;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProductImageFactory extends Factory
@@ -11,11 +12,16 @@ class ProductImageFactory extends Factory
 
     public function definition(): array
     {
-        $imageNumber = $this->faker->numberBetween(1, 8);
-        return [
-            'image_path' => "products/product-{$imageNumber}.webp",
-            'is_primary' => false
-        ];
+         // Get all image files from the products directory
+         $imageFiles = Storage::disk('public')->files('products');
+
+         // Randomly select an image file
+         $imagePath = $this->faker->randomElement($imageFiles);
+
+         return [
+             'image_path' => $imagePath,
+             'is_primary' => false
+         ];
     }
 
     public function primary()

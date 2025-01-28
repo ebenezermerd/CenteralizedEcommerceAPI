@@ -6,36 +6,74 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
+use Faker\Factory as Faker;
 
 class ProductSeeder extends Seeder
 {
+    protected $faker;
+
+    public function __construct()
+    {
+        $this->faker = Faker::create();
+    }
+
     public function run(): void
     {
-        // Clear old product images
+        // Clear existing data
+        Product::query()->delete();
+        ProductImage::query()->delete();
+
+        // Clear old images and recreate directory
         Storage::disk('public')->deleteDirectory('products');
         Storage::disk('public')->makeDirectory('products');
 
-        // Base64 encoded 1x1 pixel transparent PNG
-        $placeholderImage = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+        // Copy seed images to storage
+        $seedImagesPath = database_path('seeders/images');
+        $seedImages = glob("$seedImagesPath/*.{jpg,jpeg,png,gif}", GLOB_BRACE);
+
+        // Validate seed images exist
+        if (empty($seedImages)) {
+            throw new \Exception("No images found in: $seedImagesPath");
+        }
+
+        foreach ($seedImages as $image) {
+            $imageName = basename($image);
+            Storage::disk('public')->put("products/$imageName", file_get_contents($image));
+        }
+
+        // Get copied image paths
+        $imageFiles = Storage::disk('public')->files('products');
+
+        // Validate copied images
+        if (empty($imageFiles)) {
+            throw new \Exception("Failed to copy images to storage/public/products");
+        }
+
+        // Reset Faker uniqueness
+        $this->faker->unique(true);
 
         // Create products
         Product::factory()
             ->count(50)
             ->create()
-            ->each(function ($product) use ($placeholderImage) {
-                // Create 3-5 images per product
-                $imageCount = rand(3, 5);
-                
-                for ($i = 0; $i < $imageCount; $i++) {
-                    $imagePath = "products/{$product->id}/image{$i}.png";
-                    
+            ->each(function ($product) use ($imageFiles) {
+                // Primary image
+                $primaryImagePath = $this->faker->randomElement($imageFiles);
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_path' => $primaryImagePath,
+                    'is_primary' => true
+                ]);
+                $product->update(['coverUrl' => $primaryImagePath]);
+
+                // Additional images (3-5)
+                $additionalImageCount = rand(3, 5);
+                for ($i = 0; $i < $additionalImageCount; $i++) {
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'image_path' => $imagePath,
-                        'is_primary' => $i === 0
+                        'image_path' => $this->faker->randomElement($imageFiles),
+                        'is_primary' => false
                     ]);
-                    
-                    Storage::disk('public')->put($imagePath, $placeholderImage);
                 }
             });
     }

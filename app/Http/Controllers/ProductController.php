@@ -21,70 +21,86 @@ class ProductController extends Controller
             ->withAvg('reviews', 'rating')
             ->latest()
             ->paginate(12);
-
+            if (env('APP_ENV') === 'local') {
+                \Sentry\captureMessage('Product index accessed');
+            }
         return response()->json([
             'products' => ProductResource::collection($products)
         ], 201);
     }
-    
+
     public function store(ProductRequest $request)
     {
+
         try {
+
             DB::beginTransaction();
+            \Log::info('Raw Request from controller Data:', $request->all());
+            \Log::info('Raw Request from controller input request:', ['coverUrl' => $request->cover_img]);
 
             $categoryName = trim(str_replace('"', '', $request->category));
             $category = Category::findByNameStrict($categoryName);
             if (!$category) {
+                \Log::error('Category not found', ['category_name' => $categoryName]);
                 throw new \Exception('Category not found');
             }
-            
+
             // Create or update the product
-            $product = $request->id 
-                ? Product::findOrFail($request->id) 
+            $product = $request->id
+                ? Product::findOrFail($request->id)
                 : new Product();
-                
-            $product->fill(array_merge(
-                $request->except(['coverUrl', 'images', 'category', 'id']),
-                ['categoryId' => $category->id, 'available' => $request->quantity]
-            ));
-            $product->save();
 
-            // Handle both coverUrl and images
-            $processImage = function($image, $isPrimary = false) use ($product) {
-                if (is_file($image)) {
-                    $path = $image->store('products', 'public');
-                    ProductImage::updateOrCreate(
-                        [
+            \Log::info('Processing product data', [
+                'product_id' => $product->id ?? 'new',
+                'category_id' => $category->id
+            ]);
+
+                // Remove the $processImage closure and file upload logic.
+                // Trust the ProductRequest to have already stored files and provided paths.
+
+                // Update cover image:
+                if ($request->filled('coverUrl')) {
+                    $product->update(['coverUrl' => $request->cover_url]);
+                }
+
+                // Update additional images:
+                $images = $request->input('images', []);
+                if (!empty($images)) {
+                    $product->images()->where('is_primary', false)->delete();
+                    \Log::info('Accessing additional images', ['images' => $images]);
+                    foreach ($images as $imagePath) {
+                        ProductImage::create([
                             'product_id' => $product->id,
-                            'is_primary' => $isPrimary
-                        ],
-                        ['image_path' => $path]
-                    );
-                    return $path;
+                            'image_path' => $imagePath,
+                            'is_primary' => false,
+                        ]);
+                    }
                 }
-                return is_string($image) ? $image : null;
-            };
-
-            // Process cover image
-            if ($request->has('coverUrl')) {
-                $coverPath = $processImage($request->coverUrl, true);
-                if ($coverPath) {
-                    $product->update(['coverUrl' => $coverPath]);
+                if ($request->cover_img) {
+                    $product->images()->where('is_primary', true)->delete();
+                    $product->update(['coverUrl' => $request->cover_img]);
+                    \Log::info('Cover URL updated', [
+                        'cover_url' => $request->cover_img,
+                        'product_url' => $product->coverUrl,
+                    ]);
                 }
-            }
-
-            // Process additional images
-            if ($request->has('images')) {
-                foreach ($request->images as $image) {
-                    $processImage($image, false);
-                }
-            }
+                $product->load(['images']); // Refresh the relationship to get updated images
+                $product->refresh(); // Refresh the model to get updated coverUrl
 
             DB::commit();
+            \Log::info('Product stored successfully', [
+                'product_id' => $product->id,
+                'product' => $product->toArray(),
+            ]);
+
             return new ProductResource($product);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Error processing product', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['message' => 'Error processing product', 'error' => $e->getMessage()], 500);
         }
     }
@@ -102,10 +118,24 @@ class ProductController extends Controller
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')
                 ->findOrFail($request->productId);
-                
+
             return response()->json([
                 'product' => new ProductResource($product)
             ], 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+    }
+    //delete product
+    public function destroy($id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+            // Delete related images
+            $product->images()->delete();
+
+            $product->delete();
+            return response()->json(['message' => 'Product and related images deleted'], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Product not found'], 404);
         }

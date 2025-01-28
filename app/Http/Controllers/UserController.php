@@ -13,10 +13,11 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['roles', 'company'])  // Change 'role' to 'roles'
+        $users = User::with(['roles', 'company'])
+            ->where('id', '!=', auth()->id())  // Exclude current user
             ->latest()
             ->paginate(10);
-
+        
         return response()->json([
             'users' => UserResource::collection($users)
         ]);
@@ -25,18 +26,20 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'firstName' => 'required|string',
-            'lastName' => 'required|string',
+            'firstName' => 'required|string|max:255',
+            'lastName' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'phone' => 'required|string',
-            'address' => 'required|string',
-            'country' => 'nullable|string',
-            'region' => 'nullable|string',
-            'sex' => 'nullable|string',
-            'city' => 'nullable|string',
-            'about' => 'nullable|string',
-            'zip_code' => 'nullable|string',
+            'phone' => 'required|string|max:15',
+            'phoneNumber' => 'sometimes|string|max:15',  // Added for alternative phone field
+            'address' => 'required|string|max:500',
+            'country' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',  // Changed region to state
+            'city' => 'nullable|string|max:100',
+            'sex' => 'nullable|string|in:male,female,other',
+            'zipCode' => 'nullable|string|max:10',  // Changed zip_code to zipCode
             'role' => 'required|string|in:admin,supplier,customer',
+            'isVerified' => 'sometimes|boolean',
+            'status' => 'nullable|string|in:active,pending,banned,rejected',
             'company_id' => 'nullable|exists:companies,id',
             'image' => 'nullable|image|max:2048',
         ]);
@@ -45,22 +48,34 @@ class UserController extends Controller
             $validated['image'] = $request->file('image')->store('avatars', 'public');
         }
 
-        // Remove role from validated data and add status and password
+        // Remove role from validated data
         $role = $validated['role'];
         unset($validated['role']);
 
-        $user = User::create([
-            ...$validated,
-            'status' => 'pending',
+        // Map the fields correctly
+        $userData = [
+            'first_name' => $validated['firstName'],
+            'last_name' => $validated['lastName'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? $validated['phoneNumber'],
+            'address' => $validated['address'],
+            'country' => $validated['country'],
+            'region' => $validated['state'], // Map state to region
+            'city' => $validated['city'],
+            'sex' => $validated['sex'],
+            'zip_code' => $validated['zipCode'],
+            'status' => $validated['status'] ?: 'pending',
+            'is_verified' => $validated['isVerified'] ?? false,
             'password' => Hash::make('koricha123@account')
-        ]);
+        ];
 
-        // Assign role to user
+        $user = User::create($userData);
         $user->assignRole($role);
 
         return response()->json([
-            'users' => new UserResource($user)
-        ]);
+            'users' => new UserResource($user),
+            'message' => 'User created successfully'
+        ], 201);
     }
 
     public function show(string $id)
@@ -166,7 +181,7 @@ class UserController extends Controller
             $user->delete();
 
             Log::info('User deleted', [
-                'admin_id' => Auth::id(),
+                'admin_id' => auth()->id(),
                 'deleted_user_id' => $id,
                 'ip' => request()->ip()
             ]);
