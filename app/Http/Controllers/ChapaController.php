@@ -67,7 +67,7 @@ class ChapaController extends Controller
 
     public function handleReturn(Request $request)
     {
-        \Log::info('Payment return endpoint hit', ['tx_ref' => $request->input('tx_ref')]);
+        \Log::info('Payment return endpoint hit', ['tx_ref' => $request->all()]);
 
         $txnRef = $request->input('tx_ref');
         $payment = OrderPayment::where('tx_ref', $txnRef)->first();
@@ -87,10 +87,40 @@ class ChapaController extends Controller
             'status' => $payment->status
         ]);
 
+        if ($payment->status !== 'completed') {
+            $payment->update([
+                'status' => 'completed',
+                'payment_date' => now()
+            ]);
+
+            // Update order history timeline
+            $orderHistory = $payment->order->history;
+            if ($orderHistory) {
+                $timeline = json_decode($orderHistory->timeline, true);
+                $timeline[] = [
+                    'title' => 'Payment Completed',
+                    'time' => now()->toISOString()
+                ];
+                $orderHistory->update([
+                    'timeline' => json_encode($timeline),
+                    'payment_time' => now()
+                ]);
+            }
+
+            // Update invoice status to paid
+            $invoice = Invoice::where('order_id', $payment->order_id)->first();
+            if ($invoice) {
+                $invoice->update([
+                    'status' => 'paid',
+                    'paid_at' => now()
+                ]);
+            }
+        }
+
         if ($payment->status === 'completed') {
             return redirect()->to(env('FRONTEND_URL') . '/product/checkout?step=3');
         } else {
-            return redirect()->to(env('FRONTEND_URL') . '/product/checkout?step=3');
+            return redirect()->to(env('FRONTEND_URL') . '/product/checkout?step=2');
         }
     }
 }

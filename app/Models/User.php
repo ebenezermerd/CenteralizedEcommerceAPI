@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -92,7 +93,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 
     public function company()
     {
-        return $this->belongsTo(Company::class);
+        return $this->hasOne(Company::class, 'owner_id');
     }
     public function reviews()
     {
@@ -102,6 +103,16 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function cart()
     {
         return $this->hasOne(Cart::class);
+    }
+
+    public function addressBooks()
+    {
+        return $this->hasMany(AddressBook::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
 
     /**
@@ -116,6 +127,11 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $query->whereHas('roles', function ($query) use ($role) {
             $query->where('name', $role);
         });
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
 }

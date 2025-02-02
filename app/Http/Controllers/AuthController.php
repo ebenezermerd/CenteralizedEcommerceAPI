@@ -215,14 +215,14 @@ class AuthController extends Controller
                     'city' => $validatedData['city'],
                     'address' => $validatedData['companyAddress'],
                     'agreement' => $validatedData['agreement'],
+                    'owner_id' => $user->id,
+                    'status' => 'pending'
                 ]);
-                $user->company_id = $company->id;
                 $user->save();
             }
 
-            // $accessToken = JWTAuth::fromUser($user);
               // Send email verification
-             $user->sendEmailVerificationNotification();
+              $this->emailVerificationService->sendVerificationEmail($user);
 
             Log::info('User registered successfully', [
                 'user_id' => $user->id,
@@ -288,7 +288,7 @@ class AuthController extends Controller
         try {
             $credentials = $request->validated();
 
-            // Set TTL for access token to 15 minutes
+            // Set TTL for access token to 60 minutes
             JWTAuth::factory()->setTTL(60);
 
             if (!$token = JWTAuth::attempt($credentials)) {
@@ -302,6 +302,28 @@ class AuthController extends Controller
             }
 
             $user = Auth::user();
+            // Generate refresh token with 1 week TTL
+            JWTAuth::factory()->setTTL(10080);
+            $refreshToken = JWTAuth::fromUser($user);
+
+            // Check if user is verified
+            if (!$user->verified) {
+                // Send verification email
+                $this->emailVerificationService->sendVerificationEmail($user);
+
+                return response()->json([
+                    'status' => 'verification_required',
+                    'accessToken' => $token,
+                    'refreshToken' => $refreshToken,
+                    'message' => 'Please verify your email address. A verification code has been sent to your email.',
+                    'user' => [
+                        'email' => $user->email,
+                        'role' => $user->getRoleNames()->first(),
+                        'isVerified' => $user->verified,
+                        'id' => $user->id
+                    ]
+                ], 203);
+            }
 
             // Check if MFA is enabled
             if ($user->is_mfa_enabled) {
@@ -321,14 +343,12 @@ class AuthController extends Controller
                     'user' => [
                         'email' => $user->email,
                         'id' => $user->id,
-                        'role' => $user->getRoleNames()->first()
+                        'role' => $user->getRoleNames()->first(),
+                        'isVerified' => $user->verified
                     ]
                 ], 200);
             }
 
-            // Generate refresh token with 1 week TTL
-            JWTAuth::factory()->setTTL(10080);
-            $refreshToken = JWTAuth::fromUser($user);
 
             Log::info('User logged in successfully', [
                 'user_id' => $user->id,
@@ -432,114 +452,6 @@ class AuthController extends Controller
             Log::error('Token validation failed', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Invalid token'], 401);
         }
-    }
-
-
-    public function sendEmailVerificationOTP(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email|exists:users,email'
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        try {
-            $this->emailVerificationService->sendVerificationEmail($user);
-            return response()->json(['message' => 'OTP sent successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to send OTP'], 500);
-        }
-    }
-
-    public function verifyEmailOTP(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'otp' => 'required|string|size:6'
-        ]);
-
-        if ($this->emailVerificationService->verifyOTP($request->email, $request->otp)) {
-            $user = User::where('email', $request->email)->first();
-            $user->email_verified_at = now();
-            $user->save();
-
-            return response()->json(['message' => 'Email verified successfully']);
-        }
-
-        return response()->json(['error' => 'Invalid OTP'], 400);
-    }
-
-    public function enableMfa(Request $request)
-    {
-        $user = Auth::user();
-        $user->is_mfa_enabled = true;
-        $user->save();
-
-        $this->emailVerificationService->sendMfaOtp($user);
-
-        return response()->json(['message' => 'MFA enabled and OTP sent'], 201);
-    }
-
-    public function disableMfa(Request $request)
-    {
-        $user = Auth::user();
-        $user->is_mfa_enabled = false;
-        $user->mfa_verified_at = null;
-        $user->save();
-
-        return response()->json(['message' => 'MFA disabled'], 201);
-    }
-
-    public function getMfaStatus(Request $request)
-    {
-        $user = Auth::user();
-        return response()->json([
-            'is_mfa_enabled' => $user->is_mfa_enabled,
-            'mfa_verified_at' => $user->mfa_verified_at,
-        ]);
-    }
-
-    public function verifyMfa(Request $request)
-    {
-        $request->validate([
-            'otp' => 'required|string|size:6'
-        ]);
-
-        $user = Auth::user();
-
-        if ($this->emailVerificationService->verifyMfaOtp($user->email, $request->otp)) {
-            $user->mfa_verified_at = now();
-            $user->save();
-
-            // Generate access token with 15 minutes TTL
-            JWTAuth::factory()->setTTL(15);
-            $token = JWTAuth::fromUser($user);
-
-            // Generate refresh token with 1 week TTL
-            JWTAuth::factory()->setTTL(10080);
-            $refreshToken = JWTAuth::fromUser($user, ['refresh' => true]);
-
-            return response()->json([
-                'status' => 'success',
-                'accessToken' => $token,
-                'refreshToken' => $refreshToken,
-                'user' => new UserResource($user),
-                'role' => $user->getRoleNames()->first(),
-                'mfaRequired' => $user->is_mfa_enabled,
-                'expires_in' => 15 * 60, // 15 minutes in seconds
-                'refresh_expires_in' => 10080 * 60 // 1 week in seconds
-            ], 200);
-        }
-
-        return response()->json(['error' => 'Invalid OTP'], 400);
-    }
-
-    public function resendMfaOtp(Request $request)
-    {
-        $user = Auth::user();
-        $this->emailVerificationService->sendMfaOtp($user);
-
-        return response()->json(['message' => 'OTP resent successfully']);
     }
 
     /**

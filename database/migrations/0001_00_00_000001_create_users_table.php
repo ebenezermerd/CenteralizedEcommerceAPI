@@ -30,7 +30,6 @@ return new class extends Migration
             $table->boolean('verified')->default(false);
             $table->string('zip_code')->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->foreignId('company_id')->nullable()->constrained('companies');
             $table->enum('status', ['active', 'banned', 'pending', 'rejected'])->default('pending');
             $table->string('mfa_secret')->nullable(); // Add this line
             $table->boolean('is_mfa_enabled')->default(false); // Add this line

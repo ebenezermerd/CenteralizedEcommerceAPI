@@ -6,29 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
         Schema::create('companies', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->string('email');
             $table->string('phone');
             $table->string('country');
             $table->string('city');
-            $table->string('address');
-            $table->boolean('agreement');
+            $table->text('address');
+            $table->boolean('agreement')->default(false);
+            $table->enum('status', ['active', 'inactive', 'pending', 'blocked'])->default('pending');
+            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('companies');
     }

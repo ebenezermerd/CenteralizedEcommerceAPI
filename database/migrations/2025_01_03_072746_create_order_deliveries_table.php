@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('ship_by');
             $table->string('speedy');
-            $table->string('tracking_number');
+            $table->string('tracking_number')->nullable();
+
             $table->timestamps();
         });
     }

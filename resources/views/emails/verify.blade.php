@@ -13,7 +13,7 @@
                     <p>Your email has been successfully verified.</p>
                     <p class="mt-2">You can now access your account and enjoy our services.</p>
                 </div>
-                <a href="http://localhost:8080" 
+                <a href="{{ env('FRONTEND_URL') }}"
                    class="inline-block bg-blue-600 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-700 transition-colors duration-300">
                     Go to Your Account
                 </a>

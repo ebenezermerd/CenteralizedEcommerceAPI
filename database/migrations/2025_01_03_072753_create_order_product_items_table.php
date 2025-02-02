@@ -16,6 +16,9 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->uuid('product_id'); // Use uuid type for product_id
             $table->foreign('product_id')->references('id')->on('products')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('sku')->nullable();
+            $table->string('cover_url')->nullable();
             $table->decimal('price', 8, 2);
             $table->integer('quantity');
             $table->timestamps();

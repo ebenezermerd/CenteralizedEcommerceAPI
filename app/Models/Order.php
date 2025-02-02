@@ -10,7 +10,15 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'taxes', 'status', 'shipping', 'discount', 'subtotal', 'order_number', 'total_amount', 'total_quantity'
+        'user_id',
+        'taxes',
+        'status',
+        'shipping',
+        'discount',
+        'subtotal',
+        'order_number',
+        'total_amount',
+        'total_quantity'
     ];
 
     public function user()
@@ -23,14 +31,24 @@ class Order extends Model
         return $this->hasMany(OrderProductItem::class);
     }
 
-    public function histories()
+    public function history()
     {
-        return $this->hasMany(OrderHistory::class);
+        return $this->hasOne(OrderHistory::class);
     }
 
-    public function payments()
+    public function payment()
     {
-        return $this->hasMany(OrderPayment::class);
+        return $this->hasOne(OrderPayment::class);
+    }
+
+    public function shippingAdd()
+    {
+        return $this->hasOne(OrderShipping::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
 
     public function customer()
@@ -38,7 +56,7 @@ class Order extends Model
         return $this->hasOne(OrderCustomer::class);
     }
 
-    public function deliveries()
+    public function delivery()
     {
         return $this->hasOne(OrderDelivery::class);
     }
@@ -48,6 +66,7 @@ class Order extends Model
         return $this->hasMany(OrderProductItem::class);
     }
 
+
     public function calculateTotals()
     {
         $this->subtotal = $this->items->sum(fn($item) => $item->subtotal);
@@ -55,5 +74,4 @@ class Order extends Model
         $this->total_amount = $this->subtotal + $this->taxes - $this->discount + $this->shipping;
         $this->save();
     }
-
 }

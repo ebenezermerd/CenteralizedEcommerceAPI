@@ -5,7 +5,9 @@ namespace Database\Factories;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\ProductImage;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Storage;
 
 class ProductFactory extends Factory
 {
@@ -35,6 +37,15 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         $category = Category::inRandomOrder()->first();
+
+        // Get a random supplier
+        $vendor = User::role('supplier')->inRandomOrder()->first();
+        if (!$vendor) {
+            // If no supplier exists, create one
+            $vendor = User::factory()->create();
+            $vendor->assignRole('supplier');
+        }
+
         $categoryData = self::$productsByCategory[$category->group] ?? [
             'name' => ['Generic Product'],
             'sizes' => ['OS'],
@@ -48,6 +59,7 @@ class ProductFactory extends Factory
         $basePrice = $this->faker->randomFloat(2, 20, 500);
 
         return [
+            'vendor_id' => $vendor->id,
             'categoryId' => $category->id,
             'name' => $this->faker->randomElement($categoryData['name']),
             'sku' => $this->faker->unique()->numerify('WW75K5####YW/SV'),
@@ -91,6 +103,34 @@ class ProductFactory extends Factory
         ];
     }
 
+    public function configure()
+    {
+        return $this->afterCreating(function (Product $product) {
+            // Get available images from storage
+            $imageFiles = Storage::disk('public')->files('products');
+
+            if (!empty($imageFiles)) {
+                // Create primary image
+                $primaryImagePath = $this->faker->randomElement($imageFiles);
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_path' => $primaryImagePath,
+                    'is_primary' => true
+                ]);
+                $product->update(['coverUrl' => $primaryImagePath]);
+
+                // Create 3-5 additional images
+                $additionalImageCount = rand(3, 5);
+                for ($i = 0; $i < $additionalImageCount; $i++) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image_path' => $this->faker->randomElement($imageFiles),
+                        'is_primary' => false
+                    ]);
+                }
+            }
+        });
+    }
 
     private function generateDescription(): string
     {
