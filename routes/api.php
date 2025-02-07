@@ -15,10 +15,12 @@ use App\Http\Controllers\ChapaController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 use App\Http\Controllers\EmailVerificationController;
-use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\AddressBookController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\MailController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -29,9 +31,9 @@ Route::post('/auth/sign-in', [AuthController::class, 'login']);
 Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
 // Password Reset Routes
-Route::post('/password/email', [ResetPasswordController::class, 'sendResetLinkEmail']);
-Route::post('/password/reset', [ResetPasswordController::class, 'reset']);
-Route::get('/password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+Route::get('/auth/reset-password/{token}', [ResetPasswordController::class, 'checkToken']);
+Route::post('/auth/reset-password', [ResetPasswordController::class, 'reset']);
 
 // Email verification routes
 Route::post('/auth/email/verify', [EmailVerificationController::class, 'verifyEmail']);
@@ -58,6 +60,27 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('user/{userId}/addresses/create', [AddressBookController::class, 'store']);
     Route::put('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'update']);
     Route::delete('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'destroy']);
+
+    // Mail routes
+    Route::prefix('mail')->group(function () {
+        Route::get('list', [MailController::class, 'list']);
+        Route::get('details', [MailController::class, 'details']);
+        Route::get('labels', [MailController::class, 'labels']);
+        Route::post('create', [MailController::class, 'create']);
+        Route::post('mark-as-read/{mailId}', [MailController::class, 'markAsRead']);
+        Route::post('toggle-star/{mailId}', [MailController::class, 'toggleStar']);
+        Route::delete('delete/{mailId}', [MailController::class, 'delete']);
+        Route::get('search', [MailController::class, 'search']);
+        Route::post('draft', [MailController::class, 'saveDraft']);
+        Route::put('draft/{id}', [MailController::class, 'updateDraft']);
+    });
+
+    Route::prefix('analytics')->group(function () {
+        Route::get('widget-summary', [AnalyticsController::class, 'getWidgetSummary']);
+        Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
+
+    });
+
 
     // Admin only routes
     Route::middleware(['role:admin'])->group(function () {

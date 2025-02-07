@@ -26,10 +26,14 @@ class AuthController extends Controller
     use ApiResponses;
 
     protected $emailVerificationService;
+    protected $ACCESS_TOKEN_TTL;
+    protected $REFRESH_TOKEN_TTL;
 
     public function __construct(EmailVerificationService $emailVerificationService)
     {
         $this->emailVerificationService = $emailVerificationService;
+        $this->ACCESS_TOKEN_TTL = 60;
+        $this->REFRESH_TOKEN_TTL = 10080;
     }
 
     /**
@@ -286,10 +290,11 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         try {
+
             $credentials = $request->validated();
 
             // Set TTL for access token to 60 minutes
-            JWTAuth::factory()->setTTL(60);
+            JWTAuth::factory()->setTTL($this->ACCESS_TOKEN_TTL);
 
             if (!$token = JWTAuth::attempt($credentials)) {
                 Log::channel('telescope')->warning('Failed login attempt', [
@@ -303,8 +308,9 @@ class AuthController extends Controller
 
             $user = Auth::user();
             // Generate refresh token with 1 week TTL
-            JWTAuth::factory()->setTTL(10080);
+            JWTAuth::factory()->setTTL($this->REFRESH_TOKEN_TTL);
             $refreshToken = JWTAuth::fromUser($user);
+            // $refreshToken = auth()->refresh();
 
             // Check if user is verified
             if (!$user->verified) {
@@ -400,15 +406,15 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Invalid refresh token'], 401);
             }
 
-            // Generate new access token with 15 minutes TTL
-            JWTAuth::factory()->setTTL(15);
+            // Generate new access token with 60 minutes TTL
+            JWTAuth::factory()->setTTL($this->ACCESS_TOKEN_TTL);
             $newToken = JWTAuth::fromUser(Auth::user());
 
             return response()->json([
                 'status' => 'success',
                 'accessToken' => $newToken,
                 'token_type' => 'bearer',
-                'expires_in' => 15 * 60, // 15 minutes in seconds
+                'expires_in' => $this->ACCESS_TOKEN_TTL * 60, // 60 minutes in seconds
             ]);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not refresh token'], 500);

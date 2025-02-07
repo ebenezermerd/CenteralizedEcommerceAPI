@@ -10,21 +10,62 @@ use App\Models\Analytics;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 
 class AnalyticsController extends Controller
 {
     public function getWidgetSummary(): JsonResponse
     {
-        $now = Carbon::now();
-        $lastMonth = Carbon::now()->subMonth();
+        try {
+            $now = Carbon::now();
+            $lastMonth = Carbon::now()->subMonth();
 
-        return response()->json([
-            'sales' => $this->getSalesData($now, $lastMonth),
-            'users' => $this->getUsersData($now, $lastMonth),
-            'orders' => $this->getOrdersData($now, $lastMonth),
-            'products' => $this->getProductsData($now, $lastMonth),
-        ]);
+            return response()->json([
+                'weeklySales' => [
+                    'title' => 'Weekly Sales',
+                    'total' => $this->getSalesData($now, $lastMonth)['total'],
+                    'percent' => $this->getSalesData($now, $lastMonth)['percent'],
+                    'chart' => [
+                        'series' => $this->getMonthlySeries('total_amount'),
+                        'categories' => $this->getMonthlyCategories()
+                    ]
+                ],
+                'newUsers' => [
+                    'title' => 'New Users',
+                    'total' => $this->getUsersData($now, $lastMonth)['total'],
+                    'percent' => $this->getUsersData($now, $lastMonth)['percent'],
+                    'chart' => [
+                        'series' => $this->getMonthlySeries('users'),
+                        'categories' => $this->getMonthlyCategories()
+                    ]
+                ],
+                'purchaseOrders' => [
+                    'title' => 'Purchase Orders',
+                    'total' => $this->getOrdersData($now, $lastMonth)['total'],
+                    'percent' => $this->getOrdersData($now, $lastMonth)['percent'],
+                    'chart' => [
+                        'series' => $this->getMonthlySeries('orders'),
+                        'categories' => $this->getMonthlyCategories()
+                    ]
+                ],
+                'messages' => [
+                    'title' => 'Messages',
+                    'total' => $this->getProductsData($now, $lastMonth)['total'],
+                    'percent' => $this->getProductsData($now, $lastMonth)['percent'],
+                    'chart' => [
+                        'series' => $this->getMonthlySeries('messages'),
+                        'categories' => $this->getMonthlyCategories()
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Analytics error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Failed to fetch analytics data'], 500);
+        }
     }
 
     public function getCurrentVisits(): JsonResponse

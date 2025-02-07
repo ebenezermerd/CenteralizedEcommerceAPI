@@ -13,10 +13,14 @@ class ResetPasswordNotification extends Notification
     use Queueable;
 
     public $token;
+    public $redirectTo;
+    public $resetUrl;
 
-    public function __construct($token)
+    public function __construct($token, $redirectTo = null, $resetUrl = null)
     {
         $this->token = $token;
+        $this->redirectTo = $redirectTo;
+        $this->resetUrl = $resetUrl;
     }
 
     public function via(object $notifiable): array
@@ -26,14 +30,23 @@ class ResetPasswordNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = config('app.url') . '/reset-password/' . $this->token . '?email=' . urlencode($notifiable->email);
+        $expireInMinutes = config('auth.passwords.users.expire', 60);
+
+        // Build the reset URL
+        $baseUrl = config('app.frontend_url') . '/auth/jwt/update-password';
+
+        // The token is already a JWT token containing user_id and reset_token
+        $url = $baseUrl . '?token=' . $this->token;
+        if ($this->redirectTo) {
+            $url .= '&redirectTo=' . urlencode($this->redirectTo);
+        }
 
         return (new MailMessage)
-            ->subject(Lang::get('Reset Password Notification'))
-            ->line(Lang::get('You are receiving this email because we received a password reset request for your account.'))
-            ->action(Lang::get('Reset Password'), $url)
-            ->line(Lang::get('This password reset link will expire in :count minutes.', ['count' => config('auth.passwords.users.expire')]))
-            ->line(Lang::get('If you did not request a password reset, no further action is required.'));
+            ->subject('Reset Password Notification')
+            ->line('You are receiving this email because we received a password reset request for your account.')
+            ->action('Reset Password', $url)
+            ->line("This password reset link will expire in {$expireInMinutes} minutes.")
+            ->line('If you did not request a password reset, no further action is required.');
     }
 
     public function toArray(object $notifiable): array
