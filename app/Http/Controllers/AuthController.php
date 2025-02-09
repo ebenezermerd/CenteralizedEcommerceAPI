@@ -21,6 +21,11 @@ use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
 use App\Services\EmailVerificationService;
 
+/**
+ * @group Authentication
+ *
+ * APIs for managing authentication
+ */
 class AuthController extends Controller
 {
     use ApiResponses;
@@ -37,153 +42,41 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/sign-up",
-     *     summary="Register user",
-     *     tags={"Authentication"},
-     *     @OA\Parameter(
-     *         name="role",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", enum={"customer", "supplier"}),
-     *         example="customer",
-     *         description="Role of the user. If 'supplier' is selected, additional company information fields are required."
-     *     ),
-     *     @OA\Parameter(
-     *         name="firstName",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string"),
-     *         example="John"
-     *     ),
-     *     @OA\Parameter(
-     *         name="lastName",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string"),
-     *         example="Doe"
-     *     ),
-     *     @OA\Parameter(
-     *         name="email",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", format="email"),
-     *         example="user@example.com"
-     *     ),
-     *     @OA\Parameter(
-     *         name="phone",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string"),
-     *         example="123-456-7890"
-     *     ),
-     *     @OA\Parameter(
-     *         name="sex",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", enum={"male", "female"}),
-     *         example="male"
-     *     ),
-     *     @OA\Parameter(
-     *         name="address",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string"),
-     *         example="123 Main St"
-     *     ),
-     *     @OA\Parameter(
-     *         name="password",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", format="password"),
-     *         example="password123"
-     *     ),
-     *     @OA\Parameter(
-     *         name="password_confirmation",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", format="password"),
-     *         example="password123"
-     *     ),
-     *     @OA\Parameter(
-     *         name="companyName",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string"),
-     *         example="Example Company",
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Parameter(
-     *         name="description",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string"),
-     *         example="Company description",
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Parameter(
-     *         name="companyEmail",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string", format="email"),
-     *         example="company@example.com",
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Parameter(
-     *         name="companyPhone",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string"),
-     *         example="123-456-7890",
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Parameter(
-     *         name="country",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string"),
-     *         example="USA",
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Parameter(
-     *         name="city",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string"),
-     *         example="New York",
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Parameter(
-     *         name="companyAddress",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="string"),
-     *         example="456 Business Rd",
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Parameter(
-     *         name="agreement",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="boolean"),
-     *         example=true,
-     *         description="Required if role is 'supplier'."
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Successful registration",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="user", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="firstName", type="string", example="John"),
-     *                 @OA\Property(property="lastName", type="string", example="Doe"),
-     *                 @OA\Property(property="email", type="string", example="user@example.com")
-     *             ),
-     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-     *         )
-     *     )
-     * )
+     * Register a new user
+     *
+     * Create a new user account with the provided details.
+     *
+     * @param RegisterationRequest $request
+     *
+     * @bodyParam firstName string required The user's first name. Example: John
+     * @bodyParam lastName string required The user's last name. Example: Doe
+     * @bodyParam email string required The user's email address. Example: john@example.com
+     * @bodyParam password string required The user's password (min: 8 characters). Example: Secret123!
+     * @bodyParam phone string required The user's phone number. Example: +1234567890
+     * @bodyParam sex string required The user's gender (male/female). Example: male
+     * @bodyParam address string required The user's address. Example: 123 Main St
+     * @bodyParam role string required User role (customer/supplier). Example: customer
+     * @bodyParam agreement boolean required when role is supplier Terms agreement flag. Example: true
+     * @bodyParam companyName string required when role is supplier Company name. Example: Tech Corp
+     * @bodyParam companyEmail string required when role is supplier Company email. Example: info@techcorp.com
+     * @bodyParam companyPhone string required when role is supplier Company phone number. Example: +1234567890
+     * @bodyParam country string required when role is supplier Company country. Example: USA
+     * @bodyParam city string required when role is supplier Company city. Example: Los Angeles
+     * @bodyParam companyAddress string required when role is supplier Company address. Example: 456 Tech St
+     * @bodyParam description string required when role is supplier Company description. Example: Leading tech company
+     *
+     * @response 201 {
+     *  "message": "Registration successful! Please login in and verify your email."
+     * }
+     * @response 400 {
+     *  "error": "You must agree to the terms!"
+     * }
+     * @response 422 {
+     *  "message": "The given data was invalid",
+     *  "errors": {
+     *    "email": ["The email has already been taken."]
+     *  }
+     * }
      */
     public function register(RegisterationRequest $request)
     {
@@ -225,8 +118,8 @@ class AuthController extends Controller
                 $user->save();
             }
 
-              // Send email verification
-              $this->emailVerificationService->sendVerificationEmail($user);
+            //   // Send email verification
+            //   $this->emailVerificationService->sendVerificationEmail($user);
 
             Log::info('User registered successfully', [
                 'user_id' => $user->id,
@@ -236,7 +129,7 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Registration successful! Please verify your email.',
+                'message' => 'Registration successful! Please login and verify your email.',
                 // 'user' => new UserResource($user)
             ], 201);
 
@@ -251,42 +144,72 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/sign-in",
-     *     summary="Login user",
-     *     tags={"Authentication"},
-     *     @OA\Parameter(
-     *         name="email",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", format="email"),
-     *         example="user@example.com"
-     *     ),
-     *     @OA\Parameter(
-     *         name="password",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(type="string", format="password"),
-     *         example="password123"
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful login",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="error", type="string", example="Unauthorized")
-     *         )
-     *     )
-     * )
-    */
+     * User Login
+     *
+     * Authenticate a user and retrieve tokens.
+     *
+     * @param LoginRequest $request
+     *
+     * @bodyParam email string required User's email address. Example: john@example.com
+     * @bodyParam password string required User's password. Example: Secret123!
+     *
+     * @response 200 {
+     *  "status": "success",
+     *  "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+     *  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    *  "user": {
+    *    "id": "1",
+    *    "firstName": "John",
+    *    "lastName": "Doe",
+    *    "email": "john@example.com",
+    *    "role": "customer",
+    *    "status": "active",
+    *    "avatarUrl": "http://example.com/storage/avatar.jpg",
+    *    "phoneNumber": "+1234567890",
+    *    "address": "123 Main St",
+    *    "country": "USA",
+    *    "state": "California",
+    *    "city": "Los Angeles",
+    *    "sex": "male",
+    *    "about": "About John Doe",
+    *    "zipCode": "90001",
+    *    "company": "Tech Corp",
+    *    "isVerified": true,
+    *    "created_at": "2023-01-01T00:00:00Z",
+    *    "updated_at": "2023-01-01T00:00:00Z"
+    *  },
+     *  "expires_in": 900
+     * }
+     *
+     * @response 201 {
+     *   "status": "mfa_required",
+     *   "mfaRequired": true,
+     *   "message": "MFA verification required",
+     *   "tempToken": "string",
+     *   "user": {
+     *     "email": "string",
+     *     "id": "integer",
+     *     "role": "string",
+     *     "isVerified": "boolean"
+     *   }
+     * }
+     *
+     * @response 401 {
+     *  "error": "Invalid email or password"
+     * }
+     * @response 203 {
+     *  "status": "verification_required",
+     *  "message": "Please verify your email address"
+     * }
+     *
+     * @response 500 {
+     *   "message": "Authentication failed"
+     * }
+     *
+     * @response 501 {
+     *   "message": "Login failed"
+     * }
+     */
     public function login(LoginRequest $request)
     {
         try {
@@ -352,7 +275,7 @@ class AuthController extends Controller
                         'role' => $user->getRoleNames()->first(),
                         'isVerified' => $user->verified
                     ]
-                ], 200);
+                ], 201);
             }
 
 
@@ -384,16 +307,35 @@ class AuthController extends Controller
                 'message' => $e->getMessage(),
                 'ip' => $request->ip()
             ]);
-            return response()->json(['message' => 'Login failed'], 500);
+            return response()->json(['message' => 'Login failed'], 501);
         }
     }
 
+    /**
+     * Refresh Token
+     *
+     * Get a new access token using refresh token.
+     *
+     * @authenticated
+     *
+     * @response {
+     *  "status": "success",
+     *  "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+     *  "token_type": "bearer",
+     *  "expires_in": 3600
+     * }
+     *
+     * @response 401 {
+     *  "error": "Could not refresh token"
+     * }
+     */
     public function refresh()
     {
         try {
             $oldToken = JWTAuth::getToken();
 
             if (!$oldToken) {
+
                 return response()->json(['error' => 'Refresh token not provided'], 401);
             }
 
@@ -422,23 +364,41 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Get(
-     *     path="/api/auth/me",
-     *     summary="Get authenticated user",
-     *     tags={"Authentication"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Authenticated user data",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="firstName", type="string", example="John"),
-     *             @OA\Property(property="lastName", type="string", example="Doe"),
-     *             @OA\Property(property="email", type="string", example="user@example.com")
-     *         )
-     *     )
-     * )
+     * Get Authenticated User
+     *
+     * Retrieve the authenticated user's details.
+     *
+     * @authenticated
+     *
+     * @response {
+     *  "user": {
+    *    "id": "1",
+    *    "firstName": "John",
+    *    "lastName": "Doe",
+    *    "email": "john@example.com",
+    *    "role": "customer",
+    *    "status": "active",
+    *    "avatarUrl": "http://example.com/storage/avatar.jpg",
+    *    "phoneNumber": "+1234567890",
+    *    "address": "123 Main St",
+    *    "country": "USA",
+    *    "state": "California",
+    *    "city": "Los Angeles",
+    *    "sex": "male",
+    *    "about": "About John Doe",
+    *    "zipCode": "90001",
+    *    "company": "Tech Corp",
+    *    "isVerified": true,
+    *    "created_at": "2023-01-01T00:00:00Z",
+    *    "updated_at": "2023-01-01T00:00:00Z",
+     *  },
+     *  "mfaEnabled": false,
+     *  "mfaVerified": false
+     * }
+     *
+     * @response 401 {
+     *  "message": "Invalid token"
+     * }
      */
     public function getUser()
     {
@@ -461,20 +421,19 @@ class AuthController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/logout",
-     *     summary="Logout user",
-     *     tags={"Authentication"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successfully logged out",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Successfully logged out")
-     *         )
-     *     )
-     * )
+     * Logout User
+     *
+     * Invalidate the current token and logout user.
+     *
+     * @authenticated
+     *
+     * @response {
+     *  "message": "Successfully logged out"
+     * }
+     *
+     * @response 500 {
+     *  "error": "Logout failed"
+     * }
      */
     public function logout()
     {

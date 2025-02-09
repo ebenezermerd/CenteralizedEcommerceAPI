@@ -25,10 +25,22 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
 
-// Public routes
-Route::post('/auth/sign-up', [AuthController::class, 'register']);
-Route::post('/auth/sign-in', [AuthController::class, 'login']);
-Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+/**
+ * @group Authentication
+ *
+ * APIs for managing authentication
+ */
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('/sign-up', [AuthController::class, 'register']);
+    Route::post('/sign-in', [AuthController::class, 'login']);
+    Route::post('/refresh', [AuthController::class, 'refresh']);
+
+    // Protected routes
+    Route::middleware(['jwt'])->group(function () {
+        Route::get('/me', [AuthController::class, 'getUser']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+    });
+});
 
 // Password Reset Routes
 Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);

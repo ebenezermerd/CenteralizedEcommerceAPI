@@ -26,7 +26,7 @@ class CompanyRequest extends FormRequest
         ];
 
         // Only admin can update status
-        if ($this->user()->hasRole('admin')) {
+        if ($this->user() && $this->user()->hasRole('admin')) {
             $rules['status'] = 'sometimes|string|in:active,inactive,pending,blocked';
         }
 

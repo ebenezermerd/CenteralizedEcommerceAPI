@@ -1,0 +1,474 @@
+name: Authentication
+description: |-
+
+  APIs for managing authentication
+endpoints:
+  -
+    httpMethods:
+      - POST
+    uri: api/auth/sign-up
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for managing authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Register a new user'
+      description: 'Create a new user account with the provided details.'
+      authenticated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      role:
+        name: role
+        description: 'User role (customer/supplier).'
+        required: true
+        example: customer
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      firstName:
+        name: firstName
+        description: "The user's first name."
+        required: true
+        example: John
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      lastName:
+        name: lastName
+        description: "The user's last name."
+        required: true
+        example: Doe
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      email:
+        name: email
+        description: "The user's email address."
+        required: true
+        example: john@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      phone:
+        name: phone
+        description: "The user's phone number."
+        required: true
+        example: '+1234567890'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      sex:
+        name: sex
+        description: "The user's gender (male/female)."
+        required: true
+        example: male
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      address:
+        name: address
+        description: "The user's address."
+        required: true
+        example: '123 Main St'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      password:
+        name: password
+        description: "The user's password (min: 8 characters)."
+        required: true
+        example: Secret123!
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      confirmPassword:
+        name: confirmPassword
+        description: 'The value and <code>password</code> must match.'
+        required: true
+        example: eius
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      verified:
+        name: verified
+        description: ''
+        required: false
+        example: false
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      recaptchaToken:
+        name: recaptchaToken
+        description: ''
+        required: true
+        example: sunt
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+      agreement:
+        name: agreement
+        description: 'when role is supplier Terms agreement flag.'
+        required: true
+        example: true
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      companyName:
+        name: companyName
+        description: 'when role is supplier Company name.'
+        required: true
+        example: 'Tech Corp'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      companyEmail:
+        name: companyEmail
+        description: 'when role is supplier Company email.'
+        required: true
+        example: info@techcorp.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      role: customer
+      firstName: John
+      lastName: Doe
+      email: john@example.com
+      phone: '+1234567890'
+      sex: male
+      address: '123 Main St'
+      password: Secret123!
+      confirmPassword: eius
+      verified: false
+      recaptchaToken: sunt
+      agreement: true
+      companyName: 'Tech Corp'
+      companyEmail: info@techcorp.com
+    fileParameters: []
+    responses:
+      -
+        status: 201
+        content: |-
+          {
+           "message": "Registration successful! Please verify your email."
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 400
+        content: |-
+          {
+           "error": "You must agree to the terms!"
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 422
+        content: |-
+          {
+           "message": "The given data was invalid",
+           "errors": {
+             "email": ["The email has already been taken."]
+           }
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/auth/sign-in
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for managing authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'User Login'
+      description: 'Authenticate a user and retrieve tokens.'
+      authenticated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        name: email
+        description: "User's email address."
+        required: true
+        example: john@example.com
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      password:
+        name: password
+        description: "User's password."
+        required: true
+        example: Secret123!
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+    cleanBodyParameters:
+      email: john@example.com
+      password: Secret123!
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+           "status": "success",
+           "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+           "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+           "user": {
+             "id": 1,
+             "firstName": "John",
+             "lastName": "Doe",
+             "email": "john@example.com",
+             "role": "customer"
+           },
+           "expires_in": 900
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 203
+        content: |-
+          {
+           "status": "verification_required",
+           "message": "Please verify your email address"
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 401
+        content: |-
+          {
+           "error": "Invalid email or password"
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/auth/refresh
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for managing authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Refresh Token'
+      description: 'Get a new access token using refresh token.'
+      authenticated: true
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+           "status": "success",
+           "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+           "token_type": "bearer",
+           "expires_in": 3600
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 401
+        content: |-
+          {
+           "error": "Could not refresh token"
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - GET
+    uri: api/auth/me
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for managing authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get Authenticated User'
+      description: "Retrieve the authenticated user's details."
+      authenticated: true
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+           "user": {
+             "id": 1,
+             "firstName": "John",
+             "lastName": "Doe",
+             "email": "john@example.com",
+             "role": "customer"
+           },
+           "mfaEnabled": false,
+           "mfaVerified": false
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 401
+        content: |-
+          {
+           "message": "Invalid token"
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []
+  -
+    httpMethods:
+      - POST
+    uri: api/auth/logout
+    metadata:
+      groupName: Authentication
+      groupDescription: |-
+
+        APIs for managing authentication
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Logout User'
+      description: 'Invalidate the current token and logout user.'
+      authenticated: true
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+           "message": "Successfully logged out"
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 500
+        content: |-
+          {
+           "error": "Logout failed"
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []

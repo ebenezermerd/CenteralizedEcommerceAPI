@@ -1,0 +1,2612 @@
+openapi: 3.0.3
+info:
+  title: 'Koricha E-commerce API Documentation'
+  description: 'Welcome to the Koricha E-commerce API. This API provides endpoints for managing products, orders, customers, and other e-commerce related functionality.'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://api.koricha-ecommerce.com'
+paths:
+  /api/auth/sign-up:
+    post:
+      summary: 'Register a new user'
+      operationId: registerANewUser
+      description: 'Create a new user account with the provided details.'
+      parameters: []
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Registration successful! Please verify your email.'
+                properties:
+                  message:
+                    type: string
+                    example: 'Registration successful! Please verify your email.'
+        400:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'You must agree to the terms!'
+                properties:
+                  error:
+                    type: string
+                    example: 'You must agree to the terms!'
+        422:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'The given data was invalid'
+                  errors:
+                    email:
+                      - 'The email has already been taken.'
+                properties:
+                  message:
+                    type: string
+                    example: 'The given data was invalid'
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        example:
+                          - 'The email has already been taken.'
+                        items:
+                          type: string
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  description: 'User role (customer/supplier).'
+                  example: customer
+                  nullable: false
+                firstName:
+                  type: string
+                  description: "The user's first name."
+                  example: John
+                  nullable: false
+                lastName:
+                  type: string
+                  description: "The user's last name."
+                  example: Doe
+                  nullable: false
+                email:
+                  type: string
+                  description: "The user's email address."
+                  example: john@example.com
+                  nullable: false
+                phone:
+                  type: string
+                  description: "The user's phone number."
+                  example: '+1234567890'
+                  nullable: false
+                sex:
+                  type: string
+                  description: "The user's gender (male/female)."
+                  example: male
+                  nullable: false
+                address:
+                  type: string
+                  description: "The user's address."
+                  example: '123 Main St'
+                  nullable: false
+                password:
+                  type: string
+                  description: "The user's password (min: 8 characters)."
+                  example: Secret123!
+                  nullable: false
+                confirmPassword:
+                  type: string
+                  description: 'The value and <code>password</code> must match.'
+                  example: eius
+                  nullable: false
+                verified:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: false
+                recaptchaToken:
+                  type: string
+                  description: ''
+                  example: sunt
+                  nullable: false
+                agreement:
+                  type: boolean
+                  description: 'when role is supplier Terms agreement flag.'
+                  example: true
+                  nullable: false
+                companyName:
+                  type: string
+                  description: 'when role is supplier Company name.'
+                  example: 'Tech Corp'
+                  nullable: false
+                companyEmail:
+                  type: string
+                  description: 'when role is supplier Company email.'
+                  example: info@techcorp.com
+                  nullable: false
+              required:
+                - role
+                - firstName
+                - lastName
+                - email
+                - phone
+                - sex
+                - address
+                - password
+                - confirmPassword
+                - recaptchaToken
+                - agreement
+                - companyName
+                - companyEmail
+      security: []
+  /api/auth/sign-in:
+    post:
+      summary: 'User Login'
+      operationId: userLogin
+      description: 'Authenticate a user and retrieve tokens.'
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: success
+                  accessToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  refreshToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  user:
+                    id: 1
+                    firstName: John
+                    lastName: Doe
+                    email: john@example.com
+                    role: customer
+                  expires_in: 900
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  accessToken:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  refreshToken:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      firstName:
+                        type: string
+                        example: John
+                      lastName:
+                        type: string
+                        example: Doe
+                      email:
+                        type: string
+                        example: john@example.com
+                      role:
+                        type: string
+                        example: customer
+                  expires_in:
+                    type: integer
+                    example: 900
+        203:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: verification_required
+                  message: 'Please verify your email address'
+                properties:
+                  status:
+                    type: string
+                    example: verification_required
+                  message:
+                    type: string
+                    example: 'Please verify your email address'
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Invalid email or password'
+                properties:
+                  error:
+                    type: string
+                    example: 'Invalid email or password'
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: "User's email address."
+                  example: john@example.com
+                  nullable: false
+                password:
+                  type: string
+                  description: "User's password."
+                  example: Secret123!
+                  nullable: false
+              required:
+                - email
+                - password
+      security: []
+  /api/auth/refresh:
+    post:
+      summary: 'Refresh Token'
+      operationId: refreshToken
+      description: 'Get a new access token using refresh token.'
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: success
+                  accessToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  token_type: bearer
+                  expires_in: 3600
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  accessToken:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  token_type:
+                    type: string
+                    example: bearer
+                  expires_in:
+                    type: integer
+                    example: 3600
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Could not refresh token'
+                properties:
+                  error:
+                    type: string
+                    example: 'Could not refresh token'
+      tags:
+        - Authentication
+  /api/auth/me:
+    get:
+      summary: 'Get Authenticated User'
+      operationId: getAuthenticatedUser
+      description: "Retrieve the authenticated user's details."
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  user:
+                    id: 1
+                    firstName: John
+                    lastName: Doe
+                    email: john@example.com
+                    role: customer
+                  mfaEnabled: false
+                  mfaVerified: false
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      firstName:
+                        type: string
+                        example: John
+                      lastName:
+                        type: string
+                        example: Doe
+                      email:
+                        type: string
+                        example: john@example.com
+                      role:
+                        type: string
+                        example: customer
+                  mfaEnabled:
+                    type: boolean
+                    example: false
+                  mfaVerified:
+                    type: boolean
+                    example: false
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Invalid token'
+                properties:
+                  message:
+                    type: string
+                    example: 'Invalid token'
+      tags:
+        - Authentication
+  /api/auth/logout:
+    post:
+      summary: 'Logout User'
+      operationId: logoutUser
+      description: 'Invalidate the current token and logout user.'
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Successfully logged out'
+                properties:
+                  message:
+                    type: string
+                    example: 'Successfully logged out'
+        500:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Logout failed'
+                properties:
+                  error:
+                    type: string
+                    example: 'Logout failed'
+      tags:
+        - Authentication
+  /api/documentation:
+    get:
+      summary: 'Display Swagger API page.'
+      operationId: displaySwaggerAPIPage
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>L5 Swagger UI</title>\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"http://api.koricha-ecommerce.com/docs/asset/swagger-ui.css?v=0755b7093afdd36d03212b65315f0209\">\n    <link rel=\"icon\" type=\"image/png\" href=\"http://api.koricha-ecommerce.com/docs/asset/favicon-32x32.png?v=40d4f2c38d1cd854ad463f16373cbcb6\" sizes=\"32x32\"/>\n    <link rel=\"icon\" type=\"image/png\" href=\"http://api.koricha-ecommerce.com/docs/asset/favicon-16x16.png?v=f0ae831196d55d8f4115b6c5e8ec5384\" sizes=\"16x16\"/>\n    <style>\n    html\n    {\n        box-sizing: border-box;\n        overflow: -moz-scrollbars-vertical;\n        overflow-y: scroll;\n    }\n    *,\n    *:before,\n    *:after\n    {\n        box-sizing: inherit;\n    }\n\n    body {\n      margin:0;\n      background: #fafafa;\n    }\n    </style>\n    </head>\n\n<body >\n<div id=\"swagger-ui\"></div>\n\n<script src=\"http://api.koricha-ecommerce.com/docs/asset/swagger-ui-bundle.js?v=6c23777357d2beae9650f9aa035d93fb\"></script>\n<script src=\"http://api.koricha-ecommerce.com/docs/asset/swagger-ui-standalone-preset.js?v=6b2892eb9458da5c3224817b3984d14c\"></script>\n<script>\n    window.onload = function() {\n        // Build a system\n        const ui = SwaggerUIBundle({\n            dom_id: '#swagger-ui',\n            url: \"http://api.koricha-ecommerce.com/docs/api-docs.json\",\n            operationsSorter: null,\n            configUrl: null,\n            validatorUrl: null,\n            oauth2RedirectUrl: \"http://api.koricha-ecommerce.com/api/oauth2-callback\",\n\n            requestInterceptor: function(request) {\n                request.headers['X-CSRF-TOKEN'] = 'e69qPvnKF1VwrkuWu6NgQLAQwvoEHYtPNk3M3TJC';\n                return request;\n            },\n\n            presets: [\n                SwaggerUIBundle.presets.apis,\n                SwaggerUIStandalonePreset\n            ],\n\n            plugins: [\n                SwaggerUIBundle.plugins.DownloadUrl\n            ],\n\n            layout: \"StandaloneLayout\",\n            docExpansion : \"none\",\n            deepLinking: true,\n            filter: true,\n            persistAuthorization: \"false\",\n\n        })\n\n        window.ui = ui\n\n            }\n</script>\n</body>\n</html>\n"
+      tags:
+        - Endpoints
+      security: []
+  /api/oauth2-callback:
+    get:
+      summary: 'Display Oauth2 callback pages.'
+      operationId: displayOauth2CallbackPages
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "<!doctype html>\n<html lang=\"en-US\">\n<head>\n    <title>Swagger UI: OAuth2 Redirect</title>\n</head>\n<body>\n<script>\n    'use strict';\n    function run () {\n        var oauth2 = window.opener.swaggerUIRedirectOauth2;\n        var sentState = oauth2.state;\n        var redirectUrl = oauth2.redirectUrl;\n        var isValid, qp, arr;\n\n        if (/code|token|error/.test(window.location.hash)) {\n            qp = window.location.hash.substring(1).replace('?', '&');\n        } else {\n            qp = location.search.substring(1);\n        }\n\n        arr = qp.split(\"&\");\n        arr.forEach(function (v,i,_arr) { _arr[i] = '\"' + v.replace('=', '\":\"') + '\"';});\n        qp = qp ? JSON.parse('{' + arr.join() + '}',\n                function (key, value) {\n                    return key === \"\" ? value : decodeURIComponent(value);\n                }\n        ) : {};\n\n        isValid = qp.state === sentState;\n\n        if ((\n          oauth2.auth.schema.get(\"flow\") === \"accessCode\" ||\n          oauth2.auth.schema.get(\"flow\") === \"authorizationCode\" ||\n          oauth2.auth.schema.get(\"flow\") === \"authorization_code\"\n        ) && !oauth2.auth.code) {\n            if (!isValid) {\n                oauth2.errCb({\n                    authId: oauth2.auth.name,\n                    source: \"auth\",\n                    level: \"warning\",\n                    message: \"Authorization may be unsafe, passed state was changed in server. The passed state wasn't returned from auth server.\"\n                });\n            }\n\n            if (qp.code) {\n                delete oauth2.state;\n                oauth2.auth.code = qp.code;\n                oauth2.callback({auth: oauth2.auth, redirectUrl: redirectUrl});\n            } else {\n                let oauthErrorMsg;\n                if (qp.error) {\n                    oauthErrorMsg = \"[\"+qp.error+\"]: \" +\n                        (qp.error_description ? qp.error_description+ \". \" : \"no accessCode received from the server. \") +\n                        (qp.error_uri ? \"More info: \"+qp.error_uri : \"\");\n                }\n\n                oauth2.errCb({\n                    authId: oauth2.auth.name,\n                    source: \"auth\",\n                    level: \"error\",\n                    message: oauthErrorMsg || \"[Authorization failed]: no accessCode received from the server.\"\n                });\n            }\n        } else {\n            oauth2.callback({auth: oauth2.auth, token: qp, isValid: isValid, redirectUrl: redirectUrl});\n        }\n        window.close();\n    }\n\n    if (document.readyState !== 'loading') {\n        run();\n    } else {\n        document.addEventListener('DOMContentLoaded', function () {\n            run();\n        });\n    }\n</script>\n</body>\n</html>\n"
+      tags:
+        - Endpoints
+      security: []
+  /api/health:
+    get:
+      summary: ''
+      operationId: getApiHealth
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: ok
+                  timestamp: '2025-02-07T21:50:02.267130Z'
+                  environment: local
+                  service: 'Koricha Ecommerce Web Platform'
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    example: '2025-02-07T21:50:02.267130Z'
+                  environment:
+                    type: string
+                    example: local
+                  service:
+                    type: string
+                    example: 'Koricha Ecommerce Web Platform'
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/forgot-password:
+    post:
+      summary: ''
+      operationId: postApiAuthForgotPassword
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: maribel.bahringer@example.net
+                  nullable: false
+                redirectTo:
+                  type: string
+                  description: 'Must be a valid URL.'
+                  example: 'http://www.dicki.biz/ea-est-alias-sint-cupiditate'
+                  nullable: false
+                reset_url:
+                  type: string
+                  description: 'Must be a valid URL.'
+                  example: 'http://www.renner.org/eveniet-quia-qui-in-sit-a-facere-nesciunt'
+                  nullable: false
+              required:
+                - email
+      security: []
+  '/api/auth/reset-password/{token}':
+    get:
+      summary: ''
+      operationId: getApiAuthResetPasswordToken
+      description: ''
+      parameters: []
+      responses:
+        400:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: error
+                  message: 'Invalid reset token'
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'Invalid reset token'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: token
+        description: ''
+        example: tempore
+        required: true
+        schema:
+          type: string
+  /api/auth/reset-password:
+    post:
+      summary: ''
+      operationId: postApiAuthResetPassword
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/email/verify:
+    post:
+      summary: ''
+      operationId: postApiAuthEmailVerify
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: yolanda45@example.com
+                  nullable: false
+                otp:
+                  type: string
+                  description: 'Must be 6 characters.'
+                  example: nhvxcn
+                  nullable: false
+              required:
+                - email
+                - otp
+      security: []
+  /api/auth/email/verify/resend:
+    post:
+      summary: ''
+      operationId: postApiAuthEmailVerifyResend
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: domenic.parisian@example.org
+                  nullable: false
+              required:
+                - email
+      security: []
+  /api/auth/email/send-otp:
+    post:
+      summary: ''
+      operationId: postApiAuthEmailSendOtp
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: alexandrine.graham@example.com
+                  nullable: false
+              required:
+                - email
+      security: []
+  /api/auth/mfa-enable:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaEnable
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/mfa-disable:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaDisable
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/mfa-status:
+    get:
+      summary: ''
+      operationId: getApiAuthMfaStatus
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/mfa-verify:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaVerify
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                otp:
+                  type: string
+                  description: 'Must be 6 characters.'
+                  example: fozotm
+                  nullable: false
+              required:
+                - otp
+      security: []
+  /api/auth/mfa-resend:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaResend
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  '/api/users/update/{id}':
+    put:
+      summary: ''
+      operationId: putApiUsersUpdateId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the update.'
+        example: at
+        required: true
+        schema:
+          type: string
+  '/api/user/{userId}/addresses':
+    get:
+      summary: ''
+      operationId: getApiUserUserIdAddresses
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: dolorem
+        required: true
+        schema:
+          type: string
+  '/api/user/{userId}/addresses/create':
+    post:
+      summary: ''
+      operationId: postApiUserUserIdAddressesCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: qvarwijkehoridsiywg
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: otremblay@example.net
+                  nullable: false
+                company:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: tjxpknlvliwqtirhxh
+                  nullable: true
+                primary:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: false
+                fullAddress:
+                  type: string
+                  description: ''
+                  example: maiores
+                  nullable: false
+                phoneNumber:
+                  type: string
+                  description: ''
+                  example: non
+                  nullable: false
+                addressType:
+                  type: string
+                  description: ''
+                  example: home
+                  nullable: false
+                  enum:
+                    - home
+                    - office
+                    - Home
+                    - Office
+              required:
+                - name
+                - email
+                - primary
+                - fullAddress
+                - phoneNumber
+                - addressType
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: nostrum
+        required: true
+        schema:
+          type: string
+  '/api/user/{userId}/addresses/{addressId}':
+    put:
+      summary: ''
+      operationId: putApiUserUserIdAddressesAddressId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: dgzjknskstbffw
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: urunte@example.com
+                  nullable: false
+                company:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: lopqzamvfyzfy
+                  nullable: true
+                primary:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: false
+                fullAddress:
+                  type: string
+                  description: ''
+                  example: consectetur
+                  nullable: false
+                phoneNumber:
+                  type: string
+                  description: ''
+                  example: autem
+                  nullable: false
+                addressType:
+                  type: string
+                  description: ''
+                  example: home
+                  nullable: false
+                  enum:
+                    - home
+                    - office
+                    - Home
+                    - Office
+              required:
+                - name
+                - email
+                - primary
+                - fullAddress
+                - phoneNumber
+                - addressType
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiUserUserIdAddressesAddressId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: et
+        required: true
+        schema:
+          type: string
+      -
+        in: path
+        name: addressId
+        description: ''
+        example: vero
+        required: true
+        schema:
+          type: string
+  /api/mail/list:
+    get:
+      summary: ''
+      operationId: getApiMailList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/details:
+    get:
+      summary: ''
+      operationId: getApiMailDetails
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/labels:
+    get:
+      summary: ''
+      operationId: getApiMailLabels
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/create:
+    post:
+      summary: ''
+      operationId: postApiMailCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: object
+                  description: 'Must have at least 1 items.'
+                  example: []
+                  nullable: false
+                  properties: {  }
+                subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: yhopjtxswqvxtd
+                  nullable: false
+                message:
+                  type: string
+                  description: ''
+                  example: ab
+                  nullable: false
+                folder:
+                  type: string
+                  description: ''
+                  example: trash
+                  nullable: false
+                  enum:
+                    - inbox
+                    - sent
+                    - draft
+                    - trash
+                labelIds:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the mail_labels table.'
+                  example: null
+                  items:
+                    type: string
+                attachments:
+                  type: array
+                  description: 'Must be a file. Must not be greater than 2048 kilobytes.'
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - to
+                - subject
+                - message
+      security: []
+  '/api/mail/mark-as-read/{mailId}':
+    post:
+      summary: ''
+      operationId: postApiMailMarkAsReadMailId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: mailId
+        description: ''
+        example: unde
+        required: true
+        schema:
+          type: string
+  '/api/mail/toggle-star/{mailId}':
+    post:
+      summary: ''
+      operationId: postApiMailToggleStarMailId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: mailId
+        description: ''
+        example: sunt
+        required: true
+        schema:
+          type: string
+  '/api/mail/delete/{mailId}':
+    delete:
+      summary: ''
+      operationId: deleteApiMailDeleteMailId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: mailId
+        description: ''
+        example: alias
+        required: true
+        schema:
+          type: string
+  /api/mail/search:
+    get:
+      summary: ''
+      operationId: getApiMailSearch
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/draft:
+    post:
+      summary: ''
+      operationId: postApiMailDraft
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: object
+                  description: 'Must have at least 1 items.'
+                  example: []
+                  nullable: false
+                  properties: {  }
+                subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: nurm
+                  nullable: false
+                message:
+                  type: string
+                  description: ''
+                  example: rerum
+                  nullable: false
+                folder:
+                  type: string
+                  description: ''
+                  example: inbox
+                  nullable: false
+                  enum:
+                    - inbox
+                    - sent
+                    - draft
+                    - trash
+                labelIds:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the mail_labels table.'
+                  example: null
+                  items:
+                    type: string
+                attachments:
+                  type: array
+                  description: 'Must be a file. Must not be greater than 2048 kilobytes.'
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - to
+                - subject
+                - message
+      security: []
+  '/api/mail/draft/{id}':
+    put:
+      summary: ''
+      operationId: putApiMailDraftId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: object
+                  description: 'Must have at least 1 items.'
+                  example: []
+                  nullable: false
+                  properties: {  }
+                subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: wgxnhblryqtisihnea
+                  nullable: false
+                message:
+                  type: string
+                  description: ''
+                  example: sunt
+                  nullable: false
+                folder:
+                  type: string
+                  description: ''
+                  example: draft
+                  nullable: false
+                  enum:
+                    - inbox
+                    - sent
+                    - draft
+                    - trash
+                labelIds:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the mail_labels table.'
+                  example: null
+                  items:
+                    type: string
+                attachments:
+                  type: array
+                  description: 'Must be a file. Must not be greater than 2048 kilobytes.'
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - to
+                - subject
+                - message
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the draft.'
+        example: quo
+        required: true
+        schema:
+          type: string
+  /api/analytics/widget-summary:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsWidgetSummary
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/analytics/current-visits:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsCurrentVisits
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/users/list:
+    get:
+      summary: ''
+      operationId: getApiUsersList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/user/details/{id}':
+    get:
+      summary: ''
+      operationId: getApiUserDetailsId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the detail.'
+        example: neque
+        required: true
+        schema:
+          type: string
+  /api/users/create:
+    post:
+      summary: ''
+      operationId: postApiUsersCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  '/api/users/delete/{id}':
+    delete:
+      summary: ''
+      operationId: deleteApiUsersDeleteId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the delete.'
+        example: molestiae
+        required: true
+        schema:
+          type: string
+  '/api/users/{id}/role':
+    put:
+      summary: ''
+      operationId: putApiUsersIdRole
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the user.'
+        example: ut
+        required: true
+        schema:
+          type: string
+  '/api/products/{id}/transfer-vendor':
+    post:
+      summary: ''
+      operationId: postApiProductsIdTransferVendor
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the product.'
+        example: voluptatem
+        required: true
+        schema:
+          type: string
+  /api/products/create:
+    post:
+      summary: ''
+      operationId: postApiProductsCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: txqmro
+                  nullable: false
+                sku:
+                  type: string
+                  description: ''
+                  example: ullam
+                  nullable: false
+                code:
+                  type: string
+                  description: ''
+                  example: qui
+                  nullable: false
+                price:
+                  type: number
+                  description: 'Must be at least 1.'
+                  example: 4
+                  nullable: false
+                priceSale:
+                  type: number
+                  description: 'Must be at least 0.'
+                  example: 49
+                  nullable: true
+                taxes:
+                  type: number
+                  description: 'Must be at least 0.'
+                  example: 81
+                  nullable: true
+                coverUrl:
+                  type: string
+                  description: ''
+                  example: et
+                  nullable: false
+                images:
+                  type: array
+                  description: ''
+                  example: null
+                  items:
+                    type: string
+                description:
+                  type: string
+                  description: ''
+                  example: 'Adipisci cum architecto eos eius architecto voluptatem quidem rerum.'
+                  nullable: false
+                subDescription:
+                  type: string
+                  description: ''
+                  example: aut
+                  nullable: true
+                quantity:
+                  type: integer
+                  description: 'Must be at least 1.'
+                  example: 6
+                  nullable: false
+                sizes:
+                  type: array
+                  description: ''
+                  example:
+                    - consequatur
+                  items:
+                    type: string
+                colors:
+                  type: array
+                  description: ''
+                  example:
+                    - sit
+                  items:
+                    type: string
+                tags:
+                  type: array
+                  description: ''
+                  example:
+                    - dolores
+                  items:
+                    type: string
+                gender:
+                  type: array
+                  description: ''
+                  example:
+                    - cumque
+                  items:
+                    type: string
+                category:
+                  type: string
+                  description: ''
+                  example: magni
+                  nullable: false
+                publish:
+                  type: string
+                  description: ''
+                  example: draft
+                  nullable: false
+                  enum:
+                    - draft
+                    - published
+                saleLabel:
+                  type: object
+                  description: ''
+                  example: []
+                  nullable: false
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: ''
+                      example: false
+                      nullable: false
+                    content:
+                      type: string
+                      description: ''
+                      example: voluptatem
+                      nullable: true
+                newLabel:
+                  type: object
+                  description: ''
+                  example: []
+                  nullable: false
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: ''
+                      example: true
+                      nullable: false
+                    content:
+                      type: string
+                      description: ''
+                      example: commodi
+                      nullable: true
+              required:
+                - name
+                - sku
+                - code
+                - price
+                - coverUrl
+                - description
+                - quantity
+                - category
+                - publish
+      security: []
+  /api/products/list:
+    get:
+      summary: ''
+      operationId: getApiProductsList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/products/{id}':
+    put:
+      summary: ''
+      operationId: putApiProductsId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    get:
+      summary: ''
+      operationId: getApiProductsId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the product.'
+        example: dolorem
+        required: true
+        schema:
+          type: string
+  /api/product/details:
+    get:
+      summary: ''
+      operationId: getApiProductDetails
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/products/publish/{id}':
+    put:
+      summary: ''
+      operationId: putApiProductsPublishId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the publish.'
+        example: voluptates
+        required: true
+        schema:
+          type: string
+  /api/reviews:
+    get:
+      summary: ''
+      operationId: getApiReviews
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: ''
+      operationId: postApiReviews
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the products table.'
+                  example: voluptatibus
+                  nullable: false
+                rating:
+                  type: integer
+                  description: 'Must be at least 1. Must not be greater than 5.'
+                  example: 1
+                  nullable: false
+                comment:
+                  type: string
+                  description: ''
+                  example: corrupti
+                  nullable: true
+              required:
+                - product_id
+                - rating
+      security: []
+  '/api/reviews/{id}':
+    get:
+      summary: ''
+      operationId: getApiReviewsId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiReviewsId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                  description: 'Must be at least 1. Must not be greater than 5.'
+                  example: 5
+                  nullable: false
+                comment:
+                  type: string
+                  description: ''
+                  example: eligendi
+                  nullable: true
+              required:
+                - rating
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiReviewsId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the review.'
+        example: saepe
+        required: true
+        schema:
+          type: string
+  /api/invoices/list:
+    get:
+      summary: ''
+      operationId: getApiInvoicesList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/invoices/{id}':
+    get:
+      summary: ''
+      operationId: getApiInvoicesId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiInvoicesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  description: ''
+                  example: 838.0
+                  nullable: false
+                status:
+                  type: string
+                  description: ''
+                  example: consequatur
+                  nullable: false
+              required:
+                - amount
+                - status
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiInvoicesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the invoice.'
+        example: non
+        required: true
+        schema:
+          type: string
+  '/api/users/{userId}/invoices':
+    get:
+      summary: ''
+      operationId: getApiUsersUserIdInvoices
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: molestiae
+        required: true
+        schema:
+          type: string
+  /api/orders/list:
+    get:
+      summary: ''
+      operationId: getApiOrdersList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/orders/{id}':
+    get:
+      summary: ''
+      operationId: getApiOrdersId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiOrdersId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: ''
+                  example: refunded
+                  nullable: false
+                  enum:
+                    - pending
+                    - completed
+                    - cancelled
+                    - refunded
+              required:
+                - status
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the order.'
+        example: doloribus
+        required: true
+        schema:
+          type: string
+  /api/checkout/order:
+    post:
+      summary: ''
+      operationId: postApiCheckoutOrder
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  description: 'Must have at least 1 items.'
+                  example:
+                    - []
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: 'The <code>id</code> of an existing record in the products table.'
+                        example: beatae
+                        nullable: false
+                      quantity:
+                        type: integer
+                        description: 'Must be at least 1.'
+                        example: 25
+                        nullable: false
+                      price:
+                        type: number
+                        description: ''
+                        example: 6061.73475646
+                        nullable: false
+                      name:
+                        type: string
+                        description: ''
+                        example: officiis
+                        nullable: false
+                      coverUrl:
+                        type: string
+                        description: ''
+                        example: 'http://www.welch.com/'
+                        nullable: true
+                    required:
+                      - id
+                      - quantity
+                      - price
+                      - name
+                billing:
+                  type: object
+                  description: ''
+                  example: []
+                  nullable: false
+                  properties:
+                    name:
+                      type: string
+                      description: ''
+                      example: consequatur
+                      nullable: false
+                    email:
+                      type: string
+                      description: 'Must be a valid email address.'
+                      example: blick.cassidy@example.net
+                      nullable: false
+                    fullAddress:
+                      type: string
+                      description: ''
+                      example: facere
+                      nullable: false
+                    phoneNumber:
+                      type: string
+                      description: ''
+                      example: maxime
+                      nullable: false
+                    company:
+                      type: string
+                      description: ''
+                      example: tempora
+                      nullable: true
+                    addressType:
+                      type: string
+                      description: ''
+                      example: ab
+                      nullable: true
+                  required:
+                    - name
+                    - email
+                    - fullAddress
+                    - phoneNumber
+                shipping:
+                  type: object
+                  description: ''
+                  example: []
+                  nullable: false
+                  properties:
+                    address:
+                      type: string
+                      description: ''
+                      example: veritatis
+                      nullable: false
+                    method:
+                      type: object
+                      description: ''
+                      example: []
+                      nullable: false
+                      properties:
+                        description:
+                          type: string
+                          description: ''
+                          example: 'Culpa aut dolorum voluptates at id exercitationem accusantium.'
+                          nullable: true
+                        label:
+                          type: string
+                          description: ''
+                          example: natus
+                          nullable: false
+                        value:
+                          type: number
+                          description: ''
+                          example: 763135257.0
+                          nullable: false
+                      required:
+                        - label
+                        - value
+                  required:
+                    - address
+                payment:
+                  type: object
+                  description: ''
+                  example: []
+                  nullable: false
+                  properties:
+                    method:
+                      type: string
+                      description: ''
+                      example: id
+                      nullable: false
+                    amount:
+                      type: number
+                      description: ''
+                      example: 76.64
+                      nullable: false
+                    currency:
+                      type: string
+                      description: ''
+                      example: voluptatibus
+                      nullable: false
+                    tx_ref:
+                      type: string
+                      description: ''
+                      example: eveniet
+                      nullable: true
+                  required:
+                    - method
+                    - amount
+                    - currency
+                status:
+                  type: string
+                  description: ''
+                  example: cancelled
+                  nullable: false
+                  enum:
+                    - pending
+                    - completed
+                    - cancelled
+                    - refunded
+                total:
+                  type: number
+                  description: ''
+                  example: 2334.0
+                  nullable: false
+                subtotal:
+                  type: number
+                  description: ''
+                  example: 90249.0
+                  nullable: false
+              required:
+                - items
+                - billing
+                - shipping
+                - payment
+                - status
+                - total
+                - subtotal
+      security: []
+  /api/cart:
+    get:
+      summary: ''
+      operationId: getApiCart
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: ''
+      operationId: postApiCart
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the products table.'
+                  example: quos
+                  nullable: false
+                quantity:
+                  type: integer
+                  description: 'Must be at least 1.'
+                  example: 61
+                  nullable: false
+              required:
+                - product_id
+                - quantity
+      security: []
+  '/api/cart/{id}':
+    put:
+      summary: ''
+      operationId: putApiCartId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  description: 'Must be at least 1.'
+                  example: 52
+                  nullable: false
+              required:
+                - quantity
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiCartId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the cart.'
+        example: natus
+        required: true
+        schema:
+          type: string
+  /api/companies:
+    get:
+      summary: ''
+      operationId: getApiCompanies
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: ''
+      operationId: postApiCompanies
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: qulq
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Tempora sunt itaque suscipit quis voluptas nobis tempora.'
+                  nullable: true
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: zoe39@example.net
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: ttmgaxnthxufjagf
+                  nullable: false
+                country:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: laitpngksqqpxmguirtcpokyu
+                  nullable: false
+                city:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: isd
+                  nullable: false
+                address:
+                  type: string
+                  description: ''
+                  example: soluta
+                  nullable: false
+                owner_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: et
+                  nullable: false
+                agreement:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: false
+              required:
+                - name
+                - email
+                - phone
+                - country
+                - city
+                - address
+                - owner_id
+                - agreement
+      security: []
+  '/api/companies/{id}':
+    get:
+      summary: ''
+      operationId: getApiCompaniesId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiCompaniesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: edxullra
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Perferendis minus ut doloremque natus dignissimos.'
+                  nullable: true
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: hilda28@example.net
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: hx
+                  nullable: false
+                country:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: idghruswbsdtowk
+                  nullable: false
+                city:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: nvnufigbksqpjrjqvwfro
+                  nullable: false
+                address:
+                  type: string
+                  description: ''
+                  example: aliquid
+                  nullable: false
+                owner_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: eius
+                  nullable: false
+                agreement:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: false
+              required:
+                - name
+                - email
+                - phone
+                - country
+                - city
+                - address
+                - owner_id
+                - agreement
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiCompaniesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the company.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/companies/vendor/{id}':
+    get:
+      summary: ''
+      operationId: getApiCompaniesVendorId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the vendor.'
+        example: in
+        required: true
+        schema:
+          type: string
+  /api/chapa/callback:
+    post:
+      summary: ''
+      operationId: postApiChapaCallback
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/chapa/webhook:
+    post:
+      summary: ''
+      operationId: postApiChapaWebhook
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/chapa/return:
+    get:
+      summary: ''
+      operationId: getApiChapaReturn
+      description: ''
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: error
+                  message: 'Payment not found'
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'Payment not found'
+      tags:
+        - Endpoints
+      security: []
+  /api/analytics/website-visits:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsWebsiteVisits
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/analytics/order-timeline:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsOrderTimeline
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+tags:
+  -
+    name: Authentication
+    description: "\nAPIs for managing authentication"
+  -
+    name: Endpoints
+    description: ''

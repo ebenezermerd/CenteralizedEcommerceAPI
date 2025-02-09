@@ -30,6 +30,7 @@
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.5",
         "fakerphp/faker": "^1.23",
+        "knuckleswtf/scribe": "^4.40",
         "laravel/pail": "^1.1",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.39",

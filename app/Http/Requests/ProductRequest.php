@@ -33,7 +33,7 @@ class ProductRequest extends FormRequest
         $rules = [
             'name' => 'required|string|max:255',
             'sku' => [
-                'required',
+                'nullable',
                 'string',
                 function ($attribute, $value, $fail) {
                     $existing = Product::where('sku', $value)->first();
@@ -45,7 +45,7 @@ class ProductRequest extends FormRequest
                 },
             ],
             'code' => [
-                'required',
+                'nullable',
                 'string',
                 function ($attribute, $value, $fail) {
                     $existing = Product::where('code', $value)->first();
@@ -109,7 +109,7 @@ class ProductRequest extends FormRequest
                         ]);
                     }
                 } else if (is_string($value)) {
-                    if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                    if (!filter_var($value, FILTER_VALIDATffE_URL)) {
                         \Log::error("Image URL validation failed: Invalid URL format");
                         $fail('Image URL must be a valid URL');
                     } else {

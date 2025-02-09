@@ -12,7 +12,7 @@ class OrderShipping extends Model
     protected $fillable = [
         'order_id',
         'full_address',
-        'phone_number'
+        'phone_number',
     ];
 
     public function order()
