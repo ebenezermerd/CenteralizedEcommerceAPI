@@ -14,23 +14,108 @@ use App\Models\Category;
 class ProductController extends Controller
 {
 
-    public function index(Request $request)
-    {
-        $user = auth()->user();
-        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
-                $query->select('id', 'firstName', 'lastName', 'phone', 'email')
-                    ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
-            }])
-            ->viewableBy($user)
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
-            ->latest()
-            ->paginate(12);
 
-        return response()->json([
-            'products' => ProductResource::collection($products)
-        ], 201);
-    }
+  /**
+ * @group Products
+ *
+ * Retrieve a list of products with their details.
+ *
+ * This endpoint returns a paginated list of products including their reviews,
+ * categories, images, and vendor information. The user needs to be authenticated
+ * to view the products.
+ *
+ * @queryParam page int optional The page number (default: 1).
+ * @queryParam per_page int optional The number of items per page (default: 12).
+ *
+ * @response 201 {
+ *  "products": [
+ *      {
+ *          "id": "string",
+ *          "name": "string",
+ *          "sku": "string",
+ *          "code": "string",
+ *          "description": "string",
+ *          "subDescription": "string",
+ *          "publish": "string",
+ *          "vendor": {
+ *              "id": "string",
+ *              "name": "string",
+ *              "email": "string",
+ *              "phone": "string"
+ *          },
+ *          "coverUrl": "string|null",
+ *          "images": ["string"],
+ *          "price": "float",
+ *          "priceSale": "float",
+ *          "taxes": "float",
+ *          "tags": ["string"],
+ *          "sizes": ["string"],
+ *          "colors": ["string"],
+ *          "gender": ["string"],
+ *          "inventoryType": "string",
+ *          "quantity": "int",
+ *          "available": "boolean",
+ *          "totalSold": "int",
+ *          "category": "string|null",
+ *          "totalRatings": "float",
+ *          "totalReviews": "int",
+ *          "reviews": [
+ *              {
+ *                  "id": "string",
+ *                  "name": "string",
+ *                  "postedAt": "string",
+ *                  "comment": "string",
+ *                  "isPurchased": "boolean",
+ *                  "rating": "float",
+ *                  "avatarUrl": "string|null",
+ *                  "helpful": "int",
+ *                  "attachments": ["string"]
+ *              }
+ *          ],
+ *          "ratings": [
+ *              {
+ *                  "name": "string",
+ *                  "starCount": "int",
+ *                  "reviewCount": "int"
+ *              }
+ *          ],
+ *          "newLabel": {
+ *              "enabled": "boolean",
+ *              "content": "string"
+ *          },
+ *          "saleLabel": {
+ *              "enabled": "boolean",
+ *              "content": "string"
+ *          },
+ *          "createdAt": "string"
+ *      }
+ *  ]
+ * }
+ *
+ * @response 401 {
+ *  "message": "Unauthenticated."
+ * }
+ */
+public function index(Request $request)
+{
+    $user = auth()->user();
+    $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+            $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+        }])
+        ->viewableBy($user)
+        ->withCount('reviews')
+        ->withAvg('reviews', 'rating')
+        ->latest()
+        ->paginate(12);
+
+        // Log the result for debugging
+    \Log::info('Products Data', $products->toArray());
+
+    return response()->json([
+        'products' => ProductResource::collection($products)
+    ], 201);
+}
 
     public function store(ProductRequest $request)
     {
@@ -105,6 +190,8 @@ class ProductController extends Controller
                     $processImage($image, false);
                 }
             }
+
+            \Log::info('Product Images after saving', $product->images->toArray());
 
             DB::commit();
             return new ProductResource($product);

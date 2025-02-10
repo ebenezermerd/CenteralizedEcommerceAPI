@@ -150,42 +150,114 @@ class OrderController extends Controller
     }
 
 
-    public function checkout(Request $request): JsonResponse
-    {
-        // Log the incoming request
-        \Log::info('Order checkout initiated', [
-            'request_data' => $request->all(),
-            'user_id' => auth()->id()
-        ]);
+   /**
+ * @group Orders
+ *
+ * Checkout for placing an order.
+ *
+ * This endpoint allows a user to initiate the checkout process. It requires
+ * detailed information about the items being purchased, billing, shipping,
+ * and payment details. The user must be authenticated to access this endpoint.
+ *
+ * @bodyParam items array required The items to be ordered.
+ * @bodyParam items.*.id string required The ID of the product.
+ * @bodyParam items.*.quantity integer required The quantity of the product.
+ * @bodyParam items.*.price float required The price of the product.
+ * @bodyParam items.*.name string required The name of the product.
+ * @bodyParam items.*.coverUrl string optional The URL of the product cover image.
+ * @bodyParam billing array required The billing information.
+ * @bodyParam billing.name string required The name of the customer.
+ * @bodyParam billing.email string required The email of the customer.
+ * @bodyParam billing.fullAddress string required The full billing address.
+ * @bodyParam billing.phoneNumber string required The phone number of the customer.
+ * @bodyParam billing.company string optional The company name.
+ * @bodyParam billing.addressType string optional The type of address.
+ * @bodyParam shipping array required The shipping information.
+ * @bodyParam shipping.address string required The shipping address.
+ * @bodyParam shipping.method.description string optional The description of the shipping method.
+ * @bodyParam shipping.method.label string required The label of the shipping method.
+ * @bodyParam shipping.method.value float required The cost of the shipping method.
+ * @bodyParam payment array required The payment information.
+ * @bodyParam payment.method string required The payment method (e.g., 'chapa').
+ * @bodyParam payment.amount float required The amount to be paid.
+ * @bodyParam payment.currency string required The currency of the payment.
+ * @bodyParam payment.tx_ref string optional The transaction reference.
+ * @bodyParam status string required The order status (e.g., 'pending', 'completed').
+ * @bodyParam total float required The total amount for the order.
+ * @bodyParam subtotal float required The subtotal amount for the order.
+ *
+ * @response 201 {
+ *  "order": {
+ *      "id": "string",
+ *      "user_id": "string",
+ *      "taxes": "float",
+ *      "status": "string",
+ *      "shipping": "float",
+ *      "discount": "float",
+ *      "subtotal": "float",
+ *      "order_number": "string",
+ *      "total_amount": "float",
+ *      "total_quantity": "int",
+ *      "created_at": "string",
+ *      "updated_at": "string"
+ *  },
+ *  "checkout_url": "string|null" // Only present if payment method is 'chapa'
+ * }
+ *
+ * @response 401 {
+ *  "message": "Unauthenticated."
+ * }
+ *
+ * @response 422 {
+ *  "message": "The given data was invalid.",
+ *  "errors": {
+ *      "items": ["The items field is required."],
+ *      ...
+ *  }
+ * }
+ *
+ * @response 500 {
+ *  "message": "Error processing order",
+ *  "error": "string"
+ * }
+ */
+public function checkout(Request $request): JsonResponse
+{
+    // Log the incoming request
+    \Log::info('Order checkout initiated', [
+        'request_data' => $request->all(),
+        'user_id' => auth()->id()
+    ]);
 
-        $validated = $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric',
-            'items.*.name' => 'required|string',
-            'items.*.coverUrl' => 'nullable|string',
-            'billing' => 'required|array',
-            'billing.name' => 'required|string',
-            'billing.email' => 'required|email',
-            'billing.fullAddress' => 'required|string',
-            'billing.phoneNumber' => 'required|string',
-            'billing.company' => 'nullable|string',
-            'billing.addressType' => 'nullable|string',
-            'shipping' => 'required|array',
-            'shipping.address' => 'required|string',
-            'shipping.method.description' => 'nullable|string',
-            'shipping.method.label' => 'required|string',
-            'shipping.method.value' => 'required|numeric',
-            'payment' => 'required|array',
-            'payment.method' => 'required|string',
-            'payment.amount' => 'required|numeric',
-            'payment.currency' => 'required|string',
-            'payment.tx_ref' => 'nullable|string',
-            'status' => 'required|string|in:pending,completed,cancelled,refunded',
-            'total' => 'required|numeric',
-            'subtotal' => 'required|numeric',
-        ]);
+    $validated = $request->validate([
+        'items' => 'required|array|min:1',
+        'items.*.id' => 'required|exists:products,id',
+        'items.*.quantity' => 'required|integer|min:1',
+        'items.*.price' => 'required|numeric',
+        'items.*.name' => 'required|string',
+        'items.*.coverUrl' => 'nullable|string',
+        'billing' => 'required|array',
+        'billing.name' => 'required|string',
+        'billing.email' => 'required|email',
+        'billing.fullAddress' => 'required|string',
+        'billing.phoneNumber' => 'required|string',
+        'billing.company' => 'nullable|string',
+        'billing.addressType' => 'nullable|string',
+        'shipping' => 'required|array',
+        'shipping.address' => 'required|string',
+        'shipping.method.description' => 'nullable|string',
+        'shipping.method.label' => 'required|string',
+        'shipping.method.value' => 'required|numeric',
+        'payment' => 'required|array',
+        'payment.method' => 'required|string',
+        'payment.amount' => 'required|numeric',
+        'payment.currency' => 'required|string',
+        'payment.tx_ref' => 'nullable|string',
+        'status' => 'required|string|in:pending,completed,cancelled,refunded',
+        'total' => 'required|numeric',
+        'subtotal' => 'required|numeric',
+    ]);
+
 
         if (!$validated) {
             \Log::error('Validation failed', ['errors' => $request->validator->errors()]);

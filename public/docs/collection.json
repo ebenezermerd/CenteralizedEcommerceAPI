@@ -10,7 +10,7 @@
     ],
     "info": {
         "name": "Koricha E-commerce API Documentation",
-        "_postman_id": "edf0adf3-087d-47c2-84e1-6416ddc8e886",
+        "_postman_id": "405b7340-85a4-4bf6-a51d-9aff432b35c2",
         "description": "Welcome to the Koricha E-commerce API. This API provides endpoints for managing products, orders, customers, and other e-commerce related functionality.",
         "schema": "https:\/\/schema.getpostman.com\/json\/collection\/v2.1.0\/collection.json"
     },
@@ -41,7 +41,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"role\":\"customer\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"email\":\"john@example.com\",\"phone\":\"+1234567890\",\"sex\":\"male\",\"address\":\"123 Main St\",\"password\":\"Secret123!\",\"confirmPassword\":\"eius\",\"verified\":false,\"recaptchaToken\":\"sunt\",\"agreement\":true,\"companyName\":\"Tech Corp\",\"companyEmail\":\"info@techcorp.com\"}"
+                            "raw": "{\"role\":\"customer\",\"firstName\":\"John\",\"lastName\":\"Doe\",\"email\":\"john@example.com\",\"phone\":\"+1234567890\",\"sex\":\"male\",\"address\":\"123 Main St\",\"password\":\"Secret123!\",\"confirmPassword\":\"nostrum\",\"verified\":true,\"recaptchaToken\":\"rerum\",\"agreement\":true,\"companyName\":\"Tech Corp\",\"companyEmail\":\"info@techcorp.com\",\"companyPhone\":\"+1234567890\",\"country\":\"USA\",\"city\":\"Los Angeles\",\"companyAddress\":\"456 Tech St\",\"description\":\"Leading tech company\"}"
                         },
                         "description": "Create a new user account with the provided details.",
                         "auth": {
@@ -52,7 +52,7 @@
                         {
                             "header": [],
                             "code": 201,
-                            "body": "{\n \"message\": \"Registration successful! Please verify your email.\"\n}",
+                            "body": "{\n \"message\": \"Registration successful! Please login in and verify your email.\"\n}",
                             "name": ""
                         },
                         {
@@ -102,7 +102,13 @@
                         {
                             "header": [],
                             "code": 200,
-                            "body": "{\n \"status\": \"success\",\n \"accessToken\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\",\n \"refreshToken\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\",\n \"user\": {\n   \"id\": 1,\n   \"firstName\": \"John\",\n   \"lastName\": \"Doe\",\n   \"email\": \"john@example.com\",\n   \"role\": \"customer\"\n },\n \"expires_in\": 900\n}",
+                            "body": "{\n \"status\": \"success\",\n \"accessToken\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\",\n \"refreshToken\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\",\n \"user\": {\n   \"id\": \"1\",\n   \"firstName\": \"John\",\n   \"lastName\": \"Doe\",\n   \"email\": \"john@example.com\",\n   \"role\": \"customer\",\n   \"status\": \"active\",\n   \"avatarUrl\": \"http:\/\/example.com\/storage\/avatar.jpg\",\n   \"phoneNumber\": \"+1234567890\",\n   \"address\": \"123 Main St\",\n   \"country\": \"USA\",\n   \"state\": \"California\",\n   \"city\": \"Los Angeles\",\n   \"sex\": \"male\",\n   \"about\": \"About John Doe\",\n   \"zipCode\": \"90001\",\n   \"company\": \"Tech Corp\",\n   \"isVerified\": true,\n   \"created_at\": \"2023-01-01T00:00:00Z\",\n   \"updated_at\": \"2023-01-01T00:00:00Z\"\n },\n \"expires_in\": 900\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"status\": \"mfa_required\",\n  \"mfaRequired\": true,\n  \"message\": \"MFA verification required\",\n  \"tempToken\": \"string\",\n  \"user\": {\n    \"email\": \"string\",\n    \"id\": \"integer\",\n    \"role\": \"string\",\n    \"isVerified\": \"boolean\"\n  }\n}",
                             "name": ""
                         },
                         {
@@ -115,6 +121,18 @@
                             "header": [],
                             "code": 401,
                             "body": "{\n \"error\": \"Invalid email or password\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 500,
+                            "body": "{\n  \"message\": \"Authentication failed\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 501,
+                            "body": "{\n  \"message\": \"Login failed\"\n}",
                             "name": ""
                         }
                     ]
@@ -184,7 +202,7 @@
                         {
                             "header": [],
                             "code": 200,
-                            "body": "{\n \"user\": {\n   \"id\": 1,\n   \"firstName\": \"John\",\n   \"lastName\": \"Doe\",\n   \"email\": \"john@example.com\",\n   \"role\": \"customer\"\n },\n \"mfaEnabled\": false,\n \"mfaVerified\": false\n}",
+                            "body": "{\n \"user\": {\n   \"id\": \"1\",\n   \"firstName\": \"John\",\n   \"lastName\": \"Doe\",\n   \"email\": \"john@example.com\",\n   \"role\": \"customer\",\n   \"status\": \"active\",\n   \"avatarUrl\": \"http:\/\/example.com\/storage\/avatar.jpg\",\n   \"phoneNumber\": \"+1234567890\",\n   \"address\": \"123 Main St\",\n   \"country\": \"USA\",\n   \"state\": \"California\",\n   \"city\": \"Los Angeles\",\n   \"sex\": \"male\",\n   \"about\": \"About John Doe\",\n   \"zipCode\": \"90001\",\n   \"company\": \"Tech Corp\",\n   \"isVerified\": true,\n   \"created_at\": \"2023-01-01T00:00:00Z\",\n   \"updated_at\": \"2023-01-01T00:00:00Z\",\n },\n \"mfaEnabled\": false,\n \"mfaVerified\": false\n}",
                             "name": ""
                         },
                         {
@@ -286,11 +304,11 @@
                                 },
                                 {
                                     "key": "set-cookie",
-                                    "value": "XSRF-TOKEN=eyJpdiI6Ik5hMEVOTSsyQVh2WFhRdUFCWWdHY2c9PSIsInZhbHVlIjoiM1M5aTN1TlNnVUFnZm5RWk9LcThxV0IyNkhhcU1manJsWHcxUVVjMi8zcTBSU2Q0TlBLZEdxMDIwVVpIMjJkWm5aVE1yZ2Z0eXljYlBJVVl0OEhjK2NUZUY4eDlRWVVyb3BudDQ4bXpwVlhrTHRKUlhIOVg0QWVGZklGVzZWNWEiLCJtYWMiOiJkMDFkZTUzN2IxNDUxZjJjNTU2YTU5Mzc0MDEzNjQ4MzBlNDVjODcyNDNhYzY1MjgzMTVlNTFmNGFlM2Q4MjRkIiwidGFnIjoiIn0%3D; expires=Fri, 07 Feb 2025 23:49:59 GMT; Max-Age=7197; path=\/; samesite=lax; koricha_ecommerce_web_platform_session=eyJpdiI6IjFJTWRoczN6N09XR3RMalNMZmRDWVE9PSIsInZhbHVlIjoiNitBQ055alg3NFJyemIzdG05RVoxZHdDaEtWWFlCYWJnY3c4ZHJueTB3TCsvZ0lNa3h0elA5bUsxQTNkTlpRTXVrOHVKdDMvbTZqYW95UnNqcTRZdHdTU2FrWWJwWFNXK05XTUFFNys3dkIxcXZOSDNMZ2k4MjdpZmVpQUNxS2QiLCJtYWMiOiI4YWQ1OTE0NzQ4YTgyNDMwNzc4NTI4MDczMWMyOTA5NWIzOGNhZmVkNmUwOTFiNzRjZGI5ZjkxMGM3YzgzMGE1IiwidGFnIjoiIn0%3D; expires=Fri, 07 Feb 2025 23:49:59 GMT; Max-Age=7197; path=\/; httponly; samesite=lax"
+                                    "value": "XSRF-TOKEN=eyJpdiI6ImF1eTZ3RTRmTk9qbCtOQ0llcUhUYmc9PSIsInZhbHVlIjoiMUd3R0I2a0dpVXFhZFNPYnE0c2RHWC8zUVJ0TTNXTjQ1eU1FOTJ0U0YvMk84TTdLUWZoYkU2dWlXTzlpL1pZVDd0RWNNM2tOWWhDOWVPejNIM3grdWNyZUcxajRGbTFxN3RwQ3ZBVlB1bDgrVGZ3eWxuSUVUNkJpOFIvS2tOODEiLCJtYWMiOiJlZmZlZTNlNWM3ODU3YjFmMzcxMzM3NzM4N2M1OTI1MzQ3OGY3MDhjOThkZjc0MzI5MzM0ZmUzYjlkMmZiNTc3IiwidGFnIjoiIn0%3D; expires=Sun, 09 Feb 2025 20:09:51 GMT; Max-Age=7198; path=\/; samesite=lax; koricha_ecommerce_web_platform_session=eyJpdiI6IlZiSVdidEkvZ3BKQktyMnQyU0liNnc9PSIsInZhbHVlIjoiRC9nSDFWWDJXZ2UrZ0Fndzk2UnFzTUVoUjRLYkczMkdEV2F4c0hFU1dDdm01UkNJWFdUWVNzUFV0VUFvdnVuTUt2R3Y5RDZVWDBneFpGQ29HTEZ0cU1vSHc2b016Tng0Nm5vK3lGR1dQN3B2MUVvekZLZi9IeWk1V3NZVE5TY2EiLCJtYWMiOiI2ZjlmY2ZkYTUxOWM4NjYzYTAyN2Y4ZGY0YTllNWY3YWY1MTM4NWQ1NzQ4ODE0YTNjNmFlYmYzZjc0YzcyZTEzIiwidGFnIjoiIn0%3D; expires=Sun, 09 Feb 2025 20:09:51 GMT; Max-Age=7198; path=\/; httponly; samesite=lax"
                                 }
                             ],
                             "code": 200,
-                            "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>L5 Swagger UI<\/title>\n    <link rel=\"stylesheet\" type=\"text\/css\" href=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/swagger-ui.css?v=0755b7093afdd36d03212b65315f0209\">\n    <link rel=\"icon\" type=\"image\/png\" href=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/favicon-32x32.png?v=40d4f2c38d1cd854ad463f16373cbcb6\" sizes=\"32x32\"\/>\n    <link rel=\"icon\" type=\"image\/png\" href=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/favicon-16x16.png?v=f0ae831196d55d8f4115b6c5e8ec5384\" sizes=\"16x16\"\/>\n    <style>\n    html\n    {\n        box-sizing: border-box;\n        overflow: -moz-scrollbars-vertical;\n        overflow-y: scroll;\n    }\n    *,\n    *:before,\n    *:after\n    {\n        box-sizing: inherit;\n    }\n\n    body {\n      margin:0;\n      background: #fafafa;\n    }\n    <\/style>\n    <\/head>\n\n<body >\n<div id=\"swagger-ui\"><\/div>\n\n<script src=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/swagger-ui-bundle.js?v=6c23777357d2beae9650f9aa035d93fb\"><\/script>\n<script src=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/swagger-ui-standalone-preset.js?v=6b2892eb9458da5c3224817b3984d14c\"><\/script>\n<script>\n    window.onload = function() {\n        \/\/ Build a system\n        const ui = SwaggerUIBundle({\n            dom_id: '#swagger-ui',\n            url: \"http:\/\/api.koricha-ecommerce.com\/docs\/api-docs.json\",\n            operationsSorter: null,\n            configUrl: null,\n            validatorUrl: null,\n            oauth2RedirectUrl: \"http:\/\/api.koricha-ecommerce.com\/api\/oauth2-callback\",\n\n            requestInterceptor: function(request) {\n                request.headers['X-CSRF-TOKEN'] = 'e69qPvnKF1VwrkuWu6NgQLAQwvoEHYtPNk3M3TJC';\n                return request;\n            },\n\n            presets: [\n                SwaggerUIBundle.presets.apis,\n                SwaggerUIStandalonePreset\n            ],\n\n            plugins: [\n                SwaggerUIBundle.plugins.DownloadUrl\n            ],\n\n            layout: \"StandaloneLayout\",\n            docExpansion : \"none\",\n            deepLinking: true,\n            filter: true,\n            persistAuthorization: \"false\",\n\n        })\n\n        window.ui = ui\n\n            }\n<\/script>\n<\/body>\n<\/html>\n",
+                            "body": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>L5 Swagger UI<\/title>\n    <link rel=\"stylesheet\" type=\"text\/css\" href=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/swagger-ui.css?v=0755b7093afdd36d03212b65315f0209\">\n    <link rel=\"icon\" type=\"image\/png\" href=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/favicon-32x32.png?v=40d4f2c38d1cd854ad463f16373cbcb6\" sizes=\"32x32\"\/>\n    <link rel=\"icon\" type=\"image\/png\" href=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/favicon-16x16.png?v=f0ae831196d55d8f4115b6c5e8ec5384\" sizes=\"16x16\"\/>\n    <style>\n    html\n    {\n        box-sizing: border-box;\n        overflow: -moz-scrollbars-vertical;\n        overflow-y: scroll;\n    }\n    *,\n    *:before,\n    *:after\n    {\n        box-sizing: inherit;\n    }\n\n    body {\n      margin:0;\n      background: #fafafa;\n    }\n    <\/style>\n    <\/head>\n\n<body >\n<div id=\"swagger-ui\"><\/div>\n\n<script src=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/swagger-ui-bundle.js?v=6c23777357d2beae9650f9aa035d93fb\"><\/script>\n<script src=\"http:\/\/api.koricha-ecommerce.com\/docs\/asset\/swagger-ui-standalone-preset.js?v=6b2892eb9458da5c3224817b3984d14c\"><\/script>\n<script>\n    window.onload = function() {\n        \/\/ Build a system\n        const ui = SwaggerUIBundle({\n            dom_id: '#swagger-ui',\n            url: \"http:\/\/api.koricha-ecommerce.com\/docs\/api-docs.json\",\n            operationsSorter: null,\n            configUrl: null,\n            validatorUrl: null,\n            oauth2RedirectUrl: \"http:\/\/api.koricha-ecommerce.com\/api\/oauth2-callback\",\n\n            requestInterceptor: function(request) {\n                request.headers['X-CSRF-TOKEN'] = 'vVB1jJ2jnOaIpEb0pMdzMGnWwzQpI2aJIDBidvSI';\n                return request;\n            },\n\n            presets: [\n                SwaggerUIBundle.presets.apis,\n                SwaggerUIStandalonePreset\n            ],\n\n            plugins: [\n                SwaggerUIBundle.plugins.DownloadUrl\n            ],\n\n            layout: \"StandaloneLayout\",\n            docExpansion : \"none\",\n            deepLinking: true,\n            filter: true,\n            persistAuthorization: \"false\",\n\n        })\n\n        window.ui = ui\n\n            }\n<\/script>\n<\/body>\n<\/html>\n",
                             "name": ""
                         }
                     ]
@@ -402,7 +420,7 @@
                                 }
                             ],
                             "code": 200,
-                            "body": "{\"status\":\"ok\",\"timestamp\":\"2025-02-07T21:50:02.267130Z\",\"environment\":\"local\",\"service\":\"Koricha Ecommerce Web Platform\"}",
+                            "body": "{\"status\":\"ok\",\"timestamp\":\"2025-02-09T18:09:53.356466Z\",\"environment\":\"local\",\"service\":\"Koricha Ecommerce Web Platform\"}",
                             "name": ""
                         }
                     ]
@@ -429,7 +447,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"email\":\"maribel.bahringer@example.net\",\"redirectTo\":\"http:\\\/\\\/www.dicki.biz\\\/ea-est-alias-sint-cupiditate\",\"reset_url\":\"http:\\\/\\\/www.renner.org\\\/eveniet-quia-qui-in-sit-a-facere-nesciunt\"}"
+                            "raw": "{\"email\":\"ukovacek@example.org\",\"redirectTo\":\"http:\\\/\\\/www.ohara.com\\\/distinctio-exercitationem-ut-sunt-odio-architecto-at\",\"reset_url\":\"http:\\\/\\\/zieme.com\\\/quibusdam-magni-quia-exercitationem-voluptas-distinctio\"}"
                         },
                         "description": "",
                         "auth": {
@@ -450,7 +468,7 @@
                                 {
                                     "id": "token",
                                     "key": "token",
-                                    "value": "tempore",
+                                    "value": "ipsum",
                                     "description": ""
                                 }
                             ]
@@ -556,7 +574,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"email\":\"yolanda45@example.com\",\"otp\":\"nhvxcn\"}"
+                            "raw": "{\"email\":\"edmund12@example.org\",\"otp\":\"lutsqo\"}"
                         },
                         "description": "",
                         "auth": {
@@ -587,7 +605,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"email\":\"domenic.parisian@example.org\"}"
+                            "raw": "{\"email\":\"damon24@example.org\"}"
                         },
                         "description": "",
                         "auth": {
@@ -618,7 +636,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"email\":\"alexandrine.graham@example.com\"}"
+                            "raw": "{\"email\":\"johns.kaya@example.org\"}"
                         },
                         "description": "",
                         "auth": {
@@ -765,7 +783,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"otp\":\"fozotm\"}"
+                            "raw": "{\"otp\":\"ktpbbo\"}"
                         },
                         "description": "",
                         "auth": {
@@ -814,7 +832,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "at",
+                                    "value": "possimus",
                                     "description": "The ID of the update."
                                 }
                             ]
@@ -850,7 +868,7 @@
                                 {
                                     "id": "userId",
                                     "key": "userId",
-                                    "value": "dolorem",
+                                    "value": "amet",
                                     "description": ""
                                 }
                             ]
@@ -918,7 +936,7 @@
                                 {
                                     "id": "userId",
                                     "key": "userId",
-                                    "value": "nostrum",
+                                    "value": "earum",
                                     "description": ""
                                 }
                             ]
@@ -936,7 +954,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"name\":\"qvarwijkehoridsiywg\",\"email\":\"otremblay@example.net\",\"company\":\"tjxpknlvliwqtirhxh\",\"primary\":true,\"fullAddress\":\"maiores\",\"phoneNumber\":\"non\",\"addressType\":\"home\"}"
+                            "raw": "{\"name\":\"eltkwggkfbumccoi\",\"email\":\"schmeler.elza@example.com\",\"company\":\"tnaubijdn\",\"primary\":false,\"fullAddress\":\"ducimus\",\"phoneNumber\":\"rerum\",\"addressType\":\"Office\"}"
                         },
                         "description": "",
                         "auth": {
@@ -957,13 +975,13 @@
                                 {
                                     "id": "userId",
                                     "key": "userId",
-                                    "value": "et",
+                                    "value": "recusandae",
                                     "description": ""
                                 },
                                 {
                                     "id": "addressId",
                                     "key": "addressId",
-                                    "value": "vero",
+                                    "value": "ut",
                                     "description": ""
                                 }
                             ]
@@ -981,7 +999,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"name\":\"dgzjknskstbffw\",\"email\":\"urunte@example.com\",\"company\":\"lopqzamvfyzfy\",\"primary\":true,\"fullAddress\":\"consectetur\",\"phoneNumber\":\"autem\",\"addressType\":\"home\"}"
+                            "raw": "{\"name\":\"qthpqefxkfck\",\"email\":\"shields.miguel@example.com\",\"company\":\"wsnifrzytsfzwuykdzcvug\",\"primary\":false,\"fullAddress\":\"ea\",\"phoneNumber\":\"laborum\",\"addressType\":\"office\"}"
                         },
                         "description": "",
                         "auth": {
@@ -1002,13 +1020,13 @@
                                 {
                                     "id": "userId",
                                     "key": "userId",
-                                    "value": "et",
+                                    "value": "veritatis",
                                     "description": ""
                                 },
                                 {
                                     "id": "addressId",
                                     "key": "addressId",
-                                    "value": "alias",
+                                    "value": "cum",
                                     "description": ""
                                 }
                             ]
@@ -1237,19 +1255,19 @@
                             "formdata": [
                                 {
                                     "key": "subject",
-                                    "value": "yhopjtxswqvxtd",
+                                    "value": "iamfac",
                                     "type": "text",
                                     "description": "Must not be greater than 255 characters."
                                 },
                                 {
                                     "key": "message",
-                                    "value": "ab",
+                                    "value": "officiis",
                                     "type": "text",
                                     "description": ""
                                 },
                                 {
                                     "key": "folder",
-                                    "value": "trash",
+                                    "value": "draft",
                                     "type": "text",
                                     "description": ""
                                 },
@@ -1279,7 +1297,7 @@
                                 {
                                     "id": "mailId",
                                     "key": "mailId",
-                                    "value": "unde",
+                                    "value": "sit",
                                     "description": ""
                                 }
                             ]
@@ -1315,7 +1333,7 @@
                                 {
                                     "id": "mailId",
                                     "key": "mailId",
-                                    "value": "sunt",
+                                    "value": "rem",
                                     "description": ""
                                 }
                             ]
@@ -1351,7 +1369,7 @@
                                 {
                                     "id": "mailId",
                                     "key": "mailId",
-                                    "value": "alias",
+                                    "value": "sequi",
                                     "description": ""
                                 }
                             ]
@@ -1460,19 +1478,19 @@
                             "formdata": [
                                 {
                                     "key": "subject",
-                                    "value": "nurm",
+                                    "value": "yhcrx",
                                     "type": "text",
                                     "description": "Must not be greater than 255 characters."
                                 },
                                 {
                                     "key": "message",
-                                    "value": "rerum",
+                                    "value": "est",
                                     "type": "text",
                                     "description": ""
                                 },
                                 {
                                     "key": "folder",
-                                    "value": "inbox",
+                                    "value": "draft",
                                     "type": "text",
                                     "description": ""
                                 },
@@ -1502,7 +1520,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "quo",
+                                    "value": "architecto",
                                     "description": "The ID of the draft."
                                 }
                             ]
@@ -1523,19 +1541,19 @@
                             "formdata": [
                                 {
                                     "key": "subject",
-                                    "value": "wgxnhblryqtisihnea",
+                                    "value": "ewawytinfxtb",
                                     "type": "text",
                                     "description": "Must not be greater than 255 characters."
                                 },
                                 {
                                     "key": "message",
-                                    "value": "sunt",
+                                    "value": "earum",
                                     "type": "text",
                                     "description": ""
                                 },
                                 {
                                     "key": "folder",
-                                    "value": "draft",
+                                    "value": "trash",
                                     "type": "text",
                                     "description": ""
                                 },
@@ -1750,7 +1768,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "neque",
+                                    "value": "tempore",
                                     "description": "The ID of the detail."
                                 }
                             ]
@@ -1846,7 +1864,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "molestiae",
+                                    "value": "velit",
                                     "description": "The ID of the delete."
                                 }
                             ]
@@ -1882,7 +1900,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "ut",
+                                    "value": "et",
                                     "description": "The ID of the user."
                                 }
                             ]
@@ -1918,7 +1936,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "voluptatem",
+                                    "value": "maxime",
                                     "description": "The ID of the product."
                                 }
                             ]
@@ -1964,7 +1982,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"name\":\"txqmro\",\"sku\":\"ullam\",\"code\":\"qui\",\"price\":4,\"priceSale\":49,\"taxes\":81,\"coverUrl\":\"et\",\"description\":\"Adipisci cum architecto eos eius architecto voluptatem quidem rerum.\",\"subDescription\":\"aut\",\"quantity\":6,\"sizes\":[\"consequatur\"],\"colors\":[\"sit\"],\"tags\":[\"dolores\"],\"gender\":[\"cumque\"],\"category\":\"magni\",\"publish\":\"draft\",\"saleLabel\":{\"enabled\":false,\"content\":\"voluptatem\"},\"newLabel\":{\"enabled\":true,\"content\":\"commodi\"}}"
+                            "raw": "{\"name\":\"ifvmchpnnpbmivajcxkjri\",\"sku\":\"similique\",\"code\":\"sed\",\"price\":24,\"priceSale\":88,\"taxes\":5,\"coverUrl\":\"nisi\",\"description\":\"Corporis vero voluptates similique recusandae quidem cum voluptates.\",\"subDescription\":\"nihil\",\"quantity\":58,\"sizes\":[\"doloremque\"],\"colors\":[\"et\"],\"tags\":[\"officia\"],\"gender\":[\"maiores\"],\"category\":\"blanditiis\",\"publish\":\"published\",\"saleLabel\":{\"enabled\":false,\"content\":\"natus\"},\"newLabel\":{\"enabled\":true,\"content\":\"magnam\"}}"
                         },
                         "description": "",
                         "auth": {
@@ -1972,66 +1990,6 @@
                         }
                     },
                     "response": []
-                },
-                {
-                    "name": "GET api\/products\/list",
-                    "request": {
-                        "url": {
-                            "host": "{{baseUrl}}",
-                            "path": "api\/products\/list",
-                            "query": [],
-                            "raw": "{{baseUrl}}\/api\/products\/list"
-                        },
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application\/json"
-                            },
-                            {
-                                "key": "Accept",
-                                "value": "application\/json"
-                            }
-                        ],
-                        "body": null,
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    },
-                    "response": [
-                        {
-                            "header": [
-                                {
-                                    "key": "cache-control",
-                                    "value": "no-cache, private"
-                                },
-                                {
-                                    "key": "content-type",
-                                    "value": "application\/json"
-                                },
-                                {
-                                    "key": "x-ratelimit-limit",
-                                    "value": "60"
-                                },
-                                {
-                                    "key": "x-ratelimit-remaining",
-                                    "value": "59"
-                                },
-                                {
-                                    "key": "access-control-allow-origin",
-                                    "value": "http:\/\/localhost:8080"
-                                },
-                                {
-                                    "key": "access-control-allow-credentials",
-                                    "value": "true"
-                                }
-                            ],
-                            "code": 401,
-                            "body": "{\"error\":\"Token not provided\"}",
-                            "name": ""
-                        }
-                    ]
                 },
                 {
                     "name": "PUT api\/products\/{id}",
@@ -2045,7 +2003,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "dolorem",
+                                    "value": "placeat",
                                     "description": "The ID of the product."
                                 }
                             ]
@@ -2141,7 +2099,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "voluptates",
+                                    "value": "omnis",
                                     "description": "The ID of the publish."
                                 }
                             ]
@@ -2177,7 +2135,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "distinctio",
+                                    "value": "reprehenderit",
                                     "description": "The ID of the product."
                                 }
                             ]
@@ -2305,7 +2263,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "saepe",
+                                    "value": "odio",
                                     "description": "The ID of the review."
                                 }
                             ]
@@ -2433,7 +2391,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "non",
+                                    "value": "ea",
                                     "description": "The ID of the invoice."
                                 }
                             ]
@@ -2501,7 +2459,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "dolor",
+                                    "value": "deserunt",
                                     "description": "The ID of the invoice."
                                 }
                             ]
@@ -2519,7 +2477,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"amount\":838,\"status\":\"consequatur\"}"
+                            "raw": "{\"amount\":1268.2,\"status\":\"et\"}"
                         },
                         "description": "",
                         "auth": {
@@ -2540,7 +2498,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "quas",
+                                    "value": "possimus",
                                     "description": "The ID of the invoice."
                                 }
                             ]
@@ -2563,74 +2521,6 @@
                         }
                     },
                     "response": []
-                },
-                {
-                    "name": "GET api\/users\/{userId}\/invoices",
-                    "request": {
-                        "url": {
-                            "host": "{{baseUrl}}",
-                            "path": "api\/users\/:userId\/invoices",
-                            "query": [],
-                            "raw": "{{baseUrl}}\/api\/users\/:userId\/invoices",
-                            "variable": [
-                                {
-                                    "id": "userId",
-                                    "key": "userId",
-                                    "value": "molestiae",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application\/json"
-                            },
-                            {
-                                "key": "Accept",
-                                "value": "application\/json"
-                            }
-                        ],
-                        "body": null,
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    },
-                    "response": [
-                        {
-                            "header": [
-                                {
-                                    "key": "cache-control",
-                                    "value": "no-cache, private"
-                                },
-                                {
-                                    "key": "content-type",
-                                    "value": "application\/json"
-                                },
-                                {
-                                    "key": "x-ratelimit-limit",
-                                    "value": "60"
-                                },
-                                {
-                                    "key": "x-ratelimit-remaining",
-                                    "value": "59"
-                                },
-                                {
-                                    "key": "access-control-allow-origin",
-                                    "value": "http:\/\/localhost:8080"
-                                },
-                                {
-                                    "key": "access-control-allow-credentials",
-                                    "value": "true"
-                                }
-                            ],
-                            "code": 401,
-                            "body": "{\"error\":\"Token not provided\"}",
-                            "name": ""
-                        }
-                    ]
                 },
                 {
                     "name": "GET api\/orders\/list",
@@ -2704,7 +2594,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "doloribus",
+                                    "value": "eaque",
                                     "description": "The ID of the order."
                                 }
                             ]
@@ -2772,7 +2662,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "molestiae",
+                                    "value": "facilis",
                                     "description": "The ID of the order."
                                 }
                             ]
@@ -2791,37 +2681,6 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\"status\":\"refunded\"}"
-                        },
-                        "description": "",
-                        "auth": {
-                            "type": "noauth"
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "POST api\/checkout\/order",
-                    "request": {
-                        "url": {
-                            "host": "{{baseUrl}}",
-                            "path": "api\/checkout\/order",
-                            "query": [],
-                            "raw": "{{baseUrl}}\/api\/checkout\/order"
-                        },
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application\/json"
-                            },
-                            {
-                                "key": "Accept",
-                                "value": "application\/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\"items\":[{\"id\":\"beatae\",\"quantity\":25,\"price\":6061.73475646,\"name\":\"officiis\",\"coverUrl\":\"http:\\\/\\\/www.welch.com\\\/\"}],\"billing\":{\"name\":\"consequatur\",\"email\":\"blick.cassidy@example.net\",\"fullAddress\":\"facere\",\"phoneNumber\":\"maxime\",\"company\":\"tempora\",\"addressType\":\"ab\"},\"shipping\":{\"address\":\"veritatis\",\"method\":{\"description\":\"Culpa aut dolorum voluptates at id exercitationem accusantium.\",\"label\":\"natus\",\"value\":763135257}},\"payment\":{\"method\":\"id\",\"amount\":76.64,\"currency\":\"voluptatibus\",\"tx_ref\":\"eveniet\"},\"status\":\"cancelled\",\"total\":2334,\"subtotal\":90249}"
                         },
                         "description": "",
                         "auth": {
@@ -2912,7 +2771,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"product_id\":\"quos\",\"quantity\":61}"
+                            "raw": "{\"product_id\":\"soluta\",\"quantity\":7}"
                         },
                         "description": "",
                         "auth": {
@@ -2933,7 +2792,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "natus",
+                                    "value": "et",
                                     "description": "The ID of the cart."
                                 }
                             ]
@@ -2951,7 +2810,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"quantity\":52}"
+                            "raw": "{\"quantity\":82}"
                         },
                         "description": "",
                         "auth": {
@@ -2972,7 +2831,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "ducimus",
+                                    "value": "dolor",
                                     "description": "The ID of the cart."
                                 }
                             ]
@@ -3078,7 +2937,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"name\":\"qulq\",\"description\":\"Tempora sunt itaque suscipit quis voluptas nobis tempora.\",\"email\":\"zoe39@example.net\",\"phone\":\"ttmgaxnthxufjagf\",\"country\":\"laitpngksqqpxmguirtcpokyu\",\"city\":\"isd\",\"address\":\"soluta\",\"owner_id\":\"et\",\"agreement\":false}"
+                            "raw": "{\"name\":\"wahjttogu\",\"description\":\"Omnis dolores omnis vel autem atque commodi consequatur.\",\"email\":\"ecorwin@example.com\",\"phone\":\"fagacmd\",\"country\":\"vccfzustjxhcatgbwkvvk\",\"city\":\"tqjgpnnuztjbbhuqxslseo\",\"address\":\"ipsam\",\"owner_id\":\"porro\",\"agreement\":false}"
                         },
                         "description": "",
                         "auth": {
@@ -3185,7 +3044,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"name\":\"edxullra\",\"description\":\"Perferendis minus ut doloremque natus dignissimos.\",\"email\":\"hilda28@example.net\",\"phone\":\"hx\",\"country\":\"idghruswbsdtowk\",\"city\":\"nvnufigbksqpjrjqvwfro\",\"address\":\"aliquid\",\"owner_id\":\"eius\",\"agreement\":false}"
+                            "raw": "{\"name\":\"roqpzkuqfaaerchbshgalgux\",\"description\":\"Similique natus architecto accusantium dolorum omnis ut itaque provident.\",\"email\":\"jesse82@example.org\",\"phone\":\"pjesgmatfrxgqanb\",\"country\":\"gkhpvyrirjvwhzyjhvwq\",\"city\":\"rqgdyotviclyyocd\",\"address\":\"omnis\",\"owner_id\":\"dicta\",\"agreement\":true}"
                         },
                         "description": "",
                         "auth": {
@@ -3242,7 +3101,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "in",
+                                    "value": "tempore",
                                     "description": "The ID of the vendor."
                                 }
                             ]
@@ -3320,7 +3179,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"product_id\":\"voluptatibus\",\"rating\":1,\"comment\":\"corrupti\"}"
+                            "raw": "{\"product_id\":\"neque\",\"rating\":3,\"comment\":\"incidunt\"}"
                         },
                         "description": "",
                         "auth": {
@@ -3341,7 +3200,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "quia",
+                                    "value": "rerum",
                                     "description": "The ID of the review."
                                 }
                             ]
@@ -3359,7 +3218,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\"rating\":5,\"comment\":\"eligendi\"}"
+                            "raw": "{\"rating\":2,\"comment\":\"ipsam\"}"
                         },
                         "description": "",
                         "auth": {
@@ -3380,7 +3239,7 @@
                                 {
                                     "id": "id",
                                     "key": "id",
-                                    "value": "quae",
+                                    "value": "praesentium",
                                     "description": "The ID of the review."
                                 }
                             ]
@@ -3636,6 +3495,183 @@
                             ],
                             "code": 401,
                             "body": "{\"error\":\"Token not provided\"}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Invoices",
+            "description": "",
+            "item": [
+                {
+                    "name": "Retrieve all invoices for a specific user with detailed information.\n\nThis endpoint retrieves all invoices associated with the given user ID, including\nrelated items, billing information, and pagination.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/users\/:userId\/invoices",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/users\/:userId\/invoices",
+                            "variable": [
+                                {
+                                    "id": "userId",
+                                    "key": "userId",
+                                    "value": "occaecati",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"invoices\": [\n      {\n          \"id\": \"string\",\n          \"invoiceNumber\": \"string\",\n          \"sent\": \"boolean\",\n          \"taxes\": \"float\",\n          \"status\": \"string\",\n          \"subtotal\": \"float\",\n          \"discount\": \"float\",\n          \"shipping\": \"float\",\n          \"totalAmount\": \"float\",\n          \"createdAt\": \"string\",\n          \"dueDate\": \"string\",\n          \"items\": [\n              {\n                  \"id\": \"string\",\n                  \"title\": \"string\",\n                  \"price\": \"float\",\n                  \"total\": \"float\",\n                  \"service\": \"string\",\n                  \"quantity\": \"int\",\n                  \"description\": \"string\"\n              }\n          ],\n          \"invoiceFrom\": {\n              \"name\": \"string\",\n              \"fullAddress\": \"string\",\n              \"phoneNumber\": \"string\"\n          },\n          \"invoiceTo\": {\n              \"name\": \"string\",\n              \"fullAddress\": \"string\",\n              \"phoneNumber\": \"string\"\n          }\n      }\n  ],\n  \"pagination\": {\n      \"total\": \"int\",\n      \"perPage\": \"int\",\n      \"currentPage\": \"int\",\n      \"lastPage\": \"int\"\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 404,
+                            "body": "{\n  \"message\": \"No invoices found for this user.\"\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Orders",
+            "description": "",
+            "item": [
+                {
+                    "name": "Checkout for placing an order.\n\nThis endpoint allows a user to initiate the checkout process. It requires\ndetailed information about the items being purchased, billing, shipping,\nand payment details. The user must be authenticated to access this endpoint.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/checkout\/order",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/checkout\/order"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"items\":[\"eum\"],\"billing\":[\"architecto\"],\"shipping\":{\"0\":\"nesciunt\",\"method\":{\"description\":\"Quisquam tenetur similique libero commodi officia porro occaecati inventore.\",\"label\":\"ullam\",\"value\":56.9771377}},\"payment\":[\"autem\"],\"status\":\"ut\",\"total\":61686091.32900233,\"subtotal\":34800.192460132}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n \"order\": {\n     \"id\": \"string\",\n     \"user_id\": \"string\",\n     \"taxes\": \"float\",\n     \"status\": \"string\",\n     \"shipping\": \"float\",\n     \"discount\": \"float\",\n     \"subtotal\": \"float\",\n     \"order_number\": \"string\",\n     \"total_amount\": \"float\",\n     \"total_quantity\": \"int\",\n     \"created_at\": \"string\",\n     \"updated_at\": \"string\"\n },\n \"checkout_url\": \"string|null\" \/\/ Only present if payment method is 'chapa'\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n \"message\": \"Unauthenticated.\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n \"message\": \"The given data was invalid.\",\n \"errors\": {\n     \"items\": [\"The items field is required.\"],\n     ...\n }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 500,
+                            "body": "{\n \"message\": \"Error processing order\",\n \"error\": \"string\"\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Products",
+            "description": "",
+            "item": [
+                {
+                    "name": "Retrieve a list of products with their details.\n\nThis endpoint returns a paginated list of products including their reviews,\ncategories, images, and vendor information. The user needs to be authenticated\nto view the products.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/products\/list",
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "4",
+                                    "description": "optional The page number (default: 1).",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "7",
+                                    "description": "optional The number of items per page (default: 12).",
+                                    "disabled": false
+                                }
+                            ],
+                            "raw": "{{baseUrl}}\/api\/products\/list?page=4&per_page=7"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n \"products\": [\n     {\n         \"id\": \"string\",\n         \"name\": \"string\",\n         \"sku\": \"string\",\n         \"code\": \"string\",\n         \"description\": \"string\",\n         \"subDescription\": \"string\",\n         \"publish\": \"string\",\n         \"vendor\": {\n             \"id\": \"string\",\n             \"name\": \"string\",\n             \"email\": \"string\",\n             \"phone\": \"string\"\n         },\n         \"coverUrl\": \"string|null\",\n         \"images\": [\"string\"],\n         \"price\": \"float\",\n         \"priceSale\": \"float\",\n         \"taxes\": \"float\",\n         \"tags\": [\"string\"],\n         \"sizes\": [\"string\"],\n         \"colors\": [\"string\"],\n         \"gender\": [\"string\"],\n         \"inventoryType\": \"string\",\n         \"quantity\": \"int\",\n         \"available\": \"boolean\",\n         \"totalSold\": \"int\",\n         \"category\": \"string|null\",\n         \"totalRatings\": \"float\",\n         \"totalReviews\": \"int\",\n         \"reviews\": [\n             {\n                 \"id\": \"string\",\n                 \"name\": \"string\",\n                 \"postedAt\": \"string\",\n                 \"comment\": \"string\",\n                 \"isPurchased\": \"boolean\",\n                 \"rating\": \"float\",\n                 \"avatarUrl\": \"string|null\",\n                 \"helpful\": \"int\",\n                 \"attachments\": [\"string\"]\n             }\n         ],\n         \"ratings\": [\n             {\n                 \"name\": \"string\",\n                 \"starCount\": \"int\",\n                 \"reviewCount\": \"int\"\n             }\n         ],\n         \"newLabel\": {\n             \"enabled\": \"boolean\",\n             \"content\": \"string\"\n         },\n         \"saleLabel\": {\n             \"enabled\": \"boolean\",\n             \"content\": \"string\"\n         },\n         \"createdAt\": \"string\"\n     }\n ]\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n \"message\": \"Unauthenticated.\"\n}",
                             "name": ""
                         }
                     ]

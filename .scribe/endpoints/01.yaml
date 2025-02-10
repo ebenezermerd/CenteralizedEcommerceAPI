@@ -110,7 +110,7 @@ endpoints:
         name: confirmPassword
         description: 'The value and <code>password</code> must match.'
         required: true
-        example: eius
+        example: nostrum
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -120,7 +120,7 @@ endpoints:
         name: verified
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -130,7 +130,7 @@ endpoints:
         name: recaptchaToken
         description: ''
         required: true
-        example: sunt
+        example: rerum
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -166,6 +166,56 @@ endpoints:
         exampleWasSpecified: true
         nullable: false
         custom: []
+      companyPhone:
+        name: companyPhone
+        description: 'when role is supplier Company phone number.'
+        required: true
+        example: '+1234567890'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      country:
+        name: country
+        description: 'when role is supplier Company country.'
+        required: true
+        example: USA
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      city:
+        name: city
+        description: 'when role is supplier Company city.'
+        required: true
+        example: 'Los Angeles'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      companyAddress:
+        name: companyAddress
+        description: 'when role is supplier Company address.'
+        required: true
+        example: '456 Tech St'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
+      description:
+        name: description
+        description: 'when role is supplier Company description.'
+        required: true
+        example: 'Leading tech company'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        custom: []
     cleanBodyParameters:
       role: customer
       firstName: John
@@ -175,19 +225,24 @@ endpoints:
       sex: male
       address: '123 Main St'
       password: Secret123!
-      confirmPassword: eius
-      verified: false
-      recaptchaToken: sunt
+      confirmPassword: nostrum
+      verified: true
+      recaptchaToken: rerum
       agreement: true
       companyName: 'Tech Corp'
       companyEmail: info@techcorp.com
+      companyPhone: '+1234567890'
+      country: USA
+      city: 'Los Angeles'
+      companyAddress: '456 Tech St'
+      description: 'Leading tech company'
     fileParameters: []
     responses:
       -
         status: 201
         content: |-
           {
-           "message": "Registration successful! Please verify your email."
+           "message": "Registration successful! Please login in and verify your email."
           }
         headers: []
         description: ''
@@ -275,13 +330,45 @@ endpoints:
            "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
            "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
            "user": {
-             "id": 1,
+             "id": "1",
              "firstName": "John",
              "lastName": "Doe",
              "email": "john@example.com",
-             "role": "customer"
+             "role": "customer",
+             "status": "active",
+             "avatarUrl": "http://example.com/storage/avatar.jpg",
+             "phoneNumber": "+1234567890",
+             "address": "123 Main St",
+             "country": "USA",
+             "state": "California",
+             "city": "Los Angeles",
+             "sex": "male",
+             "about": "About John Doe",
+             "zipCode": "90001",
+             "company": "Tech Corp",
+             "isVerified": true,
+             "created_at": "2023-01-01T00:00:00Z",
+             "updated_at": "2023-01-01T00:00:00Z"
            },
            "expires_in": 900
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 201
+        content: |-
+          {
+            "status": "mfa_required",
+            "mfaRequired": true,
+            "message": "MFA verification required",
+            "tempToken": "string",
+            "user": {
+              "email": "string",
+              "id": "integer",
+              "role": "string",
+              "isVerified": "boolean"
+            }
           }
         headers: []
         description: ''
@@ -301,6 +388,24 @@ endpoints:
         content: |-
           {
            "error": "Invalid email or password"
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 500
+        content: |-
+          {
+            "message": "Authentication failed"
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 501
+        content: |-
+          {
+            "message": "Login failed"
           }
         headers: []
         description: ''
@@ -395,11 +500,25 @@ endpoints:
         content: |-
           {
            "user": {
-             "id": 1,
+             "id": "1",
              "firstName": "John",
              "lastName": "Doe",
              "email": "john@example.com",
-             "role": "customer"
+             "role": "customer",
+             "status": "active",
+             "avatarUrl": "http://example.com/storage/avatar.jpg",
+             "phoneNumber": "+1234567890",
+             "address": "123 Main St",
+             "country": "USA",
+             "state": "California",
+             "city": "Los Angeles",
+             "sex": "male",
+             "about": "About John Doe",
+             "zipCode": "90001",
+             "company": "Tech Corp",
+             "isVerified": true,
+             "created_at": "2023-01-01T00:00:00Z",
+             "updated_at": "2023-01-01T00:00:00Z",
            },
            "mfaEnabled": false,
            "mfaVerified": false

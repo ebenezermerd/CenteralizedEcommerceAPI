@@ -1,0 +1,107 @@
+name: Invoices
+description: ''
+endpoints:
+  -
+    httpMethods:
+      - GET
+    uri: 'api/users/{userId}/invoices'
+    metadata:
+      groupName: Invoices
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: |-
+        Retrieve all invoices for a specific user with detailed information.
+
+        This endpoint retrieves all invoices associated with the given user ID, including
+        related items, billing information, and pagination.
+      description: ''
+      authenticated: false
+      custom: []
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      userId:
+        name: userId
+        description: ''
+        required: true
+        example: occaecati
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        custom: []
+    cleanUrlParameters:
+      userId: occaecati
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        status: 200
+        content: |-
+          {
+            "invoices": [
+                {
+                    "id": "string",
+                    "invoiceNumber": "string",
+                    "sent": "boolean",
+                    "taxes": "float",
+                    "status": "string",
+                    "subtotal": "float",
+                    "discount": "float",
+                    "shipping": "float",
+                    "totalAmount": "float",
+                    "createdAt": "string",
+                    "dueDate": "string",
+                    "items": [
+                        {
+                            "id": "string",
+                            "title": "string",
+                            "price": "float",
+                            "total": "float",
+                            "service": "string",
+                            "quantity": "int",
+                            "description": "string"
+                        }
+                    ],
+                    "invoiceFrom": {
+                        "name": "string",
+                        "fullAddress": "string",
+                        "phoneNumber": "string"
+                    },
+                    "invoiceTo": {
+                        "name": "string",
+                        "fullAddress": "string",
+                        "phoneNumber": "string"
+                    }
+                }
+            ],
+            "pagination": {
+                "total": "int",
+                "perPage": "int",
+                "currentPage": "int",
+                "lastPage": "int"
+            }
+          }
+        headers: []
+        description: ''
+        custom: []
+      -
+        status: 404
+        content: |-
+          {
+            "message": "No invoices found for this user."
+          }
+        headers: []
+        description: ''
+        custom: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+    custom: []

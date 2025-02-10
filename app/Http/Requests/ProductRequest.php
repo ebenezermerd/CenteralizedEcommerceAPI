@@ -32,33 +32,34 @@ class ProductRequest extends FormRequest
     {
         $rules = [
             'name' => 'required|string|max:255',
-            'sku' => [
-                'nullable',
-                'string',
-                function ($attribute, $value, $fail) {
+           'sku' => [
+            'nullable',
+            'string',
+            function ($attribute, $value, $fail) {
+                if (!is_null($value)) {
                     $existing = Product::where('sku', $value)->first();
-
-                    // If we found a product and it's not the one we're updating
-                    if ($existing && (!$this->getExistingProduct() || $existing->id !== $this->getExistingProduct()->id)) {
+                    if ($existing) {
                         $fail('This SKU already exists!');
                     }
-                },
-            ],
-            'code' => [
-                'nullable',
-                'string',
-                function ($attribute, $value, $fail) {
-                    $existing = Product::where('code', $value)->first();
+                }
+            },
+        ],
 
-                    // If we found a product and it's not the one we're updating
-                    if ($existing && (!$this->getExistingProduct() || $existing->id !== $this->getExistingProduct()->id)) {
+        'code' => [
+            'nullable',
+            'string',
+            function ($attribute, $value, $fail) {
+                if (!is_null($value)) {
+                    $existing = Product::where('code', $value)->first();
+                    if ($existing) {
                         $fail('This code already exists!');
                     }
-                },
-            ],
-            'price' => 'required|numeric|min:1',
-            'priceSale' => 'nullable|numeric|min:0',
-            'taxes' => 'nullable|numeric|min:0',
+                }
+            },
+        ],
+        'price' => 'required|numeric|min:1',
+        'priceSale' => 'nullable|numeric|min:0',
+        'taxes' => 'nullable|numeric|min:0',
             'coverUrl' => ['required', function ($attribute, $value, $fail) {
                 // Allow both URLs and files
                 if (!is_string($value) && !is_file($value)) {
