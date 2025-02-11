@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -52,9 +53,9 @@ class Product extends Model
     protected $casts = [
         'id' => 'string',
         'categoryId' => 'integer',
-        'price' => 'decimal:2',
-        'priceSale' => 'decimal:2',
-        'taxes' => 'decimal:2',
+        'price' => 'float',
+        'priceSale' => 'float',
+        'taxes' => 'float',
         'tags' => 'array',
         'sizes' => 'array',
         'colors' => 'array',
@@ -77,10 +78,12 @@ class Product extends Model
         'totalRatings' => 0,
         'totalReviews' => 0,
         'taxes' => 0,
-        'coverUrl' => 'products/default-cover.png' // Add default cover URL
+        'coverUrl' => 'products/default-cover.png', // Add default cover URL
+        'sku' => null,
+        'code' => null,
     ];
 
-    protected $with = ['category', 'images']; // eager load relationships by default
+    protected $with = ['images']; // Always load images with product
 
     protected $withCount = ['reviews']; // always count reviews
 
@@ -91,7 +94,7 @@ class Product extends Model
 
     public function images()
     {
-        return $this->hasMany(ProductImage::class)->orderBy('is_primary', 'desc');
+        return $this->hasMany(ProductImage::class);
     }
 
     public function reviews()
@@ -107,6 +110,14 @@ class Product extends Model
     public function getCoverImageAttribute()
     {
         return $this->images()->where('is_primary', true)->first()?->image_path;
+    }
+
+    public function getCoverUrlAttribute($value)
+    {
+        if (!$value) return null;
+        return str_starts_with($value, 'http') 
+            ? $value 
+            : url(Storage::url($value));
     }
 
     // For frequently accessed products, use caching:
@@ -176,5 +187,16 @@ class Product extends Model
     public function cartItems()
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    // Add mutators to handle empty strings
+    public function setSkuAttribute($value)
+    {
+        $this->attributes['sku'] = !empty($value) ? $value : null;
+    }
+
+    public function setCodeAttribute($value)
+    {
+        $this->attributes['code'] = !empty($value) ? $value : null;
     }
 }

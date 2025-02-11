@@ -13,8 +13,8 @@ class ProductResource extends JsonResource
         return [
             'id' => (string) $this->id,
             'name' => $this->name,
-            'sku' => $this->sku,
-            'code' => $this->code,
+            'sku' => $this->sku ?: null,
+            'code' => $this->code ?: null,
             'description' => $this->description,
             'subDescription' => $this->subDescription,
             'publish' => $this->publish ?? 'draft',
@@ -26,10 +26,12 @@ class ProductResource extends JsonResource
             ],
 
             // Media (updated with full URLs)
-            'coverUrl' => $this->coverUrl ? (str_starts_with($this->coverUrl, 'http') ? $this->coverUrl : url(Storage::url($this->coverUrl))) : null,
+            'coverUrl' => $this->coverUrl,
             'images' => $this->whenLoaded('images', function() {
-                        return $this->images->pluck('image_path')->map(fn($path) => url(Storage::url($path)));
-                    }),
+                return $this->images->map(function($image) {
+                    return url(Storage::url($image->image_path));
+                });
+            }),
 
             // Pricing
             'price' => (float) $this->price,
@@ -43,7 +45,7 @@ class ProductResource extends JsonResource
             'gender' => $this->gender ?? [],
 
             // Inventory
-            'inventoryType' => $this->inventoryType,
+            'inventoryType' => str_replace('_', ' ', $this->inventoryType),
             'quantity' => $this->quantity,
             'available' => $this->available,
             'totalSold' => $this->totalSold,
