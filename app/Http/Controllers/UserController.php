@@ -10,10 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\EmailVerificationService;
 
-
 class UserController extends Controller
 {
-
     protected $emailVerificationService;
 
     public function __construct(EmailVerificationService $emailVerificationService)
@@ -155,7 +153,7 @@ class UserController extends Controller
                 if ($user->image && Storage::disk('public')->exists($user->image)) {
                     Storage::disk('public')->delete($user->image);
                 }
-                
+
                 Log::info('Uploading new image for user', ['user_id' => $id]);
                 $validated['image'] = $request->file('image')->store('users/avatars', 'public');
             }
