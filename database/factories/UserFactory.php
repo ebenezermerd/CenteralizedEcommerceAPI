@@ -22,7 +22,6 @@ class UserFactory extends Factory
             'sex' => $this->faker->randomElement(['male', 'female']),
             'address' => $this->faker->address,
             'password' => bcrypt('password'),
-            'company_id' => null,
             'status' => $this->faker->randomElement(['active', 'pending']),
             'verified' => $this->faker->boolean,
             'email_verified_at' => now(),
@@ -58,5 +57,20 @@ class UserFactory extends Factory
             'email_verified_at' => null,
             'verified' => false,
         ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'firstName' => 'Admin',
+            'lastName' => 'User',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password'),
+            'status' => 'active',
+            'verified' => true,
+            'email_verified_at' => now(),
+        ])->afterCreating(function (User $user) {
+            $user->assignRole('admin');
+        });
     }
 }

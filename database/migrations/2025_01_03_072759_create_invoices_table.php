@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('order_id')->constrained('orders');
             $table->integer('sent');
             $table->decimal('taxes', 8, 2);
             $table->string('status');

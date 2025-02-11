@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use App\Mail\SendOtpMail;
+use App\Mail\MfaOtpMail;
 
 class EmailVerificationService
 {
@@ -18,7 +19,7 @@ class EmailVerificationService
     public function sendVerificationEmail(User $user)
     {
         $otp = $this->generateOTP();
-        
+
         // Store OTP in cache for 10 minutes
         Cache::put('email_verify_' . $user->email, $otp, now()->addMinutes(10));
 
@@ -37,12 +38,12 @@ class EmailVerificationService
     public function sendMfaOtp(User $user)
     {
         $otp = $this->generateOTP();
-        
+
         // Store OTP in cache for 10 minutes
         Cache::put('mfa_otp_' . $user->email, $otp, now()->addMinutes(10));
 
         // Use the SendOtpMail Mailable class
-        Mail::to($user->email)->send(new SendOtpMail($otp));
+        Mail::to($user->email)->send(new MfaOtpMail($otp));
 
         return true;
     }
@@ -51,5 +52,12 @@ class EmailVerificationService
     {
         $cachedOTP = Cache::get('mfa_otp_' . $email);
         return $cachedOTP === $otp;
+
     }
+
+    public function sendInvoiceEmail(Invoice $invoice)
+    {
+        Mail::to($invoice->user->email)->send(new InvoiceCreated($invoice));
+    }
+
 }

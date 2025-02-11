@@ -7,17 +7,27 @@ use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use App\Services\EmailVerificationService;
 
 
 class UserController extends Controller
 {
+
+    protected $emailVerificationService;
+
+    public function __construct(EmailVerificationService $emailVerificationService)
+    {
+        $this->emailVerificationService = $emailVerificationService;
+    }
+
+
     public function index()
     {
         $users = User::with(['roles', 'company'])
             ->where('id', '!=', auth()->id())  // Exclude current user
             ->latest()
             ->paginate(10);
-        
+
         return response()->json([
             'users' => UserResource::collection($users)
         ]);
@@ -25,64 +35,91 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'firstName' => 'required|string|max:255',
-            'lastName' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required|string|max:15',
-            'phoneNumber' => 'sometimes|string|max:15',  // Added for alternative phone field
-            'address' => 'required|string|max:500',
-            'country' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',  // Changed region to state
-            'city' => 'nullable|string|max:100',
-            'sex' => 'nullable|string|in:male,female,other',
-            'zipCode' => 'nullable|string|max:10',  // Changed zip_code to zipCode
-            'role' => 'required|string|in:admin,supplier,customer',
-            'isVerified' => 'sometimes|boolean',
-            'status' => 'nullable|string|in:active,pending,banned,rejected',
-            'company_id' => 'nullable|exists:companies,id',
-            'image' => 'nullable|image|max:2048',
-        ]);
+        Log::info('Starting user creation process', ['request_data' => $request->all()]);
 
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('avatars', 'public');
+        try {
+            $validated = $request->validate([
+                'firstName' => 'required|string|max:255',
+                'lastName' => 'required|string|max:255',
+                'email' => 'required|email|unique:users',
+                'phone' => 'required|string|max:15',
+                'phoneNumber' => 'sometimes|string|max:15',  // Added for alternative phone field
+                'address' => 'required|string|max:500',
+                'country' => 'nullable|string|max:100',
+                'state' => 'nullable|string|max:100',  // Changed region to state
+                'city' => 'nullable|string|max:100',
+                'sex' => 'nullable|string|in:male,female,other',
+                'zipCode' => 'nullable|string|max:10',  // Changed zip_code to zipCode
+                'role' => 'required|string|in:admin,supplier,customer',
+                'isVerified' => 'sometimes|boolean',
+                'status' => 'nullable|string|in:active,pending,banned,rejected',
+                'company_id' => 'nullable|exists:companies,id',
+                'image' => 'nullable|image|max:2048',
+                'password' => 'nullable|string|min:6',
+            ]);
+
+            if ($request->hasFile('image')) {
+                $validated['image'] = $request->file('image')->store('avatars', 'public');
+            }
+
+            // Map the fields correctly
+            $userData = [
+                'firstName' => $validated['firstName'],
+                'lastName' => $validated['lastName'],
+                'email' => $validated['email'],
+                'password' => isset($validated['password']) ? Hash::make($validated['password']) : Hash::make('password'),
+                'phone' => $validated['phone'] ?? $validated['phoneNumber'] ?? null,
+                'sex' => $validated['sex'] ?? null,
+                'country' => $validated['country'] ?? null,
+                'region' => $validated['state'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'address' => $validated['address'],
+                'image' => $validated['image'] ?? null,
+                'about' => $validated['about'] ?? null,
+                'verified' => $validated['isVerified'] ?? false,
+                'zip_code' => $validated['zipCode'] ?? null,
+                'company_id' => $validated['company_id'] ?? null,
+            ];
+
+            Log::info('Attempting to create user', ['user_data' => $userData]);
+            $user = User::create($userData);
+
+            // Assign role and its permissions using Spatie
+            $user->assignRole($validated['role']);
+            Log::info('Role assigned successfully', ['role' => $validated['role']]);
+
+            // Send verification email
+            $this->emailVerificationService->sendVerificationEmail($user);
+
+            Log::info('User registered successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip()
+            ]);
+
+            return response()->json([
+                'user' => new UserResource($user),
+                'message' => 'User created successfully'
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('User creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'User creation failed',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        // Remove role from validated data
-        $role = $validated['role'];
-        unset($validated['role']);
-
-        // Map the fields correctly
-        $userData = [
-            'first_name' => $validated['firstName'],
-            'last_name' => $validated['lastName'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? $validated['phoneNumber'],
-            'address' => $validated['address'],
-            'country' => $validated['country'],
-            'region' => $validated['state'], // Map state to region
-            'city' => $validated['city'],
-            'sex' => $validated['sex'],
-            'zip_code' => $validated['zipCode'],
-            'status' => $validated['status'] ?: 'pending',
-            'is_verified' => $validated['isVerified'] ?? false,
-            'password' => Hash::make('koricha123@account')
-        ];
-
-        $user = User::create($userData);
-        $user->assignRole($role);
-
-        return response()->json([
-            'users' => new UserResource($user),
-            'message' => 'User created successfully'
-        ], 201);
     }
 
     public function show(string $id)
     {
-        $user = User::with(['role', 'company'])->findOrFail($id);
+        $user = User::with(['roles', 'company'])->findOrFail($id);
         return response()->json([
-            'users' => new UserResource($user)
+            'user' => new UserResource($user)
         ]);
     }
 
@@ -106,7 +143,7 @@ class UserController extends Controller
                 'sex' => 'nullable|string|in:male,female,other',
                 'zip_code' => 'nullable|string|max:10',
                 'role' => 'sometimes|string|in:admin,supplier,customer',
-                'company_id' => 'nullable|exists:companies,id',
+                'isVerified' => 'sometimes|boolean',
                 'about' => 'nullable|string|max:1000',
                 'image' => 'nullable|image|max:2048'
             ]);
@@ -126,6 +163,11 @@ class UserController extends Controller
                 $role = $validated['role'];
                 unset($validated['role']);
                 $user->syncRoles([$role]); // Sync roles with Spatie's permission package
+            }
+            // Update verified status if provided
+            if (isset($validated['isVerified'])) {
+                $user->verified = $validated['isVerified'];
+                unset($validated['isVerified']);
             }
 
             // Update user data

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Database\Seeder;
@@ -19,6 +20,13 @@ class ProductSeeder extends Seeder
 
     public function run(): void
     {
+        // Get all suppliers
+        $suppliers = User::role('supplier')->get();
+
+        if ($suppliers->isEmpty()) {
+            throw new \Exception('No suppliers found. Please run UserSeeder first.');
+        }
+
         // Clear existing data
         Product::query()->delete();
         ProductImage::query()->delete();
@@ -52,11 +60,11 @@ class ProductSeeder extends Seeder
         // Reset Faker uniqueness
         $this->faker->unique(true);
 
-        // Create products
-        Product::factory()
-            ->count(50)
-            ->create()
-            ->each(function ($product) use ($imageFiles) {
+        // Create products for each supplier
+        foreach ($suppliers as $supplier) {
+            Product::factory(rand(5, 10))->create([
+                'vendor_id' => $supplier->id
+            ])->each(function ($product) use ($imageFiles) {
                 // Primary image
                 $primaryImagePath = $this->faker->randomElement($imageFiles);
                 ProductImage::create([
@@ -76,5 +84,6 @@ class ProductSeeder extends Seeder
                     ]);
                 }
             });
+        }
     }
 }

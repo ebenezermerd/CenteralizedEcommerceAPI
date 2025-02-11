@@ -5,19 +5,169 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\InvoiceResource;
+use App\Http\Resources\InvoiceCollection;
 
 class InvoiceController extends Controller
 {
-    public function index(): JsonResponse
+    public function index()
     {
-        $invoices = Invoice::with('order')->paginate(10);
-        return response()->json($invoices);
+        $invoices = Invoice::with('items', 'billFrom', 'billTo')->paginate(10);
+        \Log::info('Invoices', ['invoices' => $invoices->toArray()]);
+
+        if ($invoices->isEmpty()) {
+            return response()->json([
+                'message' => 'No invoices found',
+                'invoices' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'invoices' => InvoiceResource::collection($invoices) ?? [],
+            'pagination' => [
+                'total' => $invoices->total() ?? 0,
+                'per_page' => $invoices->perPage() ?? 10,
+                'current_page' => $invoices->currentPage() ?? 1,
+                'last_page' => $invoices->lastPage() ?? 1
+            ]
+        ], 200);
     }
 
-    public function create()
+    public function show(Request $request, String $id)
     {
-        // This method can be used to show a form for creating a new invoice
+        \Log::info('Showing invoice', ['id' => $id]);
+
+        // No need to validate the id from request since it comes from route parameter
+        // Laravel will automatically convert string id to integer when querying
+        $invoice = Invoice::with('items', 'billFrom', 'billTo')->findOrFail($id);
+        \Log::info('Invoice', ['invoice' => $invoice->toArray()]);
+
+        return response()->json(new InvoiceResource($invoice) ?? [], 200);
     }
+
+/**
+ * @group Invoices
+ *
+ * Retrieve a specific user's invoices.
+ *
+ * This endpoint retrieves all invoices associated with the given user ID.
+ *
+ * @param string $userId The ID of the user whose invoices are to be retrieved.
+ *
+ * @response 200 {
+ *   "data": {
+ *       "id": "string",
+ *       "invoiceNumber": "string",
+ *       "sent": "boolean",
+ *       "taxes": "float",
+ *       "status": "string",
+ *       "subtotal": "float",
+ *       "discount": "float",
+ *       "shipping": "float",
+ *       "totalAmount": "float",
+ *       "createdAt": "string",
+ *       "dueDate": "string",
+ *       "items": [
+ *           {
+ *               "id": "string",
+ *               "title": "string",
+ *               "price": "float",
+ *               "total": "float",
+ *               "service": "string",
+ *               "quantity": "int",
+ *               "description": "string"
+ *           }
+ *       ],
+ *       "invoiceFrom": {
+ *           "name": "string",
+ *           "fullAddress": "string",
+ *           "phoneNumber": "string"
+ *       },
+ *       "invoiceTo": {
+ *           "name": "string",
+ *           "fullAddress": "string",
+ *           "phoneNumber": "string"
+ *       }
+ *   }
+ * }
+ *
+ * @response 404 {
+ *   "message": "No invoices found for this user."
+ * }
+ */
+public function showByUserId(Request $request, String $userId)
+{
+    $invoices = Invoice::where('user_id', $userId)->get();
+    return response()->json(new InvoiceResource($invoices) ?? [], 200);
+}
+
+/**
+ * @group Invoices
+ *
+ * Retrieve all invoices for a specific user with detailed information.
+ *
+ * This endpoint retrieves all invoices associated with the given user ID, including
+ * related items, billing information, and pagination.
+ *
+ * @param string $userId The ID of the user whose invoices are to be retrieved.
+ *
+ * @response 200 {
+ *   "invoices": [
+ *       {
+ *           "id": "string",
+ *           "invoiceNumber": "string",
+ *           "sent": "boolean",
+ *           "taxes": "float",
+ *           "status": "string",
+ *           "subtotal": "float",
+ *           "discount": "float",
+ *           "shipping": "float",
+ *           "totalAmount": "float",
+ *           "createdAt": "string",
+ *           "dueDate": "string",
+ *           "items": [
+ *               {
+ *                   "id": "string",
+ *                   "title": "string",
+ *                   "price": "float",
+ *                   "total": "float",
+ *                   "service": "string",
+ *                   "quantity": "int",
+ *                   "description": "string"
+ *               }
+ *           ],
+ *           "invoiceFrom": {
+ *               "name": "string",
+ *               "fullAddress": "string",
+ *               "phoneNumber": "string"
+ *           },
+ *           "invoiceTo": {
+ *               "name": "string",
+ *               "fullAddress": "string",
+ *               "phoneNumber": "string"
+ *           }
+ *       }
+ *   ],
+ *   "pagination": {
+ *       "total": "int",
+ *       "perPage": "int",
+ *       "currentPage": "int",
+ *       "lastPage": "int"
+ *   }
+ * }
+ *
+ * @response 404 {
+ *   "message": "No invoices found for this user."
+ * }
+ */
+public function userInvoices(Request $request, String $userId)
+{
+    $invoices = Invoice::whereHas('user', function($query) use ($userId) {
+        $query->where('id', $userId);
+    })->with('items', 'billFrom', 'billTo')->get();
+
+    return response()->json(new InvoiceCollection($invoices) ?? [], 200);
+}
 
     public function store(Request $request): JsonResponse
     {
@@ -31,11 +181,6 @@ class InvoiceController extends Controller
         return response()->json($invoice, 201);
     }
 
-    public function show(string $id): JsonResponse
-    {
-        $invoice = Invoice::with('order')->findOrFail($id);
-        return response()->json($invoice);
-    }
 
     public function edit(string $id)
     {

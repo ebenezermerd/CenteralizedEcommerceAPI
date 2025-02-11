@@ -14,34 +14,119 @@ use App\Models\Category;
 class ProductController extends Controller
 {
 
-    public function index()
-    {
-        $products = Product::with(['reviews', 'category', 'images'])
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating')
-            ->latest()
-            ->paginate(12);
-            if (env('APP_ENV') === 'local') {
-                \Sentry\captureMessage('Product index accessed');
-            }
-        return response()->json([
-            'products' => ProductResource::collection($products)
-        ], 201);
-    }
+
+  /**
+ * @group Products
+ *
+ * Retrieve a list of products with their details.
+ *
+ * This endpoint returns a paginated list of products including their reviews,
+ * categories, images, and vendor information. The user needs to be authenticated
+ * to view the products.
+ *
+ * @queryParam page int optional The page number (default: 1).
+ * @queryParam per_page int optional The number of items per page (default: 12).
+ *
+ * @response 201 {
+ *  "products": [
+ *      {
+ *          "id": "string",
+ *          "name": "string",
+ *          "sku": "string",
+ *          "code": "string",
+ *          "description": "string",
+ *          "subDescription": "string",
+ *          "publish": "string",
+ *          "vendor": {
+ *              "id": "string",
+ *              "name": "string",
+ *              "email": "string",
+ *              "phone": "string"
+ *          },
+ *          "coverUrl": "string|null",
+ *          "images": ["string"],
+ *          "price": "float",
+ *          "priceSale": "float",
+ *          "taxes": "float",
+ *          "tags": ["string"],
+ *          "sizes": ["string"],
+ *          "colors": ["string"],
+ *          "gender": ["string"],
+ *          "inventoryType": "string",
+ *          "quantity": "int",
+ *          "available": "boolean",
+ *          "totalSold": "int",
+ *          "category": "string|null",
+ *          "totalRatings": "float",
+ *          "totalReviews": "int",
+ *          "reviews": [
+ *              {
+ *                  "id": "string",
+ *                  "name": "string",
+ *                  "postedAt": "string",
+ *                  "comment": "string",
+ *                  "isPurchased": "boolean",
+ *                  "rating": "float",
+ *                  "avatarUrl": "string|null",
+ *                  "helpful": "int",
+ *                  "attachments": ["string"]
+ *              }
+ *          ],
+ *          "ratings": [
+ *              {
+ *                  "name": "string",
+ *                  "starCount": "int",
+ *                  "reviewCount": "int"
+ *              }
+ *          ],
+ *          "newLabel": {
+ *              "enabled": "boolean",
+ *              "content": "string"
+ *          },
+ *          "saleLabel": {
+ *              "enabled": "boolean",
+ *              "content": "string"
+ *          },
+ *          "createdAt": "string"
+ *      }
+ *  ]
+ * }
+ *
+ * @response 401 {
+ *  "message": "Unauthenticated."
+ * }
+ */
+public function index(Request $request)
+{
+    $user = auth()->user();
+    $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+            $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+        }])
+        ->viewableBy($user)
+        ->withCount('reviews')
+        ->withAvg('reviews', 'rating')
+        ->latest()
+        ->paginate(12);
+
+        // Log the result for debugging
+    \Log::info('Products Data', $products->toArray());
+
+    return response()->json([
+        'products' => ProductResource::collection($products)
+    ], 201);
+}
 
     public function store(ProductRequest $request)
     {
-
         try {
-
             DB::beginTransaction();
-            \Log::info('Raw Request from controller Data:', $request->all());
-            \Log::info('Raw Request from controller input request:', ['coverUrl' => $request->cover_img]);
+
+            $user = auth()->user();
 
             $categoryName = trim(str_replace('"', '', $request->category));
             $category = Category::findByNameStrict($categoryName);
             if (!$category) {
-                \Log::error('Category not found', ['category_name' => $categoryName]);
                 throw new \Exception('Category not found');
             }
 
@@ -50,65 +135,106 @@ class ProductController extends Controller
                 ? Product::findOrFail($request->id)
                 : new Product();
 
-            \Log::info('Processing product data', [
-                'product_id' => $product->id ?? 'new',
-                'category_id' => $category->id
-            ]);
-
-                // Remove the $processImage closure and file upload logic.
-                // Trust the ProductRequest to have already stored files and provided paths.
-
-                // Update cover image:
-                if ($request->filled('coverUrl')) {
-                    $product->update(['coverUrl' => $request->cover_url]);
+            // Check permissions for updating
+            if ($request->id) {
+                if (!$user->hasRole('admin') && $product->vendor_id !== $user->id) {
+                    throw new \Exception('Unauthorized to modify this product');
                 }
+            }
 
-                // Update additional images:
-                $images = $request->input('images', []);
-                if (!empty($images)) {
-                    $product->images()->where('is_primary', false)->delete();
-                    \Log::info('Accessing additional images', ['images' => $images]);
-                    foreach ($images as $imagePath) {
-                        ProductImage::create([
+            // Set the vendor_id
+            $vendorId = $request->input('vendor_id');
+            if ($user->hasRole('admin') && $vendorId) {
+                // Admin can set any vendor
+                $vendor = User::role('supplier')->findOrFail($vendorId);
+                $product->vendor_id = $vendor->id;
+            } else {
+                // Suppliers can only set themselves as vendor
+                $product->vendor_id = $user->id;
+            }
+
+            $product->fill(array_merge(
+                $request->except(['coverUrl', 'images', 'category', 'id', 'vendor_id']),
+                ['categoryId' => $category->id, 'available' => $request->quantity]
+            ));
+
+            $product->save();
+
+            // Handle both coverUrl and images
+            $processImage = function($image, $isPrimary = false) use ($product) {
+                if (is_file($image)) {
+                    $path = $image->store('products', 'public');
+                    ProductImage::updateOrCreate(
+                        [
                             'product_id' => $product->id,
-                            'image_path' => $imagePath,
-                            'is_primary' => false,
-                        ]);
-                    }
+                            'is_primary' => $isPrimary
+                        ],
+                        ['image_path' => $path]
+                    );
+                    return $path;
                 }
-                if ($request->cover_img) {
-                    $product->images()->where('is_primary', true)->delete();
-                    $product->update(['coverUrl' => $request->cover_img]);
-                    \Log::info('Cover URL updated', [
-                        'cover_url' => $request->cover_img,
-                        'product_url' => $product->coverUrl,
-                    ]);
+                return is_string($image) ? $image : null;
+            };
+
+            // Process cover image
+            if ($request->has('coverUrl')) {
+                $coverPath = $processImage($request->coverUrl, true);
+                if ($coverPath) {
+                    $product->update(['coverUrl' => $coverPath]);
                 }
-                $product->load(['images']); // Refresh the relationship to get updated images
-                $product->refresh(); // Refresh the model to get updated coverUrl
+            }
+
+            // Process additional images
+            if ($request->has('images')) {
+                foreach ($request->images as $image) {
+                    $processImage($image, false);
+                }
+            }
+
+            \Log::info('Product Images after saving', $product->images->toArray());
 
             DB::commit();
-            \Log::info('Product stored successfully', [
-                'product_id' => $product->id,
-                'product' => $product->toArray(),
-            ]);
-
             return new ProductResource($product);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error processing product', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return response()->json(['message' => 'Error processing product', 'error' => $e->getMessage()], 500);
         }
     }
 
-    public function update(ProductRequest $request, $id)
+    public function update(Request $request, string $id)
     {
-        $request->merge(['id' => $id]);
-        return $this->store($request);
+        try {
+            $user = auth()->user();
+            $product = Product::findOrFail($id);
+
+            // Check permissions
+            if (!$user->hasRole('admin') && $product->vendor_id !== $user->id) {
+                return response()->json(['message' => 'Unauthorized to modify this product'], 403);
+            }
+
+            // Update publish status if provided
+            if ($request->has('publish')) {
+                $newStatus = $request->input('publish');
+                if (!in_array($newStatus, ['draft', 'published'])) {
+                    return response()->json(['message' => 'Invalid publish status'], 400);
+                }
+
+                $product->publish = $newStatus;
+                $product->save();
+
+                return response()->json([
+                    'message' => "Product successfully updated to {$newStatus}",
+                    'product' => new ProductResource($product)
+                ]);
+            }
+
+            // For other updates, use the store method
+            $request->merge(['id' => $id]);
+            return $this->store($request);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error updating product', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function show(Request $request)
@@ -140,18 +266,42 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
     }
-    //delete product
-    public function destroy($id)
+
+    public function transferVendor(Request $request, $id)
     {
         try {
-            $product = Product::findOrFail($id);
-            // Delete related images
-            $product->images()->delete();
+            $request->validate([
+                'new_vendor_id' => 'required|exists:users,id'
+            ]);
 
-            $product->delete();
-            return response()->json(['message' => 'Product and related images deleted'], 201);
+            $user = auth()->user();
+            if (!$user->hasRole('admin')) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            $product = Product::findOrFail($id);
+            $newVendor = User::role('supplier')->findOrFail($request->new_vendor_id);
+
+            $product->vendor_id = $newVendor->id;
+            $product->save();
+
+            // Log the transfer
+            activity()
+                ->performedOn($product)
+                ->causedBy($user)
+                ->withProperties([
+                    'old_vendor_id' => $product->vendor_id,
+                    'new_vendor_id' => $newVendor->id
+                ])
+                ->log('product_vendor_transferred');
+
+            return response()->json([
+                'message' => 'Product vendor transferred successfully',
+                'product' => new ProductResource($product)
+            ]);
+
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Product not found'], 404);
+            return response()->json(['message' => 'Error transferring product vendor', 'error' => $e->getMessage()], 500);
         }
     }
 }

@@ -18,10 +18,18 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'subDescription' => $this->subDescription,
             'publish' => $this->publish ?? 'draft',
+            'vendor' => [
+                'id' => (string) $this->vendor->id,
+                'name' => $this->vendor->name,
+                'email' => $this->vendor->email,
+                'phone' => $this->vendor->phone
+            ],
 
             // Media (updated with full URLs)
             'coverUrl' => $this->coverUrl ? (str_starts_with($this->coverUrl, 'http') ? $this->coverUrl : url(Storage::url($this->coverUrl))) : null,
-            'images' => $this->images->pluck('image_path')->map(fn($path) => url(Storage::url($path))),
+            'images' => $this->whenLoaded('images', function() {
+                        return $this->images->pluck('image_path')->map(fn($path) => url(Storage::url($path)));
+                    }),
 
             // Pricing
             'price' => (float) $this->price,

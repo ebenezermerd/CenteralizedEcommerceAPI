@@ -17,19 +17,27 @@ class Cors
      */
     public function handle(Request $request, Closure $next)
     {
+        $response = $next($request);
+
         $allowedOrigins = [
-            'http://api.koricha-ecommerce.com',
+            'http://localhost:8080',
+            'http://api.koricha-ecommerce.com'
         ];
 
-        $origin = $request->header('Origin');
+        $origin = $request->headers->get('Origin');
 
         if (in_array($origin, $allowedOrigins)) {
-            return $next($request)
-                ->header('Access-Control-Allow-Origin', $origin)
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            $response->headers->set('Access-Control-Allow-Origin', $origin);
+            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            $response->headers->set('Access-Control-Allow-Credentials', 'true');
         }
 
-        return $next($request);
+        // Handle preflight requests
+        if ($request->isMethod('OPTIONS')) {
+            $response->setStatusCode(200);
+        }
+
+        return $response;
     }
 }

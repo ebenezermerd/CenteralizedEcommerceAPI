@@ -45,7 +45,8 @@ class Product extends Model
         'totalRatings',
         'totalReviews',
         'newLabel',
-        'saleLabel'
+        'saleLabel',
+        'vendor_id'
     ];
 
     protected $casts = [
@@ -98,6 +99,11 @@ class Product extends Model
         return $this->hasMany(ProductReview::class);
     }
 
+    public function vendor()
+    {
+        return $this->belongsTo(User::class, 'vendor_id');
+    }
+
     public function getCoverImageAttribute()
     {
         return $this->images()->where('is_primary', true)->first()?->image_path;
@@ -141,7 +147,27 @@ class Product extends Model
     {
         return $query->where('publish', 'published');
     }
-    
+
+    // Scope for getting vendor's products
+    public function scopeForVendor($query, $vendorId)
+    {
+        return $query->where('vendor_id', $vendorId);
+    }
+
+    // Scope for getting products viewable by user
+    public function scopeViewableBy($query, User $user)
+    {
+        if ($user->hasRole('admin')) {
+            return $query; // Admin can see all products
+        }
+
+        if ($user->hasRole('supplier')) {
+            return $query->where('vendor_id', $user->id);
+        }
+
+        return $query->where('publish', 'published'); // Customers see only published products
+    }
+
     public function orderItems()
     {
         return $this->hasMany(OrderProductItem::class);

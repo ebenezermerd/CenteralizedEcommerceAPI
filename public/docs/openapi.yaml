@@ -1,0 +1,3183 @@
+openapi: 3.0.3
+info:
+  title: 'Koricha E-commerce API Documentation'
+  description: 'Welcome to the Koricha E-commerce API. This API provides endpoints for managing products, orders, customers, and other e-commerce related functionality.'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://api.koricha-ecommerce.com'
+paths:
+  /api/auth/sign-up:
+    post:
+      summary: 'Register a new user'
+      operationId: registerANewUser
+      description: 'Create a new user account with the provided details.'
+      parameters: []
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Registration successful! Please login in and verify your email.'
+                properties:
+                  message:
+                    type: string
+                    example: 'Registration successful! Please login in and verify your email.'
+        400:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'You must agree to the terms!'
+                properties:
+                  error:
+                    type: string
+                    example: 'You must agree to the terms!'
+        422:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'The given data was invalid'
+                  errors:
+                    email:
+                      - 'The email has already been taken.'
+                properties:
+                  message:
+                    type: string
+                    example: 'The given data was invalid'
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        example:
+                          - 'The email has already been taken.'
+                        items:
+                          type: string
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  description: 'User role (customer/supplier).'
+                  example: customer
+                  nullable: false
+                firstName:
+                  type: string
+                  description: "The user's first name."
+                  example: John
+                  nullable: false
+                lastName:
+                  type: string
+                  description: "The user's last name."
+                  example: Doe
+                  nullable: false
+                email:
+                  type: string
+                  description: "The user's email address."
+                  example: john@example.com
+                  nullable: false
+                phone:
+                  type: string
+                  description: "The user's phone number."
+                  example: '+1234567890'
+                  nullable: false
+                sex:
+                  type: string
+                  description: "The user's gender (male/female)."
+                  example: male
+                  nullable: false
+                address:
+                  type: string
+                  description: "The user's address."
+                  example: '123 Main St'
+                  nullable: false
+                password:
+                  type: string
+                  description: "The user's password (min: 8 characters)."
+                  example: Secret123!
+                  nullable: false
+                confirmPassword:
+                  type: string
+                  description: 'The value and <code>password</code> must match.'
+                  example: nostrum
+                  nullable: false
+                verified:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: false
+                recaptchaToken:
+                  type: string
+                  description: ''
+                  example: rerum
+                  nullable: false
+                agreement:
+                  type: boolean
+                  description: 'when role is supplier Terms agreement flag.'
+                  example: true
+                  nullable: false
+                companyName:
+                  type: string
+                  description: 'when role is supplier Company name.'
+                  example: 'Tech Corp'
+                  nullable: false
+                companyEmail:
+                  type: string
+                  description: 'when role is supplier Company email.'
+                  example: info@techcorp.com
+                  nullable: false
+                companyPhone:
+                  type: string
+                  description: 'when role is supplier Company phone number.'
+                  example: '+1234567890'
+                  nullable: false
+                country:
+                  type: string
+                  description: 'when role is supplier Company country.'
+                  example: USA
+                  nullable: false
+                city:
+                  type: string
+                  description: 'when role is supplier Company city.'
+                  example: 'Los Angeles'
+                  nullable: false
+                companyAddress:
+                  type: string
+                  description: 'when role is supplier Company address.'
+                  example: '456 Tech St'
+                  nullable: false
+                description:
+                  type: string
+                  description: 'when role is supplier Company description.'
+                  example: 'Leading tech company'
+                  nullable: false
+              required:
+                - role
+                - firstName
+                - lastName
+                - email
+                - phone
+                - sex
+                - address
+                - password
+                - confirmPassword
+                - recaptchaToken
+                - agreement
+                - companyName
+                - companyEmail
+                - companyPhone
+                - country
+                - city
+                - companyAddress
+                - description
+      security: []
+  /api/auth/sign-in:
+    post:
+      summary: 'User Login'
+      operationId: userLogin
+      description: 'Authenticate a user and retrieve tokens.'
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: success
+                  accessToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  refreshToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  user:
+                    id: '1'
+                    firstName: John
+                    lastName: Doe
+                    email: john@example.com
+                    role: customer
+                    status: active
+                    avatarUrl: 'http://example.com/storage/avatar.jpg'
+                    phoneNumber: '+1234567890'
+                    address: '123 Main St'
+                    country: USA
+                    state: California
+                    city: 'Los Angeles'
+                    sex: male
+                    about: 'About John Doe'
+                    zipCode: '90001'
+                    company: 'Tech Corp'
+                    isVerified: true
+                    created_at: '2023-01-01T00:00:00Z'
+                    updated_at: '2023-01-01T00:00:00Z'
+                  expires_in: 900
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  accessToken:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  refreshToken:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: '1'
+                      firstName:
+                        type: string
+                        example: John
+                      lastName:
+                        type: string
+                        example: Doe
+                      email:
+                        type: string
+                        example: john@example.com
+                      role:
+                        type: string
+                        example: customer
+                      status:
+                        type: string
+                        example: active
+                      avatarUrl:
+                        type: string
+                        example: 'http://example.com/storage/avatar.jpg'
+                      phoneNumber:
+                        type: string
+                        example: '+1234567890'
+                      address:
+                        type: string
+                        example: '123 Main St'
+                      country:
+                        type: string
+                        example: USA
+                      state:
+                        type: string
+                        example: California
+                      city:
+                        type: string
+                        example: 'Los Angeles'
+                      sex:
+                        type: string
+                        example: male
+                      about:
+                        type: string
+                        example: 'About John Doe'
+                      zipCode:
+                        type: string
+                        example: '90001'
+                      company:
+                        type: string
+                        example: 'Tech Corp'
+                      isVerified:
+                        type: boolean
+                        example: true
+                      created_at:
+                        type: string
+                        example: '2023-01-01T00:00:00Z'
+                      updated_at:
+                        type: string
+                        example: '2023-01-01T00:00:00Z'
+                  expires_in:
+                    type: integer
+                    example: 900
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: mfa_required
+                  mfaRequired: true
+                  message: 'MFA verification required'
+                  tempToken: string
+                  user:
+                    email: string
+                    id: integer
+                    role: string
+                    isVerified: boolean
+                properties:
+                  status:
+                    type: string
+                    example: mfa_required
+                  mfaRequired:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'MFA verification required'
+                  tempToken:
+                    type: string
+                    example: string
+                  user:
+                    type: object
+                    properties:
+                      email:
+                        type: string
+                        example: string
+                      id:
+                        type: string
+                        example: integer
+                      role:
+                        type: string
+                        example: string
+                      isVerified:
+                        type: string
+                        example: boolean
+        203:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: verification_required
+                  message: 'Please verify your email address'
+                properties:
+                  status:
+                    type: string
+                    example: verification_required
+                  message:
+                    type: string
+                    example: 'Please verify your email address'
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Invalid email or password'
+                properties:
+                  error:
+                    type: string
+                    example: 'Invalid email or password'
+        500:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Authentication failed'
+                properties:
+                  message:
+                    type: string
+                    example: 'Authentication failed'
+        501:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Login failed'
+                properties:
+                  message:
+                    type: string
+                    example: 'Login failed'
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: "User's email address."
+                  example: john@example.com
+                  nullable: false
+                password:
+                  type: string
+                  description: "User's password."
+                  example: Secret123!
+                  nullable: false
+              required:
+                - email
+                - password
+      security: []
+  /api/auth/refresh:
+    post:
+      summary: 'Refresh Token'
+      operationId: refreshToken
+      description: 'Get a new access token using refresh token.'
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: success
+                  accessToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  token_type: bearer
+                  expires_in: 3600
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  accessToken:
+                    type: string
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  token_type:
+                    type: string
+                    example: bearer
+                  expires_in:
+                    type: integer
+                    example: 3600
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Could not refresh token'
+                properties:
+                  error:
+                    type: string
+                    example: 'Could not refresh token'
+      tags:
+        - Authentication
+  /api/auth/me:
+    get:
+      summary: 'Get Authenticated User'
+      operationId: getAuthenticatedUser
+      description: "Retrieve the authenticated user's details."
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "{\n \"user\": {\n   \"id\": \"1\",\n   \"firstName\": \"John\",\n   \"lastName\": \"Doe\",\n   \"email\": \"john@example.com\",\n   \"role\": \"customer\",\n   \"status\": \"active\",\n   \"avatarUrl\": \"http://example.com/storage/avatar.jpg\",\n   \"phoneNumber\": \"+1234567890\",\n   \"address\": \"123 Main St\",\n   \"country\": \"USA\",\n   \"state\": \"California\",\n   \"city\": \"Los Angeles\",\n   \"sex\": \"male\",\n   \"about\": \"About John Doe\",\n   \"zipCode\": \"90001\",\n   \"company\": \"Tech Corp\",\n   \"isVerified\": true,\n   \"created_at\": \"2023-01-01T00:00:00Z\",\n   \"updated_at\": \"2023-01-01T00:00:00Z\",\n },\n \"mfaEnabled\": false,\n \"mfaVerified\": false\n}"
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Invalid token'
+                properties:
+                  message:
+                    type: string
+                    example: 'Invalid token'
+      tags:
+        - Authentication
+  /api/auth/logout:
+    post:
+      summary: 'Logout User'
+      operationId: logoutUser
+      description: 'Invalidate the current token and logout user.'
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Successfully logged out'
+                properties:
+                  message:
+                    type: string
+                    example: 'Successfully logged out'
+        500:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Logout failed'
+                properties:
+                  error:
+                    type: string
+                    example: 'Logout failed'
+      tags:
+        - Authentication
+  /api/documentation:
+    get:
+      summary: 'Display Swagger API page.'
+      operationId: displaySwaggerAPIPage
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>L5 Swagger UI</title>\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"http://api.koricha-ecommerce.com/docs/asset/swagger-ui.css?v=0755b7093afdd36d03212b65315f0209\">\n    <link rel=\"icon\" type=\"image/png\" href=\"http://api.koricha-ecommerce.com/docs/asset/favicon-32x32.png?v=40d4f2c38d1cd854ad463f16373cbcb6\" sizes=\"32x32\"/>\n    <link rel=\"icon\" type=\"image/png\" href=\"http://api.koricha-ecommerce.com/docs/asset/favicon-16x16.png?v=f0ae831196d55d8f4115b6c5e8ec5384\" sizes=\"16x16\"/>\n    <style>\n    html\n    {\n        box-sizing: border-box;\n        overflow: -moz-scrollbars-vertical;\n        overflow-y: scroll;\n    }\n    *,\n    *:before,\n    *:after\n    {\n        box-sizing: inherit;\n    }\n\n    body {\n      margin:0;\n      background: #fafafa;\n    }\n    </style>\n    </head>\n\n<body >\n<div id=\"swagger-ui\"></div>\n\n<script src=\"http://api.koricha-ecommerce.com/docs/asset/swagger-ui-bundle.js?v=6c23777357d2beae9650f9aa035d93fb\"></script>\n<script src=\"http://api.koricha-ecommerce.com/docs/asset/swagger-ui-standalone-preset.js?v=6b2892eb9458da5c3224817b3984d14c\"></script>\n<script>\n    window.onload = function() {\n        // Build a system\n        const ui = SwaggerUIBundle({\n            dom_id: '#swagger-ui',\n            url: \"http://api.koricha-ecommerce.com/docs/api-docs.json\",\n            operationsSorter: null,\n            configUrl: null,\n            validatorUrl: null,\n            oauth2RedirectUrl: \"http://api.koricha-ecommerce.com/api/oauth2-callback\",\n\n            requestInterceptor: function(request) {\n                request.headers['X-CSRF-TOKEN'] = 'vVB1jJ2jnOaIpEb0pMdzMGnWwzQpI2aJIDBidvSI';\n                return request;\n            },\n\n            presets: [\n                SwaggerUIBundle.presets.apis,\n                SwaggerUIStandalonePreset\n            ],\n\n            plugins: [\n                SwaggerUIBundle.plugins.DownloadUrl\n            ],\n\n            layout: \"StandaloneLayout\",\n            docExpansion : \"none\",\n            deepLinking: true,\n            filter: true,\n            persistAuthorization: \"false\",\n\n        })\n\n        window.ui = ui\n\n            }\n</script>\n</body>\n</html>\n"
+      tags:
+        - Endpoints
+      security: []
+  /api/oauth2-callback:
+    get:
+      summary: 'Display Oauth2 callback pages.'
+      operationId: displayOauth2CallbackPages
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "<!doctype html>\n<html lang=\"en-US\">\n<head>\n    <title>Swagger UI: OAuth2 Redirect</title>\n</head>\n<body>\n<script>\n    'use strict';\n    function run () {\n        var oauth2 = window.opener.swaggerUIRedirectOauth2;\n        var sentState = oauth2.state;\n        var redirectUrl = oauth2.redirectUrl;\n        var isValid, qp, arr;\n\n        if (/code|token|error/.test(window.location.hash)) {\n            qp = window.location.hash.substring(1).replace('?', '&');\n        } else {\n            qp = location.search.substring(1);\n        }\n\n        arr = qp.split(\"&\");\n        arr.forEach(function (v,i,_arr) { _arr[i] = '\"' + v.replace('=', '\":\"') + '\"';});\n        qp = qp ? JSON.parse('{' + arr.join() + '}',\n                function (key, value) {\n                    return key === \"\" ? value : decodeURIComponent(value);\n                }\n        ) : {};\n\n        isValid = qp.state === sentState;\n\n        if ((\n          oauth2.auth.schema.get(\"flow\") === \"accessCode\" ||\n          oauth2.auth.schema.get(\"flow\") === \"authorizationCode\" ||\n          oauth2.auth.schema.get(\"flow\") === \"authorization_code\"\n        ) && !oauth2.auth.code) {\n            if (!isValid) {\n                oauth2.errCb({\n                    authId: oauth2.auth.name,\n                    source: \"auth\",\n                    level: \"warning\",\n                    message: \"Authorization may be unsafe, passed state was changed in server. The passed state wasn't returned from auth server.\"\n                });\n            }\n\n            if (qp.code) {\n                delete oauth2.state;\n                oauth2.auth.code = qp.code;\n                oauth2.callback({auth: oauth2.auth, redirectUrl: redirectUrl});\n            } else {\n                let oauthErrorMsg;\n                if (qp.error) {\n                    oauthErrorMsg = \"[\"+qp.error+\"]: \" +\n                        (qp.error_description ? qp.error_description+ \". \" : \"no accessCode received from the server. \") +\n                        (qp.error_uri ? \"More info: \"+qp.error_uri : \"\");\n                }\n\n                oauth2.errCb({\n                    authId: oauth2.auth.name,\n                    source: \"auth\",\n                    level: \"error\",\n                    message: oauthErrorMsg || \"[Authorization failed]: no accessCode received from the server.\"\n                });\n            }\n        } else {\n            oauth2.callback({auth: oauth2.auth, token: qp, isValid: isValid, redirectUrl: redirectUrl});\n        }\n        window.close();\n    }\n\n    if (document.readyState !== 'loading') {\n        run();\n    } else {\n        document.addEventListener('DOMContentLoaded', function () {\n            run();\n        });\n    }\n</script>\n</body>\n</html>\n"
+      tags:
+        - Endpoints
+      security: []
+  /api/health:
+    get:
+      summary: ''
+      operationId: getApiHealth
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: ok
+                  timestamp: '2025-02-09T18:09:53.356466Z'
+                  environment: local
+                  service: 'Koricha Ecommerce Web Platform'
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    example: '2025-02-09T18:09:53.356466Z'
+                  environment:
+                    type: string
+                    example: local
+                  service:
+                    type: string
+                    example: 'Koricha Ecommerce Web Platform'
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/forgot-password:
+    post:
+      summary: ''
+      operationId: postApiAuthForgotPassword
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: ukovacek@example.org
+                  nullable: false
+                redirectTo:
+                  type: string
+                  description: 'Must be a valid URL.'
+                  example: 'http://www.ohara.com/distinctio-exercitationem-ut-sunt-odio-architecto-at'
+                  nullable: false
+                reset_url:
+                  type: string
+                  description: 'Must be a valid URL.'
+                  example: 'http://zieme.com/quibusdam-magni-quia-exercitationem-voluptas-distinctio'
+                  nullable: false
+              required:
+                - email
+      security: []
+  '/api/auth/reset-password/{token}':
+    get:
+      summary: ''
+      operationId: getApiAuthResetPasswordToken
+      description: ''
+      parameters: []
+      responses:
+        400:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: error
+                  message: 'Invalid reset token'
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'Invalid reset token'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: token
+        description: ''
+        example: ipsum
+        required: true
+        schema:
+          type: string
+  /api/auth/reset-password:
+    post:
+      summary: ''
+      operationId: postApiAuthResetPassword
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/email/verify:
+    post:
+      summary: ''
+      operationId: postApiAuthEmailVerify
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: edmund12@example.org
+                  nullable: false
+                otp:
+                  type: string
+                  description: 'Must be 6 characters.'
+                  example: lutsqo
+                  nullable: false
+              required:
+                - email
+                - otp
+      security: []
+  /api/auth/email/verify/resend:
+    post:
+      summary: ''
+      operationId: postApiAuthEmailVerifyResend
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: damon24@example.org
+                  nullable: false
+              required:
+                - email
+      security: []
+  /api/auth/email/send-otp:
+    post:
+      summary: ''
+      operationId: postApiAuthEmailSendOtp
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: 'Must be a valid email address. The <code>email</code> of an existing record in the users table.'
+                  example: johns.kaya@example.org
+                  nullable: false
+              required:
+                - email
+      security: []
+  /api/auth/mfa-enable:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaEnable
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/mfa-disable:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaDisable
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/mfa-status:
+    get:
+      summary: ''
+      operationId: getApiAuthMfaStatus
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/auth/mfa-verify:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaVerify
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                otp:
+                  type: string
+                  description: 'Must be 6 characters.'
+                  example: ktpbbo
+                  nullable: false
+              required:
+                - otp
+      security: []
+  /api/auth/mfa-resend:
+    post:
+      summary: ''
+      operationId: postApiAuthMfaResend
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  '/api/users/update/{id}':
+    put:
+      summary: ''
+      operationId: putApiUsersUpdateId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the update.'
+        example: possimus
+        required: true
+        schema:
+          type: string
+  '/api/user/{userId}/addresses':
+    get:
+      summary: ''
+      operationId: getApiUserUserIdAddresses
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: amet
+        required: true
+        schema:
+          type: string
+  '/api/user/{userId}/addresses/create':
+    post:
+      summary: ''
+      operationId: postApiUserUserIdAddressesCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: eltkwggkfbumccoi
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: schmeler.elza@example.com
+                  nullable: false
+                company:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: tnaubijdn
+                  nullable: true
+                primary:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: false
+                fullAddress:
+                  type: string
+                  description: ''
+                  example: ducimus
+                  nullable: false
+                phoneNumber:
+                  type: string
+                  description: ''
+                  example: rerum
+                  nullable: false
+                addressType:
+                  type: string
+                  description: ''
+                  example: Office
+                  nullable: false
+                  enum:
+                    - home
+                    - office
+                    - Home
+                    - Office
+              required:
+                - name
+                - email
+                - primary
+                - fullAddress
+                - phoneNumber
+                - addressType
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: earum
+        required: true
+        schema:
+          type: string
+  '/api/user/{userId}/addresses/{addressId}':
+    put:
+      summary: ''
+      operationId: putApiUserUserIdAddressesAddressId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: qthpqefxkfck
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: shields.miguel@example.com
+                  nullable: false
+                company:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: wsnifrzytsfzwuykdzcvug
+                  nullable: true
+                primary:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: false
+                fullAddress:
+                  type: string
+                  description: ''
+                  example: ea
+                  nullable: false
+                phoneNumber:
+                  type: string
+                  description: ''
+                  example: laborum
+                  nullable: false
+                addressType:
+                  type: string
+                  description: ''
+                  example: office
+                  nullable: false
+                  enum:
+                    - home
+                    - office
+                    - Home
+                    - Office
+              required:
+                - name
+                - email
+                - primary
+                - fullAddress
+                - phoneNumber
+                - addressType
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiUserUserIdAddressesAddressId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: recusandae
+        required: true
+        schema:
+          type: string
+      -
+        in: path
+        name: addressId
+        description: ''
+        example: ut
+        required: true
+        schema:
+          type: string
+  /api/mail/list:
+    get:
+      summary: ''
+      operationId: getApiMailList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/details:
+    get:
+      summary: ''
+      operationId: getApiMailDetails
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/labels:
+    get:
+      summary: ''
+      operationId: getApiMailLabels
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/create:
+    post:
+      summary: ''
+      operationId: postApiMailCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: object
+                  description: 'Must have at least 1 items.'
+                  example: []
+                  nullable: false
+                  properties: {  }
+                subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: iamfac
+                  nullable: false
+                message:
+                  type: string
+                  description: ''
+                  example: officiis
+                  nullable: false
+                folder:
+                  type: string
+                  description: ''
+                  example: draft
+                  nullable: false
+                  enum:
+                    - inbox
+                    - sent
+                    - draft
+                    - trash
+                labelIds:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the mail_labels table.'
+                  example: null
+                  items:
+                    type: string
+                attachments:
+                  type: array
+                  description: 'Must be a file. Must not be greater than 2048 kilobytes.'
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - to
+                - subject
+                - message
+      security: []
+  '/api/mail/mark-as-read/{mailId}':
+    post:
+      summary: ''
+      operationId: postApiMailMarkAsReadMailId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: mailId
+        description: ''
+        example: sit
+        required: true
+        schema:
+          type: string
+  '/api/mail/toggle-star/{mailId}':
+    post:
+      summary: ''
+      operationId: postApiMailToggleStarMailId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: mailId
+        description: ''
+        example: rem
+        required: true
+        schema:
+          type: string
+  '/api/mail/delete/{mailId}':
+    delete:
+      summary: ''
+      operationId: deleteApiMailDeleteMailId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: mailId
+        description: ''
+        example: sequi
+        required: true
+        schema:
+          type: string
+  /api/mail/search:
+    get:
+      summary: ''
+      operationId: getApiMailSearch
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/mail/draft:
+    post:
+      summary: ''
+      operationId: postApiMailDraft
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: object
+                  description: 'Must have at least 1 items.'
+                  example: []
+                  nullable: false
+                  properties: {  }
+                subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: yhcrx
+                  nullable: false
+                message:
+                  type: string
+                  description: ''
+                  example: est
+                  nullable: false
+                folder:
+                  type: string
+                  description: ''
+                  example: draft
+                  nullable: false
+                  enum:
+                    - inbox
+                    - sent
+                    - draft
+                    - trash
+                labelIds:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the mail_labels table.'
+                  example: null
+                  items:
+                    type: string
+                attachments:
+                  type: array
+                  description: 'Must be a file. Must not be greater than 2048 kilobytes.'
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - to
+                - subject
+                - message
+      security: []
+  '/api/mail/draft/{id}':
+    put:
+      summary: ''
+      operationId: putApiMailDraftId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: object
+                  description: 'Must have at least 1 items.'
+                  example: []
+                  nullable: false
+                  properties: {  }
+                subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: ewawytinfxtb
+                  nullable: false
+                message:
+                  type: string
+                  description: ''
+                  example: earum
+                  nullable: false
+                folder:
+                  type: string
+                  description: ''
+                  example: trash
+                  nullable: false
+                  enum:
+                    - inbox
+                    - sent
+                    - draft
+                    - trash
+                labelIds:
+                  type: array
+                  description: 'The <code>id</code> of an existing record in the mail_labels table.'
+                  example: null
+                  items:
+                    type: string
+                attachments:
+                  type: array
+                  description: 'Must be a file. Must not be greater than 2048 kilobytes.'
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - to
+                - subject
+                - message
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the draft.'
+        example: architecto
+        required: true
+        schema:
+          type: string
+  /api/analytics/widget-summary:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsWidgetSummary
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/analytics/current-visits:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsCurrentVisits
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/users/list:
+    get:
+      summary: ''
+      operationId: getApiUsersList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/user/details/{id}':
+    get:
+      summary: ''
+      operationId: getApiUserDetailsId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the detail.'
+        example: tempore
+        required: true
+        schema:
+          type: string
+  /api/users/create:
+    post:
+      summary: ''
+      operationId: postApiUsersCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  '/api/users/delete/{id}':
+    delete:
+      summary: ''
+      operationId: deleteApiUsersDeleteId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the delete.'
+        example: velit
+        required: true
+        schema:
+          type: string
+  '/api/users/{id}/role':
+    put:
+      summary: ''
+      operationId: putApiUsersIdRole
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the user.'
+        example: et
+        required: true
+        schema:
+          type: string
+  '/api/products/{id}/transfer-vendor':
+    post:
+      summary: ''
+      operationId: postApiProductsIdTransferVendor
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the product.'
+        example: maxime
+        required: true
+        schema:
+          type: string
+  /api/products/create:
+    post:
+      summary: ''
+      operationId: postApiProductsCreate
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: ifvmchpnnpbmivajcxkjri
+                  nullable: false
+                sku:
+                  type: string
+                  description: ''
+                  example: similique
+                  nullable: true
+                code:
+                  type: string
+                  description: ''
+                  example: sed
+                  nullable: true
+                price:
+                  type: number
+                  description: 'Must be at least 1.'
+                  example: 24
+                  nullable: false
+                priceSale:
+                  type: number
+                  description: 'Must be at least 0.'
+                  example: 88
+                  nullable: true
+                taxes:
+                  type: number
+                  description: 'Must be at least 0.'
+                  example: 5
+                  nullable: true
+                coverUrl:
+                  type: string
+                  description: ''
+                  example: nisi
+                  nullable: false
+                images:
+                  type: array
+                  description: ''
+                  example: null
+                  items:
+                    type: string
+                description:
+                  type: string
+                  description: ''
+                  example: 'Corporis vero voluptates similique recusandae quidem cum voluptates.'
+                  nullable: false
+                subDescription:
+                  type: string
+                  description: ''
+                  example: nihil
+                  nullable: true
+                quantity:
+                  type: integer
+                  description: 'Must be at least 1.'
+                  example: 58
+                  nullable: false
+                sizes:
+                  type: array
+                  description: ''
+                  example:
+                    - doloremque
+                  items:
+                    type: string
+                colors:
+                  type: array
+                  description: ''
+                  example:
+                    - et
+                  items:
+                    type: string
+                tags:
+                  type: array
+                  description: ''
+                  example:
+                    - officia
+                  items:
+                    type: string
+                gender:
+                  type: array
+                  description: ''
+                  example:
+                    - maiores
+                  items:
+                    type: string
+                category:
+                  type: string
+                  description: ''
+                  example: blanditiis
+                  nullable: false
+                publish:
+                  type: string
+                  description: ''
+                  example: published
+                  nullable: false
+                  enum:
+                    - draft
+                    - published
+                saleLabel:
+                  type: object
+                  description: ''
+                  example: []
+                  nullable: false
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: ''
+                      example: false
+                      nullable: false
+                    content:
+                      type: string
+                      description: ''
+                      example: natus
+                      nullable: true
+                newLabel:
+                  type: object
+                  description: ''
+                  example: []
+                  nullable: false
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: ''
+                      example: true
+                      nullable: false
+                    content:
+                      type: string
+                      description: ''
+                      example: magnam
+                      nullable: true
+              required:
+                - name
+                - price
+                - coverUrl
+                - description
+                - quantity
+                - category
+                - publish
+      security: []
+  '/api/products/{id}':
+    put:
+      summary: ''
+      operationId: putApiProductsId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    get:
+      summary: ''
+      operationId: getApiProductsId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the product.'
+        example: placeat
+        required: true
+        schema:
+          type: string
+  /api/product/details:
+    get:
+      summary: ''
+      operationId: getApiProductDetails
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/products/publish/{id}':
+    put:
+      summary: ''
+      operationId: putApiProductsPublishId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the publish.'
+        example: omnis
+        required: true
+        schema:
+          type: string
+  /api/reviews:
+    get:
+      summary: ''
+      operationId: getApiReviews
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: ''
+      operationId: postApiReviews
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the products table.'
+                  example: neque
+                  nullable: false
+                rating:
+                  type: integer
+                  description: 'Must be at least 1. Must not be greater than 5.'
+                  example: 3
+                  nullable: false
+                comment:
+                  type: string
+                  description: ''
+                  example: incidunt
+                  nullable: true
+              required:
+                - product_id
+                - rating
+      security: []
+  '/api/reviews/{id}':
+    get:
+      summary: ''
+      operationId: getApiReviewsId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiReviewsId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                  description: 'Must be at least 1. Must not be greater than 5.'
+                  example: 2
+                  nullable: false
+                comment:
+                  type: string
+                  description: ''
+                  example: ipsam
+                  nullable: true
+              required:
+                - rating
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiReviewsId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the review.'
+        example: odio
+        required: true
+        schema:
+          type: string
+  /api/invoices/list:
+    get:
+      summary: ''
+      operationId: getApiInvoicesList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/invoices/{id}':
+    get:
+      summary: ''
+      operationId: getApiInvoicesId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiInvoicesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  description: ''
+                  example: 1268.2
+                  nullable: false
+                status:
+                  type: string
+                  description: ''
+                  example: et
+                  nullable: false
+              required:
+                - amount
+                - status
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiInvoicesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the invoice.'
+        example: ea
+        required: true
+        schema:
+          type: string
+  /api/orders/list:
+    get:
+      summary: ''
+      operationId: getApiOrdersList
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/orders/{id}':
+    get:
+      summary: ''
+      operationId: getApiOrdersId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiOrdersId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: ''
+                  example: refunded
+                  nullable: false
+                  enum:
+                    - pending
+                    - completed
+                    - cancelled
+                    - refunded
+              required:
+                - status
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the order.'
+        example: eaque
+        required: true
+        schema:
+          type: string
+  /api/cart:
+    get:
+      summary: ''
+      operationId: getApiCart
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: ''
+      operationId: postApiCart
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the products table.'
+                  example: soluta
+                  nullable: false
+                quantity:
+                  type: integer
+                  description: 'Must be at least 1.'
+                  example: 7
+                  nullable: false
+              required:
+                - product_id
+                - quantity
+      security: []
+  '/api/cart/{id}':
+    put:
+      summary: ''
+      operationId: putApiCartId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  description: 'Must be at least 1.'
+                  example: 82
+                  nullable: false
+              required:
+                - quantity
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiCartId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the cart.'
+        example: et
+        required: true
+        schema:
+          type: string
+  /api/companies:
+    get:
+      summary: ''
+      operationId: getApiCompanies
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: ''
+      operationId: postApiCompanies
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: wahjttogu
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Omnis dolores omnis vel autem atque commodi consequatur.'
+                  nullable: true
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: ecorwin@example.com
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: fagacmd
+                  nullable: false
+                country:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: vccfzustjxhcatgbwkvvk
+                  nullable: false
+                city:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: tqjgpnnuztjbbhuqxslseo
+                  nullable: false
+                address:
+                  type: string
+                  description: ''
+                  example: ipsam
+                  nullable: false
+                owner_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: porro
+                  nullable: false
+                agreement:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: false
+              required:
+                - name
+                - email
+                - phone
+                - country
+                - city
+                - address
+                - owner_id
+                - agreement
+      security: []
+  '/api/companies/{id}':
+    get:
+      summary: ''
+      operationId: getApiCompaniesId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: ''
+      operationId: putApiCompaniesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: roqpzkuqfaaerchbshgalgux
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Similique natus architecto accusantium dolorum omnis ut itaque provident.'
+                  nullable: true
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: jesse82@example.org
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: pjesgmatfrxgqanb
+                  nullable: false
+                country:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: gkhpvyrirjvwhzyjhvwq
+                  nullable: false
+                city:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: rqgdyotviclyyocd
+                  nullable: false
+                address:
+                  type: string
+                  description: ''
+                  example: omnis
+                  nullable: false
+                owner_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: dicta
+                  nullable: false
+                agreement:
+                  type: boolean
+                  description: ''
+                  example: true
+                  nullable: false
+              required:
+                - name
+                - email
+                - phone
+                - country
+                - city
+                - address
+                - owner_id
+                - agreement
+      security: []
+    delete:
+      summary: ''
+      operationId: deleteApiCompaniesId
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the company.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/companies/vendor/{id}':
+    get:
+      summary: ''
+      operationId: getApiCompaniesVendorId
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the vendor.'
+        example: tempore
+        required: true
+        schema:
+          type: string
+  /api/chapa/callback:
+    post:
+      summary: ''
+      operationId: postApiChapaCallback
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/chapa/webhook:
+    post:
+      summary: ''
+      operationId: postApiChapaWebhook
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  /api/chapa/return:
+    get:
+      summary: ''
+      operationId: getApiChapaReturn
+      description: ''
+      parameters: []
+      responses:
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  status: error
+                  message: 'Payment not found'
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: 'Payment not found'
+      tags:
+        - Endpoints
+      security: []
+  /api/analytics/website-visits:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsWebsiteVisits
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  /api/analytics/order-timeline:
+    get:
+      summary: ''
+      operationId: getApiAnalyticsOrderTimeline
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  error: 'Token not provided'
+                properties:
+                  error:
+                    type: string
+                    example: 'Token not provided'
+      tags:
+        - Endpoints
+      security: []
+  '/api/users/{userId}/invoices':
+    get:
+      summary: "Retrieve all invoices for a specific user with detailed information.\n\nThis endpoint retrieves all invoices associated with the given user ID, including\nrelated items, billing information, and pagination."
+      operationId: retrieveAllInvoicesForASpecificUserWithDetailedInformationThisEndpointRetrievesAllInvoicesAssociatedWithTheGivenUserIDIncludingrelatedItemsBillingInformationAndPagination
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  invoices:
+                    -
+                      id: string
+                      invoiceNumber: string
+                      sent: boolean
+                      taxes: float
+                      status: string
+                      subtotal: float
+                      discount: float
+                      shipping: float
+                      totalAmount: float
+                      createdAt: string
+                      dueDate: string
+                      items:
+                        -
+                          id: string
+                          title: string
+                          price: float
+                          total: float
+                          service: string
+                          quantity: int
+                          description: string
+                      invoiceFrom:
+                        name: string
+                        fullAddress: string
+                        phoneNumber: string
+                      invoiceTo:
+                        name: string
+                        fullAddress: string
+                        phoneNumber: string
+                  pagination:
+                    total: int
+                    perPage: int
+                    currentPage: int
+                    lastPage: int
+                properties:
+                  invoices:
+                    type: array
+                    example:
+                      -
+                        id: string
+                        invoiceNumber: string
+                        sent: boolean
+                        taxes: float
+                        status: string
+                        subtotal: float
+                        discount: float
+                        shipping: float
+                        totalAmount: float
+                        createdAt: string
+                        dueDate: string
+                        items:
+                          -
+                            id: string
+                            title: string
+                            price: float
+                            total: float
+                            service: string
+                            quantity: int
+                            description: string
+                        invoiceFrom:
+                          name: string
+                          fullAddress: string
+                          phoneNumber: string
+                        invoiceTo:
+                          name: string
+                          fullAddress: string
+                          phoneNumber: string
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: string
+                        invoiceNumber:
+                          type: string
+                          example: string
+                        sent:
+                          type: string
+                          example: boolean
+                        taxes:
+                          type: string
+                          example: float
+                        status:
+                          type: string
+                          example: string
+                        subtotal:
+                          type: string
+                          example: float
+                        discount:
+                          type: string
+                          example: float
+                        shipping:
+                          type: string
+                          example: float
+                        totalAmount:
+                          type: string
+                          example: float
+                        createdAt:
+                          type: string
+                          example: string
+                        dueDate:
+                          type: string
+                          example: string
+                        items:
+                          type: array
+                          example:
+                            -
+                              id: string
+                              title: string
+                              price: float
+                              total: float
+                              service: string
+                              quantity: int
+                              description: string
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: string
+                              title:
+                                type: string
+                                example: string
+                              price:
+                                type: string
+                                example: float
+                              total:
+                                type: string
+                                example: float
+                              service:
+                                type: string
+                                example: string
+                              quantity:
+                                type: string
+                                example: int
+                              description:
+                                type: string
+                                example: string
+                        invoiceFrom:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: string
+                            fullAddress:
+                              type: string
+                              example: string
+                            phoneNumber:
+                              type: string
+                              example: string
+                        invoiceTo:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: string
+                            fullAddress:
+                              type: string
+                              example: string
+                            phoneNumber:
+                              type: string
+                              example: string
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: string
+                        example: int
+                      perPage:
+                        type: string
+                        example: int
+                      currentPage:
+                        type: string
+                        example: int
+                      lastPage:
+                        type: string
+                        example: int
+        404:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'No invoices found for this user.'
+                properties:
+                  message:
+                    type: string
+                    example: 'No invoices found for this user.'
+      tags:
+        - Invoices
+      security: []
+    parameters:
+      -
+        in: path
+        name: userId
+        description: ''
+        example: occaecati
+        required: true
+        schema:
+          type: string
+  /api/checkout/order:
+    post:
+      summary: "Checkout for placing an order.\n\nThis endpoint allows a user to initiate the checkout process. It requires\ndetailed information about the items being purchased, billing, shipping,\nand payment details. The user must be authenticated to access this endpoint."
+      operationId: checkoutForPlacingAnOrderThisEndpointAllowsAUserToInitiateTheCheckoutProcessItRequiresdetailedInformationAboutTheItemsBeingPurchasedBillingShippingandPaymentDetailsTheUserMustBeAuthenticatedToAccessThisEndpoint
+      description: ''
+      parameters: []
+      responses:
+        201:
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "{\n \"order\": {\n     \"id\": \"string\",\n     \"user_id\": \"string\",\n     \"taxes\": \"float\",\n     \"status\": \"string\",\n     \"shipping\": \"float\",\n     \"discount\": \"float\",\n     \"subtotal\": \"float\",\n     \"order_number\": \"string\",\n     \"total_amount\": \"float\",\n     \"total_quantity\": \"int\",\n     \"created_at\": \"string\",\n     \"updated_at\": \"string\"\n },\n \"checkout_url\": \"string|null\" // Only present if payment method is 'chapa'\n}"
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+        422:
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "{\n \"message\": \"The given data was invalid.\",\n \"errors\": {\n     \"items\": [\"The items field is required.\"],\n     ...\n }\n}"
+        500:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Error processing order'
+                  error: string
+                properties:
+                  message:
+                    type: string
+                    example: 'Error processing order'
+                  error:
+                    type: string
+                    example: string
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  description: 'The items to be ordered.'
+                  example:
+                    - eum
+                  items:
+                    type: string
+                billing:
+                  type: array
+                  description: 'The billing information.'
+                  example:
+                    - architecto
+                  items:
+                    type: string
+                shipping:
+                  type: array
+                  description: 'The shipping information.'
+                  example:
+                    - nesciunt
+                  items:
+                    type: string
+                payment:
+                  type: array
+                  description: 'The payment information.'
+                  example:
+                    - autem
+                  items:
+                    type: string
+                status:
+                  type: string
+                  description: "The order status (e.g., 'pending', 'completed')."
+                  example: ut
+                  nullable: false
+                total:
+                  type: number
+                  description: 'The total amount for the order.'
+                  example: 61686091.329002
+                  nullable: false
+                subtotal:
+                  type: number
+                  description: 'The subtotal amount for the order.'
+                  example: 34800.192460132
+                  nullable: false
+              required:
+                - items
+                - billing
+                - shipping
+                - payment
+                - status
+                - total
+                - subtotal
+      security: []
+  /api/products/list:
+    get:
+      summary: "Retrieve a list of products with their details.\n\nThis endpoint returns a paginated list of products including their reviews,\ncategories, images, and vendor information. The user needs to be authenticated\nto view the products."
+      operationId: retrieveAListOfProductsWithTheirDetailsThisEndpointReturnsAPaginatedListOfProductsIncludingTheirReviewscategoriesImagesAndVendorInformationTheUserNeedsToBeAuthenticatedtoViewTheProducts
+      description: ''
+      parameters:
+        -
+          in: query
+          name: page
+          description: 'optional The page number (default: 1).'
+          example: 4
+          required: false
+          schema:
+            type: integer
+            description: 'optional The page number (default: 1).'
+            example: 4
+            nullable: false
+        -
+          in: query
+          name: per_page
+          description: 'optional The number of items per page (default: 12).'
+          example: 7
+          required: false
+          schema:
+            type: integer
+            description: 'optional The number of items per page (default: 12).'
+            example: 7
+            nullable: false
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  products:
+                    -
+                      id: string
+                      name: string
+                      sku: string
+                      code: string
+                      description: string
+                      subDescription: string
+                      publish: string
+                      vendor:
+                        id: string
+                        name: string
+                        email: string
+                        phone: string
+                      coverUrl: string|null
+                      images:
+                        - string
+                      price: float
+                      priceSale: float
+                      taxes: float
+                      tags:
+                        - string
+                      sizes:
+                        - string
+                      colors:
+                        - string
+                      gender:
+                        - string
+                      inventoryType: string
+                      quantity: int
+                      available: boolean
+                      totalSold: int
+                      category: string|null
+                      totalRatings: float
+                      totalReviews: int
+                      reviews:
+                        -
+                          id: string
+                          name: string
+                          postedAt: string
+                          comment: string
+                          isPurchased: boolean
+                          rating: float
+                          avatarUrl: string|null
+                          helpful: int
+                          attachments:
+                            - string
+                      ratings:
+                        -
+                          name: string
+                          starCount: int
+                          reviewCount: int
+                      newLabel:
+                        enabled: boolean
+                        content: string
+                      saleLabel:
+                        enabled: boolean
+                        content: string
+                      createdAt: string
+                properties:
+                  products:
+                    type: array
+                    example:
+                      -
+                        id: string
+                        name: string
+                        sku: string
+                        code: string
+                        description: string
+                        subDescription: string
+                        publish: string
+                        vendor:
+                          id: string
+                          name: string
+                          email: string
+                          phone: string
+                        coverUrl: string|null
+                        images:
+                          - string
+                        price: float
+                        priceSale: float
+                        taxes: float
+                        tags:
+                          - string
+                        sizes:
+                          - string
+                        colors:
+                          - string
+                        gender:
+                          - string
+                        inventoryType: string
+                        quantity: int
+                        available: boolean
+                        totalSold: int
+                        category: string|null
+                        totalRatings: float
+                        totalReviews: int
+                        reviews:
+                          -
+                            id: string
+                            name: string
+                            postedAt: string
+                            comment: string
+                            isPurchased: boolean
+                            rating: float
+                            avatarUrl: string|null
+                            helpful: int
+                            attachments:
+                              - string
+                        ratings:
+                          -
+                            name: string
+                            starCount: int
+                            reviewCount: int
+                        newLabel:
+                          enabled: boolean
+                          content: string
+                        saleLabel:
+                          enabled: boolean
+                          content: string
+                        createdAt: string
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: string
+                        name:
+                          type: string
+                          example: string
+                        sku:
+                          type: string
+                          example: string
+                        code:
+                          type: string
+                          example: string
+                        description:
+                          type: string
+                          example: string
+                        subDescription:
+                          type: string
+                          example: string
+                        publish:
+                          type: string
+                          example: string
+                        vendor:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              example: string
+                            name:
+                              type: string
+                              example: string
+                            email:
+                              type: string
+                              example: string
+                            phone:
+                              type: string
+                              example: string
+                        coverUrl:
+                          type: string
+                          example: string|null
+                        images:
+                          type: array
+                          example:
+                            - string
+                          items:
+                            type: string
+                        price:
+                          type: string
+                          example: float
+                        priceSale:
+                          type: string
+                          example: float
+                        taxes:
+                          type: string
+                          example: float
+                        tags:
+                          type: array
+                          example:
+                            - string
+                          items:
+                            type: string
+                        sizes:
+                          type: array
+                          example:
+                            - string
+                          items:
+                            type: string
+                        colors:
+                          type: array
+                          example:
+                            - string
+                          items:
+                            type: string
+                        gender:
+                          type: array
+                          example:
+                            - string
+                          items:
+                            type: string
+                        inventoryType:
+                          type: string
+                          example: string
+                        quantity:
+                          type: string
+                          example: int
+                        available:
+                          type: string
+                          example: boolean
+                        totalSold:
+                          type: string
+                          example: int
+                        category:
+                          type: string
+                          example: string|null
+                        totalRatings:
+                          type: string
+                          example: float
+                        totalReviews:
+                          type: string
+                          example: int
+                        reviews:
+                          type: array
+                          example:
+                            -
+                              id: string
+                              name: string
+                              postedAt: string
+                              comment: string
+                              isPurchased: boolean
+                              rating: float
+                              avatarUrl: string|null
+                              helpful: int
+                              attachments:
+                                - string
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: string
+                              name:
+                                type: string
+                                example: string
+                              postedAt:
+                                type: string
+                                example: string
+                              comment:
+                                type: string
+                                example: string
+                              isPurchased:
+                                type: string
+                                example: boolean
+                              rating:
+                                type: string
+                                example: float
+                              avatarUrl:
+                                type: string
+                                example: string|null
+                              helpful:
+                                type: string
+                                example: int
+                              attachments:
+                                type: array
+                                example:
+                                  - string
+                                items:
+                                  type: string
+                        ratings:
+                          type: array
+                          example:
+                            -
+                              name: string
+                              starCount: int
+                              reviewCount: int
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                example: string
+                              starCount:
+                                type: string
+                                example: int
+                              reviewCount:
+                                type: string
+                                example: int
+                        newLabel:
+                          type: object
+                          properties:
+                            enabled:
+                              type: string
+                              example: boolean
+                            content:
+                              type: string
+                              example: string
+                        saleLabel:
+                          type: object
+                          properties:
+                            enabled:
+                              type: string
+                              example: boolean
+                            content:
+                              type: string
+                              example: string
+                        createdAt:
+                          type: string
+                          example: string
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Products
+      security: []
+tags:
+  -
+    name: Authentication
+    description: "\nAPIs for managing authentication"
+  -
+    name: Endpoints
+    description: ''
+  -
+    name: Invoices
+    description: ''
+  -
+    name: Orders
+    description: ''
+  -
+    name: Products
+    description: ''
