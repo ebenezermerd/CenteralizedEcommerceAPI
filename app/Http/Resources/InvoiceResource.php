@@ -1,11 +1,11 @@
 <?php
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\InvoiceItemResource;
 use App\Http\Resources\InvoiceFromResource;
 use App\Http\Resources\InvoiceToResource;
-
 
 class InvoiceResource extends JsonResource
 {

@@ -17,7 +17,6 @@ use App\Http\Resources\OrderResource;
 use App\Http\Resources\OrderCollection;
 use App\Services\EmailVerificationService;
 
-
 class OrderController extends Controller
 {
     protected $emailVerificationService;
@@ -150,7 +149,7 @@ class OrderController extends Controller
     }
 
 
-   /**
+    /**
  * @group Orders
  *
  * Checkout for placing an order.
@@ -221,42 +220,42 @@ class OrderController extends Controller
  *  "error": "string"
  * }
  */
-public function checkout(Request $request): JsonResponse
-{
-    // Log the incoming request
-    \Log::info('Order checkout initiated', [
-        'request_data' => $request->all(),
-        'user_id' => auth()->id()
-    ]);
+    public function checkout(Request $request): JsonResponse
+    {
+        // Log the incoming request
+        \Log::info('Order checkout initiated', [
+            'request_data' => $request->all(),
+            'user_id' => auth()->id()
+        ]);
 
-    $validated = $request->validate([
-        'items' => 'required|array|min:1',
-        'items.*.id' => 'required|exists:products,id',
-        'items.*.quantity' => 'required|integer|min:1',
-        'items.*.price' => 'required|numeric',
-        'items.*.name' => 'required|string',
-        'items.*.coverUrl' => 'nullable|string',
-        'billing' => 'required|array',
-        'billing.name' => 'required|string',
-        'billing.email' => 'required|email',
-        'billing.fullAddress' => 'required|string',
-        'billing.phoneNumber' => 'required|string',
-        'billing.company' => 'nullable|string',
-        'billing.addressType' => 'nullable|string',
-        'shipping' => 'required|array',
-        'shipping.address' => 'required|string',
-        'shipping.method.description' => 'nullable|string',
-        'shipping.method.label' => 'required|string',
-        'shipping.method.value' => 'required|numeric',
-        'payment' => 'required|array',
-        'payment.method' => 'required|string',
-        'payment.amount' => 'required|numeric',
-        'payment.currency' => 'required|string',
-        'payment.tx_ref' => 'nullable|string',
-        'status' => 'required|string|in:pending,completed,cancelled,refunded',
-        'total' => 'required|numeric',
-        'subtotal' => 'required|numeric',
-    ]);
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.price' => 'required|numeric',
+            'items.*.name' => 'required|string',
+            'items.*.coverUrl' => 'nullable|string',
+            'billing' => 'required|array',
+            'billing.name' => 'required|string',
+            'billing.email' => 'required|email',
+            'billing.fullAddress' => 'required|string',
+            'billing.phoneNumber' => 'required|string',
+            'billing.company' => 'nullable|string',
+            'billing.addressType' => 'nullable|string',
+            'shipping' => 'required|array',
+            'shipping.address' => 'required|string',
+            'shipping.method.description' => 'nullable|string',
+            'shipping.method.label' => 'required|string',
+            'shipping.method.value' => 'required|numeric',
+            'payment' => 'required|array',
+            'payment.method' => 'required|string',
+            'payment.amount' => 'required|numeric',
+            'payment.currency' => 'required|string',
+            'payment.tx_ref' => 'nullable|string',
+            'status' => 'required|string|in:pending,completed,cancelled,refunded',
+            'total' => 'required|numeric',
+            'subtotal' => 'required|numeric',
+        ]);
 
 
         if (!$validated) {

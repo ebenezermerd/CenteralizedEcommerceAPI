@@ -334,4 +334,3 @@ class AnalyticsController extends Controller
     // The rest of the methods remain unchanged
     // ...
 }
-

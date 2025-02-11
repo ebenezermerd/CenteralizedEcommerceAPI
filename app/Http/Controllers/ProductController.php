@@ -13,9 +13,7 @@ use App\Models\Category;
 
 class ProductController extends Controller
 {
-
-
-  /**
+    /**
  * @group Products
  *
  * Retrieve a list of products with their details.
@@ -96,26 +94,26 @@ class ProductController extends Controller
  *  "message": "Unauthenticated."
  * }
  */
-public function index(Request $request)
-{
-    $user = auth()->user();
-    $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function ($query) {
             $query->select('id', 'firstName', 'lastName', 'phone', 'email')
                 ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
         }])
-        ->viewableBy($user)
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->latest()
-        ->paginate(12);
+            ->viewableBy($user)
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->latest()
+            ->paginate(12);
 
         // Log the result for debugging
-    \Log::info('Products Data', $products->toArray());
+        \Log::info('Products Data', $products->toArray());
 
-    return response()->json([
-        'products' => ProductResource::collection($products)
-    ], 201);
-}
+        return response()->json([
+            'products' => ProductResource::collection($products)
+        ], 201);
+    }
 
     public function store(ProductRequest $request)
     {
@@ -161,7 +159,7 @@ public function index(Request $request)
             $product->save();
 
             // Handle both coverUrl and images
-            $processImage = function($image, $isPrimary = false) use ($product) {
+            $processImage = function ($image, $isPrimary = false) use ($product) {
                 if (is_file($image)) {
                     $path = $image->store('products', 'public');
                     ProductImage::updateOrCreate(

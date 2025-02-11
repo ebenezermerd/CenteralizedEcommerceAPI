@@ -5,7 +5,6 @@ namespace App\Http\Resources;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 
-
 class OrderCustomerResource extends JsonResource
 {
     /**

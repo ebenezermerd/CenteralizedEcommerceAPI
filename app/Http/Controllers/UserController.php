@@ -9,10 +9,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Services\EmailVerificationService;
 
-
 class UserController extends Controller
 {
-
     protected $emailVerificationService;
 
     public function __construct(EmailVerificationService $emailVerificationService)

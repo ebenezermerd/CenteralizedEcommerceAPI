@@ -1,12 +1,10 @@
 
 <?php
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use App\Http\Resources\InvoiceResource;
-
-
-
 
 class InvoiceCollection extends ResourceCollection
 {
