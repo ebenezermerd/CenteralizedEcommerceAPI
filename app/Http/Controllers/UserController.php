@@ -7,6 +7,7 @@ use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Services\EmailVerificationService;
 
 
@@ -125,11 +126,11 @@ class UserController extends Controller
 
     public function update(Request $request, string $id)
     {
+        Log::info('Starting user update process', ['user_id' => $id, 'request_data' => $request->all()]);
+
         try {
-            // Find user or fail
             $user = User::findOrFail($id);
 
-            // Validate incoming data
             $validated = $request->validate([
                 'firstName' => 'sometimes|string|max:255',
                 'lastName' => 'sometimes|string|max:255',
@@ -148,14 +149,15 @@ class UserController extends Controller
                 'image' => 'nullable|image|max:2048'
             ]);
 
-            // Handle image update
+            // Handle image upload
             if ($request->hasFile('image')) {
-                // Delete old image file if it exists
+                // Delete old image if exists
                 if ($user->image && Storage::disk('public')->exists($user->image)) {
                     Storage::disk('public')->delete($user->image);
                 }
-                // Store new image
-                $validated['image'] = $request->file('image')->store('avatars', 'public');
+                
+                Log::info('Uploading new image for user', ['user_id' => $id]);
+                $validated['image'] = $request->file('image')->store('users/avatars', 'public');
             }
 
             // Handle role update

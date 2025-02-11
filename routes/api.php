@@ -59,6 +59,7 @@ Route::middleware(['jwt'])->group(function () {
     // Auth routes
     Route::get('/auth/me', [AuthController::class, 'getUser']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/update-password', [ResetPasswordController::class, 'updatePassword']);
 
     // MFA routes
     Route::post('/auth/mfa-enable', [MFAController::class, 'enable']);
@@ -66,7 +67,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::get('/auth/mfa-status', [MFAController::class, 'getStatus']);
     Route::post('/auth/mfa-verify', [MFAController::class, 'verify']);
     Route::post('/auth/mfa-resend', [MFAController::class, 'resendOtp']);
-    Route::put('/users/update/{id}', [UserController::class, 'update']);
+    Route::post('/users/update/{id}', [UserController::class, 'update']);
 
 
     // Address routes

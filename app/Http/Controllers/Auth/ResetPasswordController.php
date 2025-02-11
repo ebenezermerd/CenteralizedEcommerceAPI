@@ -117,6 +117,64 @@ class ResetPasswordController extends Controller
         }
     }
 
+    public function updatePassword(Request $request)
+    {
+        try {
+            $messages = [
+                'oldPassword.required' => 'Current password is required',
+                'newPassword.required' => 'New password is required',
+                'newPassword.min' => 'New password must be at least 6 characters',
+                'newPassword.different' => 'New password must be different from current password',
+            ];
+
+            $request->validate([
+                'oldPassword' => 'required',
+                'newPassword' => [
+                    'required',
+                    'min:6',
+                    'different:oldPassword'
+                ]
+            ], $messages);
+
+            $user = auth()->user();
+
+            if (!password_verify($request->oldPassword, $user->password)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Current password is incorrect'
+                ], 400);
+            }
+            
+            $user->password = bcrypt($request->newPassword);
+            $user->save();
+
+            Log::info('Password updated successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password updated successfully'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Password update failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update password'
+            ], 400);
+        }
+    }
+
     public function checkToken(Request $request, $token)
     {
         try {

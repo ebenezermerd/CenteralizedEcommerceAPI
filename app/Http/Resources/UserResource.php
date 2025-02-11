@@ -3,7 +3,9 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Resources\Json\JsonResource;
+
 
 class UserResource extends JsonResource
 {
@@ -21,7 +23,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'role' => $this->getRoleNames()->first() ?? 'customer',
             'status' => $this->status,
-            'avatarUrl' => $this->image ? asset("storage/{$this->image}") : null,
+            'avatarUrl' => $this->image ? url(Storage::url($this->image)) : null,
             'phoneNumber' => $this->phone,
             'address' => $this->address,
             'country' => $this->country,
