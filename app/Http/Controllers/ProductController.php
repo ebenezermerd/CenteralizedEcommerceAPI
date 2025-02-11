@@ -16,9 +16,7 @@ use App\Models\User;
 
 class ProductController extends Controller
 {
-
-
-  /**
+    /**
  * @group Products
  *
  * Retrieve a list of products with their details.
@@ -99,26 +97,26 @@ class ProductController extends Controller
  *  "message": "Unauthenticated."
  * }
  */
-public function index(Request $request)
-{
-    $user = auth()->user();
-    $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function ($query) {
             $query->select('id', 'firstName', 'lastName', 'phone', 'email')
                 ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
         }])
-        ->viewableBy($user)
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->latest()
-        ->paginate(12);
+            ->viewableBy($user)
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->latest()
+            ->paginate(12);
 
         // Log the result for debugging
-    \Log::info('Products Data', $products->toArray());
+        \Log::info('Products Data', $products->toArray());
 
-    return response()->json([
-        'products' => ProductResource::collection($products)
-    ], 201);
-}
+        return response()->json([
+            'products' => ProductResource::collection($products)
+        ], 201);
+    }
 
     public function store(Request $request)
     {
@@ -248,7 +246,7 @@ public function index(Request $request)
                                 return $query->where('id', '!=', $request->id);
                             })
                             ->exists();
-                        
+
                         if ($exists) {
                             $fail('This SKU already exists!');
                         }
@@ -264,7 +262,7 @@ public function index(Request $request)
                                 return $query->where('id', '!=', $request->id);
                             })
                             ->exists();
-                        
+
                         if ($exists) {
                             $fail('This code already exists!');
                         }
@@ -356,7 +354,7 @@ public function index(Request $request)
 
             // Process images first
             $processedImages = $this->processImages(request());
-            
+
             // Fill product data
             $product->fill(array_merge(
                 collect($data)->except(['images', 'category'])->toArray(),
@@ -403,7 +401,7 @@ public function index(Request $request)
             DB::beginTransaction();
 
             $product = Product::findOrFail($id);
-            
+
             if (!$this->canManageProduct($product)) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
@@ -416,7 +414,7 @@ public function index(Request $request)
             $this->saveProduct($product, $request->all());
 
             DB::commit();
-            
+
             return new ProductResource($product->fresh());
 
         } catch (\Exception $e) {

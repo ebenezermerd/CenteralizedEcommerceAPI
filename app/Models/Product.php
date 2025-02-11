@@ -114,23 +114,25 @@ class Product extends Model
 
     public function getCoverUrlAttribute($value)
     {
-        if (!$value) return null;
-        return str_starts_with($value, 'http') 
-            ? $value 
+        if (!$value) {
+            return null;
+        }
+        return str_starts_with($value, 'http')
+            ? $value
             : url(Storage::url($value));
     }
 
     // For frequently accessed products, use caching:
     public function getTotalReviewsAttribute()
     {
-        return cache()->remember("product.{$this->id}.reviews_count", 3600, function() {
+        return cache()->remember("product.{$this->id}.reviews_count", 3600, function () {
             return $this->reviews()->count();
         });
     }
 
     public function getAverageRatingAttribute()
     {
-        return cache()->remember("product.{$this->id}.avg_rating", 3600, function() {
+        return cache()->remember("product.{$this->id}.avg_rating", 3600, function () {
             return $this->reviews()->avg('rating') ?? 0;
         });
     }
