@@ -26,6 +26,7 @@ Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 // Routes accessible by all authenticated users
 Route::get('products/list', [ProductController::class, 'index']);
 Route::get('products/{id}', [ProductController::class, 'show']);
+Route::get('product/details', [ProductController::class, 'show']);
 
 // Protected routes
 Route::middleware(['jwt'])->group(function () {

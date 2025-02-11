@@ -114,15 +114,29 @@ class ProductController extends Controller
     public function show(Request $request)
     {
         try {
+            \Log::info('Fetching product details', [
+                'product_id' => $request->productId
+            ]);
+
             $product = Product::with(['reviews', 'category', 'images'])
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')
                 ->findOrFail($request->productId);
 
+            \Log::info('Product found successfully', [
+                'product_id' => $request->productId,
+                'product' => $product->toArray()
+            ]);
+
             return response()->json([
                 'product' => new ProductResource($product)
             ], 201);
         } catch (\Exception $e) {
+            \Log::error('Error fetching product', [
+                'product_id' => $request->productId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['message' => 'Product not found'], 404);
         }
     }
