@@ -172,8 +172,8 @@ return [
             'enabled' => true,
             'level' => 'debug',
         ],
-        
-        
+
+
 
         Watchers\MailWatcher::class => env('TELESCOPE_MAIL_WATCHER', true),
 

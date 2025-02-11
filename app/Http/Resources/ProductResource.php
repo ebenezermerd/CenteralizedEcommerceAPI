@@ -27,9 +27,9 @@ class ProductResource extends JsonResource
 
             // Media (updated with full URLs)
             'coverUrl' => $this->coverUrl ? (str_starts_with($this->coverUrl, 'http') ? $this->coverUrl : url(Storage::url($this->coverUrl))) : null,
-            'images' => $this->whenLoaded('images', function() {
-                        return $this->images->pluck('image_path')->map(fn($path) => url(Storage::url($path)));
-                    }),
+            'images' => $this->whenLoaded('images', function () {
+                return $this->images->pluck('image_path')->map(fn ($path) => url(Storage::url($path)));
+            }),
 
             // Pricing
             'price' => (float) $this->price,
@@ -54,7 +54,7 @@ class ProductResource extends JsonResource
             // Reviews and Ratings
             'totalRatings' => (float) $this->average_rating,
             'totalReviews' => (int) $this->reviews_count,
-            'reviews' => $this->reviews->map(function($review) {
+            'reviews' => $this->reviews->map(function ($review) {
                 return [
                     'id' => (string) $review->id,
                     'name' => $review->name,
@@ -67,7 +67,7 @@ class ProductResource extends JsonResource
                     'attachments' => $review->attachments ?? []
                 ];
             }),
-            'ratings' => collect(range(1, 5))->map(function($star) {
+            'ratings' => collect(range(1, 5))->map(function ($star) {
                 $reviews = $this->reviews->where('rating', $star);
                 return [
                     'name' => "$star Star",

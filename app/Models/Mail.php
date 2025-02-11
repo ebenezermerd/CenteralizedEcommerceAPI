@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Mail extends Model
 {
-
     protected $table = 'mails';
 
     protected $fillable = [

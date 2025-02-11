@@ -112,14 +112,14 @@ class Product extends Model
     // For frequently accessed products, use caching:
     public function getTotalReviewsAttribute()
     {
-        return cache()->remember("product.{$this->id}.reviews_count", 3600, function() {
+        return cache()->remember("product.{$this->id}.reviews_count", 3600, function () {
             return $this->reviews()->count();
         });
     }
 
     public function getAverageRatingAttribute()
     {
-        return cache()->remember("product.{$this->id}.avg_rating", 3600, function() {
+        return cache()->remember("product.{$this->id}.avg_rating", 3600, function () {
             return $this->reviews()->avg('rating') ?? 0;
         });
     }
