@@ -48,8 +48,9 @@ class UserController extends Controller
                 'address' => 'required|string|max:500',
                 'country' => 'nullable|string|max:100',
                 'state' => 'nullable|string|max:100',  // Changed region to state
+                'birthdate' => 'nullable|date',
                 'city' => 'nullable|string|max:100',
-                'sex' => 'nullable|string|in:male,female,other',
+                'sex' => 'nullable|string|in:male,Male,female,Female',
                 'zipCode' => 'nullable|string|max:10',  // Changed zip_code to zipCode
                 'role' => 'required|string|in:admin,supplier,customer',
                 'isVerified' => 'sometimes|boolean',
@@ -74,6 +75,7 @@ class UserController extends Controller
                 'country' => $validated['country'] ?? null,
                 'region' => $validated['state'] ?? null,
                 'city' => $validated['city'] ?? null,
+                'birthdate' => $validated['birthdate'] ?? null,
                 'address' => $validated['address'],
                 'image' => $validated['image'] ?? null,
                 'about' => $validated['about'] ?? null,
@@ -141,7 +143,8 @@ class UserController extends Controller
                 'country' => 'nullable|string|max:100',
                 'region' => 'nullable|string|max:100',
                 'city' => 'nullable|string|max:100',
-                'sex' => 'nullable|string|in:male,female,other',
+                'birthdate' => 'nullable|date',
+                'sex' => 'nullable|string|in:Male,Female,male,female',
                 'zip_code' => 'nullable|string|max:10',
                 'role' => 'sometimes|string|in:admin,supplier,customer',
                 'isVerified' => 'sometimes|boolean',

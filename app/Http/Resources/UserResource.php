@@ -33,6 +33,7 @@ class UserResource extends JsonResource
             'about' => $this->about,
             'status' => $this->status,
             'zipCode' => $this->zip_code,
+            'birthdate' => $this->birthdate,
             'company' => $this->company?->name,
             'isVerified' => $this->verified,
             'created_at' => $this->created_at?->toIso8601String(),

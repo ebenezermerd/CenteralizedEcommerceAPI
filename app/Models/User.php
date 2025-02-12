@@ -26,7 +26,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     protected $fillable = [
         'firstName', 'lastName', 'email', 'phone', 'sex',
         'address', 'about', 'password', 'mfa_secret', 'is_mfa_enabled', 'mfa_verified_at', 'country', 'region', 'city',
-        'verified', 'email_verified_at', 'image', 'status', 'zip_code', 'email_otp', 'email_otp_expires_at' // Add these fields
+        'verified', 'email_verified_at', 'image', 'status', 'zip_code', 'email_otp', 'email_otp_expires_at', 'birthdate' // Add these fields
     ];
 
     public function getJWTIdentifier()
