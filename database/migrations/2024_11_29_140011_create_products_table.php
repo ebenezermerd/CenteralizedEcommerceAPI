@@ -20,6 +20,9 @@ return new class extends Migration
             $table->text('description');
             $table->text('subDescription');
             $table->enum('publish', ['draft', 'published']);
+            
+            // Add brand column after basic information
+            $table->json('brand')->nullable();
 
             // Pricing
             $table->decimal('price', 10, 2);

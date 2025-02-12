@@ -117,8 +117,9 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('products/create', [ProductController::class, 'store']);
         Route::get('products/list', [ProductController::class, 'index']);
         Route::put('products/{id}', [ProductController::class, 'update']);
+        Route::post('products/update/{id}', [ProductController::class, 'update']);
         Route::get('product/details', [ProductController::class, 'show']);
-        Route::put('products/publish/{id}', [ProductController::class, 'update']);
+        Route::put('products/publish/{id}', [ProductController::class, 'publishChange']);
     });
 
     // Routes accessible by all authenticated users

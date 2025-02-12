@@ -47,7 +47,8 @@ class Product extends Model
         'totalReviews',
         'newLabel',
         'saleLabel',
-        'vendor_id'
+        'vendor_id',
+        'brand',  // Add brand to fillable
     ];
 
     protected $casts = [
@@ -66,7 +67,8 @@ class Product extends Model
         'totalRatings' => 'float',
         'totalReviews' => 'integer',
         'newLabel' => 'array',
-        'saleLabel' => 'array'
+        'saleLabel' => 'array',
+        'brand' => 'array',  // Add brand to casts
     ];
 
     protected $attributes = [

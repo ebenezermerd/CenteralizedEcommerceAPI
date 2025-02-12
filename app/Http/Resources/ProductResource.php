@@ -29,7 +29,8 @@ class ProductResource extends JsonResource
             'coverUrl' => $this->coverUrl,
             'images' => $this->whenLoaded('images', function() {
                 return $this->images->map(function($image) {
-                    return url(Storage::url($image->image_path));
+                    $path = $image->image_path;
+                    return str_starts_with($path, 'http') ? $path : url(Storage::url($path));
                 });
             }),
 
@@ -88,7 +89,11 @@ class ProductResource extends JsonResource
                 'content' => $this->saleLabel['content'] ?? 'SALE'
             ],
 
-            'createdAt' => $this->created_at
+            'createdAt' => $this->created_at,
+            'brand' => [
+                'name' => $this->brand['name'] ?? null,
+                'description' => $this->brand['description'] ?? null,
+            ]
         ];
     }
 }

@@ -136,6 +136,12 @@ public function index(Request $request)
                 }
             }
 
+            // Log brand data before validation
+            Log::info('Brand data before validation', [
+                'brand_data' => $request->brand,
+                'is_json' => json_decode($request->brand) !== null
+            ]);
+
             // 1. Validate the request
             $validated = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
@@ -153,14 +159,42 @@ public function index(Request $request)
                 'tags' => 'required|array|min:1',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
-                'coverUrl' => 'required|file|mimes:jpeg,png,jpg,gif|max:2048',
-                'images' => 'required|array',
-                'images.*' => 'required|file|mimes:jpeg,png,jpg,gif|max:2048',
+                'coverUrl' => ['nullable', function($attribute, $value, $fail) {
+                    if (!empty($value)) {
+                        if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
+                            $fail('The cover url must be either a valid URL or an image file.');
+                        }
+                        if ($value instanceof \Illuminate\Http\UploadedFile) {
+                            $allowedTypes = ['jpeg', 'png', 'jpg', 'gif'];
+                            if (!in_array($value->getClientOriginalExtension(), $allowedTypes)) {
+                                $fail('The cover url must be a file of type: jpeg, png, jpg, gif.');
+                            }
+                        }
+                    }
+                }],
+                'images' => 'nullable|array',
+                'images.*' => [function($attribute, $value, $fail) {
+                    if (!empty($value)) {
+                        if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
+                            $fail('Each image must be either a valid URL or an image file.');
+                        }
+                        if ($value instanceof \Illuminate\Http\UploadedFile) {
+                            $allowedTypes = ['jpeg', 'png', 'jpg', 'gif'];
+                            if (!in_array($value->getClientOriginalExtension(), $allowedTypes)) {
+                                $fail('Each image must be a file of type: jpeg, png, jpg, gif.');
+                            }
+                        }
+                    }
+                }],
                 'saleLabel' => 'required|json',
-                'newLabel' => 'required|json'
+                'newLabel' => 'required|json',
+                'brand' => 'nullable|json'
             ]);
 
             if ($validated->fails()) {
+                Log::error('Validation failed for brand data', [
+                    'brand_errors' => $validated->errors()->get('brand')
+                ]);
                 return response()->json(['errors' => $validated->errors()], 422);
             }
 
@@ -169,6 +203,13 @@ public function index(Request $request)
             if (!$category) {
                 return response()->json(['message' => 'Invalid category'], 422);
             }
+
+            // Pre-process brand data
+            $brandData = is_string($request->brand) ? json_decode($request->brand, true) : $request->brand;
+            
+            Log::info('Brand data before product creation', [
+                'decoded_brand' => $brandData
+            ]);
 
             // 3. Create product
             $product = new Product();
@@ -191,7 +232,16 @@ public function index(Request $request)
                 'publish' => $request->publish,
                 'saleLabel' => json_decode($request->saleLabel, true),
                 'newLabel' => json_decode($request->newLabel, true),
-                'vendor_id' => auth()->id()
+                'vendor_id' => auth()->id(),
+                'brand' => $brandData
+            ]);
+
+            // Ensure brand is set correctly
+            $product->brand = $brandData;
+
+            // Log brand data after fill
+            Log::info('Brand data after product fill', [
+                'product_brand' => $product->brand
             ]);
 
             // 4. Handle images
@@ -202,6 +252,12 @@ public function index(Request $request)
 
             $product->coverUrl = $processedImages['coverUrl'];
             $product->save();
+
+            // Log final brand data after save
+            Log::info('Final brand data after save', [
+                'product_id' => $product->id,
+                'final_brand' => $product->fresh()->brand
+            ]);
 
             // 5. Store additional images
             if (!empty($processedImages['additionalImages'])) {
@@ -215,7 +271,10 @@ public function index(Request $request)
             }
 
             DB::commit();
-            Log::info('Product created successfully', ['product_id' => $product->id]);
+            Log::info('Product created successfully with brand data', [
+                'product_id' => $product->id,
+                'final_brand_state' => $product->brand
+            ]);
 
             return response()->json([
                 'message' => 'Product created successfully',
@@ -224,7 +283,8 @@ public function index(Request $request)
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error creating product', [
+            Log::error('Error creating product with brand data', [
+                'brand_data' => $request->brand ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -287,7 +347,8 @@ public function index(Request $request)
             'images' => 'required|array',
             'images.*' => 'required',
             'saleLabel' => 'required|json',
-            'newLabel' => 'required|json'
+            'newLabel' => 'required|json',
+            'brand' => 'nullable|json'
         ]);
 
         if ($validator->fails()) {
@@ -318,21 +379,27 @@ public function index(Request $request)
     protected function processImages(Request $request): array
     {
         try {
-            // Process cover image
             $coverUrl = null;
-            if ($request->hasFile('coverUrl')) {
-                $cover = $request->file('coverUrl');
-                if ($cover->isValid() && in_array($cover->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $coverUrl = $cover->store('products/covers', 'public');
+            if ($request->has('coverUrl')) {
+                if ($request->hasFile('coverUrl')) {
+                    $cover = $request->file('coverUrl');
+                    if ($cover->isValid() && in_array($cover->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
+                        $coverUrl = $cover->store('products/covers', 'public');
+                    }
+                } else if (is_string($request->coverUrl) && filter_var($request->coverUrl, FILTER_VALIDATE_URL)) {
+                    $coverUrl = $request->coverUrl;
                 }
             }
 
-            // Process additional images
             $additionalImages = [];
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    if ($image->isValid() && in_array($image->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
-                        $additionalImages[] = $image->store('products/images', 'public');
+            if ($request->has('images')) {
+                foreach ($request->images as $image) {
+                    if ($image instanceof \Illuminate\Http\UploadedFile) {
+                        if ($image->isValid() && in_array($image->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
+                            $additionalImages[] = $image->store('products/images', 'public');
+                        }
+                    } else if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+                        $additionalImages[] = $image;
                     }
                 }
             }
@@ -402,27 +469,201 @@ public function index(Request $request)
         try {
             DB::beginTransaction();
 
+            Log::info('Starting product update - Brand Data Debug', [
+                'product_id' => $id,
+                'raw_brand_data' => $request->brand,
+                'brand_content_type' => gettype($request->brand)
+            ]);
+
             $product = Product::findOrFail($id);
             
             if (!$this->canManageProduct($product)) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
 
-            // Clean up old images if new ones are provided
-            if ($request->hasFile('coverUrl') || $request->hasFile('images')) {
-                $this->cleanupOldImages($product);
+            // Clean up old images only if new files are provided
+            $arrayFields = ['colors', 'sizes', 'gender', 'tags'];
+            foreach ($arrayFields as $field) {
+                if (is_string($request->$field)) {
+                    $request->merge([
+                        $field => json_decode($request->$field, true)
+                    ]);
+                }
             }
 
-            $this->saveProduct($product, $request->all());
+            // Log brand data before validation
+            Log::info('Brand data before validation', [
+                'product_id' => $id,
+                'brand_data' => $request->brand,
+                'is_json' => json_decode($request->brand) !== null
+            ]);
+
+            // 1. Validate the request
+            $validated = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'sku' => 'nullable|string|unique:products,sku,' . $id,
+                'code' => 'nullable|string|unique:products,code,' . $id,
+                'description' => 'required|string',
+                'subDescription' => 'required|string',
+                'quantity' => 'required|integer|min:1',
+                'price' => 'required|numeric|min:1',
+                'priceSale' => 'nullable|numeric|min:0',
+                'taxes' => 'nullable|numeric|min:0',
+                'colors' => 'required|array|min:1',
+                'sizes' => 'required|array|min:1',
+                'gender' => 'required|array|min:1',
+                'tags' => 'required|array|min:1',
+                'category' => 'required|string',
+                'publish' => 'required|in:draft,published',
+                'coverUrl' => ['nullable', function($attribute, $value, $fail) {
+                    if (!empty($value)) {
+                        if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
+                            $fail('The cover url must be either a valid URL or an image file.');
+                        }
+                        if ($value instanceof \Illuminate\Http\UploadedFile) {
+                            $allowedTypes = ['jpeg', 'png', 'jpg', 'gif'];
+                            if (!in_array($value->getClientOriginalExtension(), $allowedTypes)) {
+                                $fail('The cover url must be a file of type: jpeg, png, jpg, gif.');
+                            }
+                        }
+                    }
+                }],
+                'images' => 'nullable|array',
+                'images.*' => [function($attribute, $value, $fail) {
+                    if (!empty($value)) {
+                        if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
+                            $fail('Each image must be either a valid URL or an image file.');
+                        }
+                        if ($value instanceof \Illuminate\Http\UploadedFile) {
+                            $allowedTypes = ['jpeg', 'png', 'jpg', 'gif'];
+                            if (!in_array($value->getClientOriginalExtension(), $allowedTypes)) {
+                                $fail('Each image must be a file of type: jpeg, png, jpg, gif.');
+                            }
+                        }
+                    }
+                }],
+                'saleLabel' => 'required|json',
+                'newLabel' => 'required|json',
+                'brand' => 'nullable|json'
+            ]);
+
+            if ($validated->fails()) {
+                Log::error('Validation failed for brand data', [
+                    'product_id' => $id,
+                    'brand_errors' => $validated->errors()->get('brand')
+                ]);
+                return response()->json(['errors' => $validated->errors()], 422);
+            }
+
+            // Log brand data after validation
+            Log::info('Brand data after validation', [
+                'product_id' => $id,
+                'validated_brand' => $request->brand,
+                'decoded_brand' => json_decode($request->brand, true)
+            ]);
+
+            // 2. Get or validate category
+            $category = Category::where('name', trim($request->category))->first();
+            if (!$category) {
+                return response()->json(['message' => 'Invalid category'], 422);
+            }
+
+            // Decode brand data before filling
+            $decodedBrand = json_decode($request->brand, true);
+            Log::info('Brand data before product fill', [
+                'product_id' => $id,
+                'decoded_brand' => $decodedBrand
+            ]);
+
+            // Pre-process brand data
+            $brandData = is_string($request->brand) ? json_decode($request->brand, true) : $request->brand;
+
+            $product->fill([
+                'name' => $request->name,
+                'sku' => $request->sku,
+                'code' => $request->code,
+                'description' => $request->description,
+                'subDescription' => $request->subDescription,
+                'quantity' => $request->quantity,
+                'available' => $request->quantity,
+                'price' => $request->price,
+                'priceSale' => $request->priceSale,
+                'taxes' => $request->taxes,
+                'colors' => $request->colors,
+                'sizes' => $request->sizes,
+                'gender' => $request->gender,
+                'tags' => $request->tags,
+                'categoryId' => $category->id,
+                'publish' => $request->publish,
+                'saleLabel' => json_decode($request->saleLabel, true),
+                'newLabel' => json_decode($request->newLabel, true),
+                'brand' => $brandData,
+                'vendor_id' => auth()->id()
+            ]);
+
+            // Ensure brand is set correctly
+            $product->brand = $brandData;
+
+            // Log brand data after fill
+            Log::info('Brand data after product fill', [
+                'product_id' => $id,
+                'product_brand' => $product->brand
+            ]);
+
+            // 4. Handle images
+            $processedImages = $this->processImages($request);
+            if (isset($processedImages['error'])) {
+                return response()->json(['error' => $processedImages['error']], 500);
+            }
+
+            if($processedImages['coverUrl']){
+                $product->coverUrl = $processedImages['coverUrl'];
+            }
+            
+            $product->save();
+
+            // Log final brand data after save
+            Log::info('Final brand data after save', [
+                'product_id' => $id,
+                'final_brand' => $product->fresh()->brand
+            ]);
+
+            // 5. Store additional images
+            if (!empty($processedImages['additionalImages'])) {
+                // Delete existing images
+                ProductImage::where('product_id', $product->id)->delete();
+                foreach ($processedImages['additionalImages'] as $imagePath) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'image_path' => $imagePath,
+                        'is_primary' => false
+                    ]);
+                }
+            }
 
             DB::commit();
-            
-            return new ProductResource($product->fresh());
+            Log::info('Product updated successfully with brand data', [
+                'product_id' => $product->id,
+                'final_brand_state' => $product->brand
+            ]);
+
+            return response()->json([
+                'message' => 'Product updated successfully',
+                'product' => new ProductResource($product)
+            ], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Product update failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Error updating product', 'error' => $e->getMessage()], 500);
+            Log::error('Error updating product with brand data', [
+                'product_id' => $id,
+                'brand_data' => $request->brand ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Error updating product',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -491,6 +732,49 @@ public function index(Request $request)
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error transferring product vendor', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function publishChange(Request $request, string $id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+            
+            if (!$this->canManageProduct($product)) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            $validated = Validator::make($request->all(), [
+                'publish' => 'required|string|in:draft,published'
+            ]);
+
+            if ($validated->fails()) {
+                return response()->json(['errors' => $validated->errors()], 422);
+            }
+
+            $product->publish = $request->publish;
+            $product->save();
+
+            Log::info('Product publish status updated', [
+                'product_id' => $id,
+                'publish_status' => $request->publish,
+                'updated_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'message' => 'Product visibility updated successfully',
+                'product' => new ProductResource($product)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating product publish status', [
+                'product_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'message' => 'Error updating product visibility',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
