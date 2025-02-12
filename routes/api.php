@@ -38,7 +38,7 @@ Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 Route::get('products/list', [ProductController::class, 'index']);
 Route::get('products/{id}', [ProductController::class, 'show']);
 Route::get('product/details', [ProductController::class, 'show']);
-    // Protected routes
+// Protected routes
 Route::middleware(['jwt'])->group(function () {
     Route::get('/me', [AuthController::class, 'getUser']);
     Route::post('/logout', [AuthController::class, 'logout']);
