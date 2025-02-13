@@ -155,6 +155,7 @@ Route::middleware(['jwt'])->group(function () {
     // Company routes with proper authentication
     Route::apiResource('companies', CompanyController::class);
     Route::get('companies/vendor/{id}', [CompanyController::class, 'vendorCompany']);
+    Route::put('companies/{company}/status', [CompanyController::class, 'updateStatus']);
 });
 
 // Customer specific routes

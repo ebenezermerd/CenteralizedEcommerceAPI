@@ -19,6 +19,10 @@ class AddressBookController extends Controller
         $user = User::findOrFail($userId);
         $addressBooks = $user->addressBooks;
 
+        if ($addressBooks->isEmpty()) {
+            return response()->json([], 200);
+        }
+
         return response()->json(AddressResource::collection($addressBooks));
     }
 

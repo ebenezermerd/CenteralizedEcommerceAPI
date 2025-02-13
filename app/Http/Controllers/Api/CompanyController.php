@@ -107,4 +107,27 @@ class CompanyController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function updateStatus(Request $request, Company $company)
+    {
+        // Only admin can update company status
+        if (!Auth::user()->hasRole('admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'status' => 'required|string|in:pending,active,inactive,blocked'
+        ]);
+
+        $company->update([
+            'status' => $request->status
+        ]);
+
+        $company->load('owner');
+
+        return response()->json([
+            'message' => 'Company status updated successfully',
+            'company' => $company
+        ]);
+    }
 }
