@@ -120,9 +120,21 @@ public function index(Request $request)
     public function store(ProductRequest $request)
     {
         try {
+
+            // Log the raw request data
+            \Log::info('Raw product request data:', $request->all());
+
             DB::beginTransaction();
 
             $user = auth()->user();
+
+               // Convert empty strings to null at the controller level
+               $request->merge([
+                'sku' => $request->sku ?: null, // Convert empty string to null
+                'code' => $request->code ?: null,
+            ]);
+
+
 
             $categoryName = trim(str_replace('"', '', $request->category));
             $category = Category::findByNameStrict($categoryName);
@@ -157,6 +169,10 @@ public function index(Request $request)
                 $request->except(['coverUrl', 'images', 'category', 'id', 'vendor_id']),
                 ['categoryId' => $category->id, 'available' => $request->quantity]
             ));
+
+             // Then force Eloquent to recognize nulls
+             $product->sku = $request->sku;
+             $product->code = $request->code;
 
             $product->save();
 

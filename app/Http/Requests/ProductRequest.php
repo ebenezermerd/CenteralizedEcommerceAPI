@@ -32,31 +32,10 @@ class ProductRequest extends FormRequest
     {
         $rules = [
             'name' => 'required|string|max:255',
-           'sku' => [
-            'nullable',
-            'string',
-            function ($attribute, $value, $fail) {
-                if (!is_null($value)) {
-                    $existing = Product::where('sku', $value)->first();
-                    if ($existing) {
-                        $fail('This SKU already exists!');
-                    }
-                }
-            },
-        ],
+           'sku' => 'nullable|string',
 
-        'code' => [
-            'nullable',
-            'string',
-            function ($attribute, $value, $fail) {
-                if (!is_null($value)) {
-                    $existing = Product::where('code', $value)->first();
-                    if ($existing) {
-                        $fail('This code already exists!');
-                    }
-                }
-            },
-        ],
+        'code' => 'nullable|string',
+
         'price' => 'required|numeric|min:1',
         'priceSale' => 'nullable|numeric|min:0',
         'taxes' => 'nullable|numeric|min:0',
@@ -186,6 +165,11 @@ class ProductRequest extends FormRequest
 
     protected function prepareForValidation()
     {
+          // Convert empty strings to null for sku and code
+    $this->merge([
+        'sku' => $this->sku !== '' ? $this->sku : null,
+        'code' => $this->code !== '' ? $this->code : null,
+    ]);
         // Get existing product if updating
         if ($this->sku || $this->code) {
             $this->existingProduct = $this->getExistingProduct();

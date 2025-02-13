@@ -15,8 +15,8 @@ return new class extends Migration
 
             // Basic information
             $table->string('name');
-            $table->string('sku')->unique()->nullable();
-            $table->string('code')->unique()->nullable();
+            $table->string('sku')->nullable()->unique()->change();
+        $table->string('code')->nullable()->unique()->change();
             $table->text('description');
             $table->text('subDescription');
             $table->enum('publish', ['draft', 'published']);
