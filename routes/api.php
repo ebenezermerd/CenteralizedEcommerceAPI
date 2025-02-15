@@ -127,8 +127,14 @@ Route::middleware(['jwt'])->group(function () {
     Route::get('products/{id}', [ProductController::class, 'show']);
 
     // Review routes
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('reviews', [ReviewController::class, 'store']);
+        Route::put('reviews/{id}', [ReviewController::class, 'update']);
+        Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
+        Route::post('reviews/{id}/helpful', [ReviewController::class, 'helpful']);
+    });
+
     Route::get('reviews', [ReviewController::class, 'index']);
-    Route::get('reviews/{id}', [ReviewController::class, 'show']);
 
 
     // Invoice routes
@@ -160,10 +166,6 @@ Route::middleware(['jwt'])->group(function () {
 
 // Customer specific routes
 Route::middleware(['role:customer|admin|supplier'])->group(function () {
-    Route::post('reviews', [ReviewController::class, 'store']);
-    Route::put('reviews/{id}', [ReviewController::class, 'update']);
-    Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
-
     Route::post('/checkout/orders', [OrderController::class, 'checkout']);
     Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
     Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
