@@ -36,7 +36,7 @@ class RoleSeeder extends Seeder
             'admin' => $allPermissions, // Admin gets all permissions
             'supplier' => [
                 'list_products', 'create_products', 'edit_products',
-                'list_orders', 'edit_orders',
+                'list_orders', 'show_orders', 'edit_orders', 'checkout_orders',
                 'list_reviews', 'edit_reviews',
                 'list_invoices', 'create_invoices', 'download_invoices',
                 'list_mails', 'create_mails', 'edit_mails', 'delete_mails', 'download_mails', 'send_mails'
@@ -44,7 +44,7 @@ class RoleSeeder extends Seeder
             'customer' => [
                 'list_products',
                 'create_reviews', 'edit_reviews',
-                'list_orders',
+                'list_orders', 'show_orders', 'checkout_orders',
                 'list_invoices', 'download_invoices',
                 'list_mails', 'download_mails', 'send_mails'
             ]

@@ -151,6 +151,8 @@ class OrderController extends Controller
 
     public function myOrders(Request $request): JsonResponse
     {
+        \Log::info('Order my orders request received', ['user_id' => auth()->id()]);
+        
         $orders = Order::with([
             'history',
             'payment',
