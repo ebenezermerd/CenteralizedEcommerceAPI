@@ -47,7 +47,7 @@ class ReviewController extends Controller
             'posted_at' => now(),
             'is_purchased' => true, // You might want to check if user has purchased the product
             'helpful' => 0,
-            'avatar_url' => Auth::user()->avatar_url ?? null,
+            'avatar_url' => Auth::user()->avatarUrl ?? null,
         ]);
 
         return response()->json([
