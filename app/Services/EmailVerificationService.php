@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use App\Mail\SendOtpMail;
+use App\Models\Invoice;
 use App\Mail\MfaOtpMail;
 
 class EmailVerificationService
