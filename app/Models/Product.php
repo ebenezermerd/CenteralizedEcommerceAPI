@@ -117,8 +117,8 @@ class Product extends Model
     public function getCoverUrlAttribute($value)
     {
         if (!$value) return null;
-        return str_starts_with($value, 'http') 
-            ? $value 
+        return str_starts_with($value, 'http')
+            ? $value
             : url(Storage::url($value));
     }
 

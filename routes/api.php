@@ -24,6 +24,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
+Route::get('products/list', [ProductController::class, 'index']);
 
 /**
  * @group Authentication
@@ -35,7 +36,6 @@ Route::post('/auth/sign-in', [AuthController::class, 'login']);
 Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
 // Routes accessible by all authenticated users
-Route::get('products/list', [ProductController::class, 'index']);
 Route::get('products/{id}', [ProductController::class, 'show']);
 Route::get('product/details', [ProductController::class, 'show']);
     // Protected routes

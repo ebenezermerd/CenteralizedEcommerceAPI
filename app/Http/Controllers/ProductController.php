@@ -102,7 +102,21 @@ class ProductController extends Controller
 public function index(Request $request)
 {
     $user = auth()->user();
-    $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+
+    //guest user can see only published products
+    if (!$user) {
+        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+            $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+        }])
+        ->published()
+        ->withCount('reviews')
+        ->withAvg('reviews', 'rating')
+        ->latest()
+        ->paginate(12);
+    } else {
+        //admin and supplier can see all products
+        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
             $query->select('id', 'firstName', 'lastName', 'phone', 'email')
                 ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
         }])
@@ -111,6 +125,7 @@ public function index(Request $request)
         ->withAvg('reviews', 'rating')
         ->latest()
         ->paginate(12);
+    }   
 
         // Log the result for debugging
     \Log::info('Products Data', $products->toArray());
@@ -206,7 +221,7 @@ public function index(Request $request)
 
             // Pre-process brand data
             $brandData = is_string($request->brand) ? json_decode($request->brand, true) : $request->brand;
-            
+
             Log::info('Brand data before product creation', [
                 'decoded_brand' => $brandData
             ]);
@@ -308,7 +323,7 @@ public function index(Request $request)
                                 return $query->where('id', '!=', $request->id);
                             })
                             ->exists();
-                        
+
                         if ($exists) {
                             $fail('This SKU already exists!');
                         }
@@ -324,7 +339,7 @@ public function index(Request $request)
                                 return $query->where('id', '!=', $request->id);
                             })
                             ->exists();
-                        
+
                         if ($exists) {
                             $fail('This code already exists!');
                         }
@@ -423,7 +438,7 @@ public function index(Request $request)
 
             // Process images first
             $processedImages = $this->processImages(request());
-            
+
             // Fill product data
             $product->fill(array_merge(
                 collect($data)->except(['images', 'category'])->toArray(),
@@ -476,7 +491,7 @@ public function index(Request $request)
             ]);
 
             $product = Product::findOrFail($id);
-            
+
             if (!$this->canManageProduct($product)) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
@@ -619,7 +634,7 @@ public function index(Request $request)
             if($processedImages['coverUrl']){
                 $product->coverUrl = $processedImages['coverUrl'];
             }
-            
+
             $product->save();
 
             // Log final brand data after save
@@ -739,7 +754,7 @@ public function index(Request $request)
     {
         try {
             $product = Product::findOrFail($id);
-            
+
             if (!$this->canManageProduct($product)) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
