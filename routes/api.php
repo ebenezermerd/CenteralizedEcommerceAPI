@@ -159,7 +159,7 @@ Route::middleware(['jwt'])->group(function () {
 });
 
 // Customer specific routes
-Route::middleware(['role:customer'])->group(function () {
+Route::middleware(['role:customer|admin|supplier'])->group(function () {
     Route::post('reviews', [ReviewController::class, 'store']);
     Route::put('reviews/{id}', [ReviewController::class, 'update']);
     Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
