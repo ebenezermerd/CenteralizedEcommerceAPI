@@ -164,8 +164,9 @@ Route::middleware(['role:customer'])->group(function () {
     Route::put('reviews/{id}', [ReviewController::class, 'update']);
     Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
 
-    Route::post('orders', [OrderController::class, 'store']);
-    Route::get('orders/my-orders', [OrderController::class, 'myOrders']);
+    Route::post('/checkout/orders', [OrderController::class, 'checkout']);
+    Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
+    Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
 });
 
 Route::post('chapa/callback', [ChapaController::class, 'handleCallback'])->name('chapa.callback');

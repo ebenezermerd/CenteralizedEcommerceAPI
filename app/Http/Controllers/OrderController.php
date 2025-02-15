@@ -149,6 +149,27 @@ class OrderController extends Controller
         return response()->json(new OrderResource($order), 200);
     }
 
+    public function myOrders(Request $request): JsonResponse
+    {
+        $orders = Order::with([
+            'history',
+            'payment',
+            'shippingAdd',
+            'customer',
+            'delivery',
+            'productItems',
+        ])->where('user_id', auth()->id())->get();
+
+        if (!$orders) {
+            return response()->json([
+                'message' => 'No orders found',
+                'orders' => []
+            ], 200);
+        }
+
+        return response()->json(new OrderResource($orders), 200);
+    }
+
 
    /**
  * @group Orders
