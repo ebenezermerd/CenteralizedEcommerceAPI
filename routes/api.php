@@ -24,7 +24,10 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
-Route::get('products/list', [ProductController::class, 'index']);
+Route::get('/products/list', [ProductController::class, 'index']);
+// Routes accessible by all authenticated users
+Route::get('/products/{id}', [ProductController::class, 'show']);
+Route::get('/product/details', [ProductController::class, 'show']);
 
 /**
  * @group Authentication
@@ -35,9 +38,6 @@ Route::post('/auth/sign-up', [AuthController::class, 'register']);
 Route::post('/auth/sign-in', [AuthController::class, 'login']);
 Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
-// Routes accessible by all authenticated users
-Route::get('products/{id}', [ProductController::class, 'show']);
-Route::get('product/details', [ProductController::class, 'show']);
     // Protected routes
 Route::middleware(['jwt'])->group(function () {
     Route::get('/me', [AuthController::class, 'getUser']);
