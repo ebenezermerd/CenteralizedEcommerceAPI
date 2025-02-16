@@ -32,7 +32,7 @@ class RegisterationRequest extends FormRequest
             'password' => 'required|string|min:6',
             'confirmPassword' => 'required|same:password',
             'verified' => 'boolean',
-            'recaptchaToken' => 'required|captcha', // Validate reCAPTCHA
+            // 'recaptchaToken' => 'required|captcha', // Validate reCAPTCHA
         ];
 
         if ($this->role === 'supplier') {
