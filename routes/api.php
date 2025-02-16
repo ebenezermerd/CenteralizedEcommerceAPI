@@ -123,8 +123,8 @@ Route::middleware(['jwt'])->group(function () {
     });
 
     // Routes accessible by all authenticated users
-    Route::get('products/list', [ProductController::class, 'index']);
-    Route::get('products/{id}', [ProductController::class, 'show']);
+    // Route::get('products/list', [ProductController::class, 'index']);
+    // Route::get('products/{id}', [ProductController::class, 'show']);
 
     // Review routes
     Route::middleware(['auth:sanctum'])->group(function () {
