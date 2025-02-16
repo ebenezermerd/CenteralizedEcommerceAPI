@@ -25,7 +25,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
 Route::get('/products/list', [ProductController::class, 'index']);
-// Routes accessible by all authenticated users
+// Public routes
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/product/details', [ProductController::class, 'show']);
 
@@ -38,12 +38,6 @@ Route::post('/auth/sign-up', [AuthController::class, 'register']);
 Route::post('/auth/sign-in', [AuthController::class, 'login']);
 Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
-    // Protected routes
-Route::middleware(['jwt'])->group(function () {
-    Route::get('/me', [AuthController::class, 'getUser']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-});
-
 // Password Reset Routes
 Route::post('/auth/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
 Route::get('/auth/reset-password/{token}', [ResetPasswordController::class, 'checkToken']);
@@ -53,6 +47,11 @@ Route::post('/auth/reset-password', [ResetPasswordController::class, 'reset']);
 Route::post('/auth/email/verify', [EmailVerificationController::class, 'verifyEmail']);
 Route::post('/auth/email/verify/resend', [EmailVerificationController::class, 'resendVerificationEmail']);
 Route::post('/auth/email/send-otp', [EmailVerificationController::class, 'sendVerificationOTP']);
+
+
+Route::post('chapa/callback', [ChapaController::class, 'handleCallback'])->name('chapa.callback');
+Route::post('chapa/webhook', [OrderController::class, 'handleWebhook'])->name('chapa.webhook');
+Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');
 
 // Protected routes
 Route::middleware(['jwt'])->group(function () {
@@ -93,7 +92,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::prefix('analytics')->group(function () {
         Route::get('widget-summary', [AnalyticsController::class, 'getWidgetSummary']);
         Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
-
+        Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
     });
 
 
@@ -115,27 +114,18 @@ Route::middleware(['jwt'])->group(function () {
     // Admin and Supplier routes
     Route::middleware(['role:admin|supplier'])->group(function () {
         Route::post('products/create', [ProductController::class, 'store']);
-        Route::get('products/list', [ProductController::class, 'index']);
-        Route::put('products/{id}', [ProductController::class, 'update']);
         Route::post('products/update/{id}', [ProductController::class, 'update']);
-        Route::get('product/details', [ProductController::class, 'show']);
         Route::put('products/publish/{id}', [ProductController::class, 'publishChange']);
     });
 
-    // Routes accessible by all authenticated users
-    // Route::get('products/list', [ProductController::class, 'index']);
-    // Route::get('products/{id}', [ProductController::class, 'show']);
-
     // Review routes
-    Route::middleware(['auth:sanctum'])->group(function () {
-        Route::post('reviews', [ReviewController::class, 'store']);
-        Route::put('reviews/{id}', [ReviewController::class, 'update']);
-        Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
-        Route::post('reviews/{id}/helpful', [ReviewController::class, 'helpful']);
+    Route::prefix('reviews')->group(function () {
+        Route::get('/', [ReviewController::class, 'index']);
+        Route::post('/create', [ReviewController::class, 'store']);
+        Route::put('/{id}', [ReviewController::class, 'update']);
+        Route::delete('/{id}', [ReviewController::class, 'destroy']);
+        Route::post('/{id}/helpful', [ReviewController::class, 'helpful']);
     });
-
-    Route::get('reviews', [ReviewController::class, 'index']);
-
 
     // Invoice routes
     Route::get('invoices/list', [InvoiceController::class, 'index']);
@@ -162,23 +152,20 @@ Route::middleware(['jwt'])->group(function () {
     Route::apiResource('companies', CompanyController::class);
     Route::get('companies/vendor/{id}', [CompanyController::class, 'vendorCompany']);
     Route::put('companies/{company}/status', [CompanyController::class, 'updateStatus']);
+
+    // Customer specific routes
+    Route::middleware(['role:customer|admin|supplier'])->group(function () {
+        Route::post('/checkout/orders', [OrderController::class, 'checkout']);
+        Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
+        Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
+    });
+    
+    // Analytics routes
+    Route::middleware(['role:admin'])->prefix('analytics')->group(function () {
+        Route::get('widget-summary', [AnalyticsController::class, 'getWidgetSummary']);
+        Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
+        Route::get('website-visits', [AnalyticsController::class, 'getWebsiteVisits']);
+        Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
+    });
 });
 
-// Customer specific routes
-Route::middleware(['role:customer|admin|supplier'])->group(function () {
-    Route::post('/checkout/orders', [OrderController::class, 'checkout']);
-    Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
-    Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
-});
-
-Route::post('chapa/callback', [ChapaController::class, 'handleCallback'])->name('chapa.callback');
-Route::post('chapa/webhook', [OrderController::class, 'handleWebhook'])->name('chapa.webhook');
-Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');
-
-// Analytics routes
-Route::middleware(['jwt', 'role:admin'])->prefix('analytics')->group(function () {
-    Route::get('widget-summary', [AnalyticsController::class, 'getWidgetSummary']);
-    Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
-    Route::get('website-visits', [AnalyticsController::class, 'getWebsiteVisits']);
-    Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
-});
