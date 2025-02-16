@@ -22,6 +22,8 @@ class Cors
         $allowedOrigins = [
             'http://localhost:8080',
             'http://localhost:5173',
+            'https://korecha.com.et',
+            'https://admin.korecha.com.et',
             'http://api.koricha-ecommerce.com'
         ];
 
