@@ -129,8 +129,8 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
+                'success' => true,
                 'message' => 'Registration successful! Please login and verify your email.',
-                // 'user' => new UserResource($user)
             ], 201);
         } catch (\Exception $e) {
             Log::error('Registration failed', [
