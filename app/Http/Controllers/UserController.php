@@ -146,10 +146,15 @@ class UserController extends Controller
                 'sex' => 'nullable|string|in:Male,Female,male,female',
                 'zip_code' => 'nullable|string|max:10',
                 'role' => 'sometimes|string|in:admin,supplier,customer',
-                'isVerified' => 'sometimes|boolean',
+                'isVerified' => 'sometimes|boolean|in:true,false,0,1,"0","1","true","false"',
                 'about' => 'nullable|string|max:1000',
                 'image' => 'nullable|image|max:2048'
             ]);
+
+            // Cast isVerified to boolean if it exists
+            if (isset($validated['isVerified'])) {
+                $validated['isVerified'] = filter_var($validated['isVerified'], FILTER_VALIDATE_BOOLEAN);
+            }
 
             // Handle image upload
             if ($request->hasFile('image')) {
