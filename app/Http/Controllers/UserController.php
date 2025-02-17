@@ -168,9 +168,11 @@ class UserController extends Controller
                 unset($validated['role']);
                 $user->syncRoles([$role]); // Sync roles with Spatie's permission package
             }
+
             // Update verified status if provided
             if (isset($validated['isVerified'])) {
-                $user->verified = $validated['isVerified'];
+                // Convert string "true"/"false" to boolean
+                $user->verified = filter_var($validated['isVerified'], FILTER_VALIDATE_BOOLEAN);
                 unset($validated['isVerified']);
             }
 
