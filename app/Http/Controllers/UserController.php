@@ -147,7 +147,7 @@ class UserController extends Controller
                 'sex' => 'nullable|string|in:Male,Female,male,female',
                 'zip_code' => 'nullable|string|max:10',
                 'role' => 'sometimes|string|in:admin,supplier,customer',
-                //'isVerified' => 'sometimes|boolean',
+                'isVerified' => 'sometimes|boolean',
                 'about' => 'nullable|string|max:1000',
                 'image' => 'nullable|image|max:2048'
             ]);
