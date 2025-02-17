@@ -104,7 +104,6 @@ class UserController extends Controller
                 'user' => new UserResource($user),
                 'message' => 'User created successfully'
             ], 201);
-
         } catch (\Exception $e) {
             Log::error('User creation failed', [
                 'error' => $e->getMessage(),
@@ -158,7 +157,7 @@ class UserController extends Controller
                 if ($user->image && Storage::disk('public')->exists($user->image)) {
                     Storage::disk('public')->delete($user->image);
                 }
-                
+
                 Log::info('Uploading new image for user', ['user_id' => $id]);
                 $validated['image'] = $request->file('image')->store('users/avatars', 'public');
             }
@@ -204,7 +203,7 @@ class UserController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => getMessage(),
+                'message' => $e->getMessage(),
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
@@ -215,7 +214,7 @@ class UserController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

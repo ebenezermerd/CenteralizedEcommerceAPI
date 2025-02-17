@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Product;
 use App\Models\Company;
 use Faker\Factory as Faker;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
@@ -77,7 +77,7 @@ class DatabaseSeeder extends Seeder
 
         // Create customers
         User::factory(5)->create()->each(function ($user) {
-            $faker = Faker::create();
+            $faker = \Faker\Factory::create();
 
             // Assign customer role
             $user->assignRole('customer');
