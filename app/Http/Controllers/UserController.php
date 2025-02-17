@@ -147,7 +147,7 @@ class UserController extends Controller
                 'sex' => 'nullable|string|in:Male,Female,male,female',
                 'zip_code' => 'nullable|string|max:10',
                 'role' => 'sometimes|string|in:admin,supplier,customer',
-                'isVerified' => 'sometimes|boolean',
+                'isVerified' => 'sometimes|string|in:true,false,0,1,yes,no',
                 'about' => 'nullable|string|max:1000',
                 'image' => 'nullable|image|max:2048'
             ]);
@@ -171,7 +171,7 @@ class UserController extends Controller
             }
             // Update verified status if provided
             if (isset($validated['isVerified'])) {
-                $user->verified = $validated['isVerified'];
+                $user->verified = filter_var($validated['isVerified'], FILTER_VALIDATE_BOOLEAN);
                 unset($validated['isVerified']);
             }
 
