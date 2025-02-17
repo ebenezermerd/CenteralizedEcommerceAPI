@@ -54,15 +54,20 @@ class UserController extends Controller
                 'sex' => 'nullable|string|in:male,Male,female,Female',
                 'zipCode' => 'nullable|string|max:10',  // Changed zip_code to zipCode
                 'role' => 'required|string|in:admin,supplier,customer',
-                'isVerified' => 'sometimes|boolean',
+                'isVerified' => 'sometimes|string|in:true,false,0,1,yes,no',
                 'status' => 'nullable|string|in:active,pending,banned,rejected',
-                'company_id' => 'nullable|exists:companies,id',
                 'image' => 'nullable|image|max:2048',
                 'password' => 'nullable|string|min:6',
             ]);
 
             if ($request->hasFile('image')) {
-                $validated['image'] = $request->file('image')->store('avatars', 'public');
+                Log::info('Uploading new image for user');
+                $validated['image'] = $request->file('image')->store('users/avatars', 'public');
+            }
+             // verified status if provided
+            if (isset($validated['isVerified'])) {
+                $validated['verified'] = filter_var($validated['isVerified'], FILTER_VALIDATE_BOOLEAN);
+                unset($validated['isVerified']);
             }
 
             // Map the fields correctly
@@ -82,7 +87,6 @@ class UserController extends Controller
                 'about' => $validated['about'] ?? null,
                 'verified' => $validated['isVerified'] ?? false,
                 'zip_code' => $validated['zipCode'] ?? null,
-                'company_id' => $validated['company_id'] ?? null,
             ];
 
             Log::info('Attempting to create user', ['user_data' => $userData]);
