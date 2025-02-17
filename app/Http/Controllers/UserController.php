@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\EmailVerificationService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 
 class UserController extends Controller
@@ -140,16 +141,28 @@ class UserController extends Controller
                 'status' => 'sometimes|string|in:active,pending,banned,rejected',
                 'address' => 'sometimes|string|max:500',
                 'country' => 'nullable|string|max:100',
-                'region' => 'nullable|string|max:100',
+                'state' => 'nullable|string|max:100',  // Changed from region
                 'city' => 'nullable|string|max:100',
                 'birthdate' => 'nullable|date',
                 'sex' => 'nullable|string|in:Male,Female,male,female',
                 'zip_code' => 'nullable|string|max:10',
                 'role' => 'sometimes|string|in:admin,supplier,customer',
-                'isVerified' => 'sometimes|boolean|in:true,false,0,1,"0","1","true","false"',
+                'isVerified' => 'sometimes|boolean',
                 'about' => 'nullable|string|max:1000',
-                'image' => 'nullable|image|max:2048'
+                'image' => 'nullable|string'  // Changed validation for base64 or URL
             ]);
+
+            // Handle image data
+            if (isset($validated['image']) && is_array($validated['image'])) {
+                // Skip image update if only metadata is received
+                unset($validated['image']);
+            }
+
+            // Map state to region for database consistency
+            if (isset($validated['state'])) {
+                $validated['region'] = $validated['state'];
+                unset($validated['state']);
+            }
 
             // Cast isVerified to boolean if it exists
             if (isset($validated['isVerified'])) {
@@ -205,12 +218,6 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'User not found.'
             ], 404);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
             Log::error('User update failed', [
                 'user_id' => $id,
