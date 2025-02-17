@@ -132,7 +132,6 @@ class AuthController extends Controller
                 'message' => 'Registration successful! Please login and verify your email.',
                 // 'user' => new UserResource($user)
             ], 201);
-
         } catch (\Exception $e) {
             Log::error('Registration failed', [
                 'error' => $e->getMessage(),
@@ -157,27 +156,27 @@ class AuthController extends Controller
      *  "status": "success",
      *  "accessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
      *  "refreshToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-    *  "user": {
-    *    "id": "1",
-    *    "firstName": "John",
-    *    "lastName": "Doe",
-    *    "email": "john@example.com",
-    *    "role": "customer",
-    *    "status": "active",
-    *    "avatarUrl": "http://example.com/storage/avatar.jpg",
-    *    "phoneNumber": "+1234567890",
-    *    "address": "123 Main St",
-    *    "country": "USA",
-    *    "state": "California",
-    *    "city": "Los Angeles",
-    *    "sex": "male",
-    *    "about": "About John Doe",
-    *    "zipCode": "90001",
-    *    "company": "Tech Corp",
-    *    "isVerified": true,
-    *    "created_at": "2023-01-01T00:00:00Z",
-    *    "updated_at": "2023-01-01T00:00:00Z"
-    *  },
+     *  "user": {
+     *    "id": "1",
+     *    "firstName": "John",
+     *    "lastName": "Doe",
+     *    "email": "john@example.com",
+     *    "role": "customer",
+     *    "status": "active",
+     *    "avatarUrl": "http://example.com/storage/avatar.jpg",
+     *    "phoneNumber": "+1234567890",
+     *    "address": "123 Main St",
+     *    "country": "USA",
+     *    "state": "California",
+     *    "city": "Los Angeles",
+     *    "sex": "male",
+     *    "about": "About John Doe",
+     *    "zipCode": "90001",
+     *    "company": "Tech Corp",
+     *    "isVerified": true,
+     *    "created_at": "2023-01-01T00:00:00Z",
+     *    "updated_at": "2023-01-01T00:00:00Z"
+     *  },
      *  "expires_in": 900
      * }
      *
@@ -213,7 +212,6 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         try {
-
             $credentials = $request->validated();
 
             // Set TTL for access token to 60 minutes
@@ -226,14 +224,17 @@ class AuthController extends Controller
                     'user_agent' => $request->userAgent()
                 ]);
 
-                return response()->json(['error' => 'Invalid email or password'], 401);
+                return response()->json([
+                    'success' => false,
+                    'status' => 'invalid_credentials',
+                    'message' => 'Invalid email or password'
+                ], 401);
             }
 
             $user = Auth::user();
             // Generate refresh token with 1 week TTL
             JWTAuth::factory()->setTTL($this->REFRESH_TOKEN_TTL);
             $refreshToken = JWTAuth::fromUser($user);
-            // $refreshToken = auth()->refresh();
 
             // Check if user is verified
             if (!$user->verified) {
@@ -241,10 +242,11 @@ class AuthController extends Controller
                 $this->emailVerificationService->sendVerificationEmail($user);
 
                 return response()->json([
+                    'success' => false,
                     'status' => 'verification_required',
+                    'message' => 'Please verify your email address. A verification code has been sent to your email.',
                     'accessToken' => $token,
                     'refreshToken' => $refreshToken,
-                    'message' => 'Please verify your email address. A verification code has been sent to your email.',
                     'user' => [
                         'email' => $user->email,
                         'role' => $user->getRoleNames()->first(),
@@ -265,9 +267,9 @@ class AuthController extends Controller
                 $this->emailVerificationService->sendMfaOtp($user);
 
                 return response()->json([
+                    'success' => true,
                     'status' => 'mfa_required',
-                    'mfaRequired' => true,
-                    'message' => 'MFA verification required',
+                    'message' => 'MFA verification required. A verification code has been sent to your email.',
                     'tempToken' => $tempToken,
                     'user' => [
                         'email' => $user->email,
@@ -278,7 +280,6 @@ class AuthController extends Controller
                 ], 201);
             }
 
-
             Log::info('User logged in successfully', [
                 'user_id' => $user->id,
                 'email' => $user->email,
@@ -286,7 +287,9 @@ class AuthController extends Controller
             ]);
 
             return response()->json([
+                'success' => true,
                 'status' => 'success',
+                'message' => 'Login successful',
                 'accessToken' => $token,
                 'refreshToken' => $refreshToken,
                 'user' => new UserResource($user),
@@ -295,19 +298,26 @@ class AuthController extends Controller
                 'expires_in' => 15 * 60, // 15 minutes in seconds
                 'refresh_expires_in' => 10080 * 60 // 1 week in seconds
             ], 200);
-
         } catch (JWTException $e) {
             Log::error('JWT token creation failed', [
                 'error' => $e->getMessage(),
                 'ip' => $request->ip()
             ]);
-            return response()->json(['message' => 'Authentication failed'], 500);
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Authentication failed. Please try again later.'
+            ], 500);
         } catch (\Exception $e) {
             Log::error('Login error', [
                 'message' => $e->getMessage(),
                 'ip' => $request->ip()
             ]);
-            return response()->json(['message' => 'Login failed'], 501);
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Login failed. Please try again later.'
+            ], 501);
         }
     }
 
@@ -372,25 +382,25 @@ class AuthController extends Controller
      *
      * @response {
      *  "user": {
-    *    "id": "1",
-    *    "firstName": "John",
-    *    "lastName": "Doe",
-    *    "email": "john@example.com",
-    *    "role": "customer",
-    *    "status": "active",
-    *    "avatarUrl": "http://example.com/storage/avatar.jpg",
-    *    "phoneNumber": "+1234567890",
-    *    "address": "123 Main St",
-    *    "country": "USA",
-    *    "state": "California",
-    *    "city": "Los Angeles",
-    *    "sex": "male",
-    *    "about": "About John Doe",
-    *    "zipCode": "90001",
-    *    "company": "Tech Corp",
-    *    "isVerified": true,
-    *    "created_at": "2023-01-01T00:00:00Z",
-    *    "updated_at": "2023-01-01T00:00:00Z",
+     *    "id": "1",
+     *    "firstName": "John",
+     *    "lastName": "Doe",
+     *    "email": "john@example.com",
+     *    "role": "customer",
+     *    "status": "active",
+     *    "avatarUrl": "http://example.com/storage/avatar.jpg",
+     *    "phoneNumber": "+1234567890",
+     *    "address": "123 Main St",
+     *    "country": "USA",
+     *    "state": "California",
+     *    "city": "Los Angeles",
+     *    "sex": "male",
+     *    "about": "About John Doe",
+     *    "zipCode": "90001",
+     *    "company": "Tech Corp",
+     *    "isVerified": true,
+     *    "created_at": "2023-01-01T00:00:00Z",
+     *    "updated_at": "2023-01-01T00:00:00Z",
      *  },
      *  "mfaEnabled": false,
      *  "mfaVerified": false
@@ -413,7 +423,6 @@ class AuthController extends Controller
                 'mfaEnabled' => $user->is_mfa_enabled,
                 'mfaVerified' => !empty($user->mfa_verified_at)
             ]);
-
         } catch (JWTException $e) {
             Log::error('Token validation failed', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Invalid token'], 401);
