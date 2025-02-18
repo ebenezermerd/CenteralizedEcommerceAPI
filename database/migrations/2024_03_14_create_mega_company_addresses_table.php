@@ -23,29 +23,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
-
-        // Add a trigger to ensure only one default address
-        DB::unprepared('
-            CREATE TRIGGER ensure_single_default_address
-            BEFORE INSERT ON mega_company_addresses
-            FOR EACH ROW
-            BEGIN
-                IF NEW.is_default = 1 THEN
-                    UPDATE mega_company_addresses SET is_default = 0 WHERE is_default = 1;
-                END IF;
-            END
-        ');
-
-        DB::unprepared('
-            CREATE TRIGGER ensure_single_default_address_update
-            BEFORE UPDATE ON mega_company_addresses
-            FOR EACH ROW
-            BEGIN
-                IF NEW.is_default = 1 AND OLD.is_default = 0 THEN
-                    UPDATE mega_company_addresses SET is_default = 0 WHERE is_default = 1;
-                END IF;
-            END
-        ');
     }
 
     /**
@@ -53,10 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Drop triggers first
-        DB::unprepared('DROP TRIGGER IF EXISTS ensure_single_default_address');
-        DB::unprepared('DROP TRIGGER IF EXISTS ensure_single_default_address_update');
-
         Schema::dropIfExists('mega_company_addresses');
     }
 };
