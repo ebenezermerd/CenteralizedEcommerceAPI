@@ -486,7 +486,7 @@ class OrderController extends Controller
                     'total' => $item['price'] * $item['quantity'],
                     'service' => 'product',
                     'quantity' => $item['quantity'],
-                    'description' => $product->description,
+                    'description' => $product->subDescription,
                 ]);
                 $invoice->items()->save($invoiceItem);
                 \Log::info('Invoice item created', ['item' => $invoiceItem->toArray()]);
