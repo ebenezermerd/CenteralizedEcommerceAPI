@@ -17,10 +17,10 @@ class MegaCompanyAddressResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'full_address' => $this->full_address,
-            'phone_number' => $this->phone_number,
+            'fullAddress' => $this->full_address,
+            'phoneNumber' => $this->phone_number,
             'email' => $this->email,
-            'is_default' => $this->is_default,
+            'isDefault' => $this->is_default,
             'type' => $this->type,
         ];
     }
