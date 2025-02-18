@@ -17,7 +17,8 @@ class InvoiceToResource extends JsonResource
         return [
             'name' => $this->name,
             'fullAddress' => $this->full_address,
-            'phoneNumber' => $this->phone_number
+            'phoneNumber' => $this->phone_number,
+            'email' => $this->email
         ];
     }
 }

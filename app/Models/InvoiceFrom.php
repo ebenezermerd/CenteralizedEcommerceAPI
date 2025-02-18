@@ -15,7 +15,8 @@ class InvoiceFrom extends Model
         'invoice_id',
         'name',
         'full_address',
-        'phone_number'
+        'phone_number',
+        'email'
     ];
 
     public function invoice()

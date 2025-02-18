@@ -465,14 +465,16 @@ class OrderController extends Controller
                 $invoice->billFrom()->create([
                     'name' => $megaCompanyAddress ? $megaCompanyAddress->name : config('app.company_name', 'Company Name'),
                     'full_address' => $megaCompanyAddress ? $megaCompanyAddress->full_address : config('app.company_address', 'Company Address'),
-                    'phone_number' => $megaCompanyAddress ? $megaCompanyAddress->phone_number : config('app.company_phone', 'Company Phone')
+                    'phone_number' => $megaCompanyAddress ? $megaCompanyAddress->phone_number : config('app.company_phone', 'Company Phone'),
+                    'email' => $megaCompanyAddress ? $megaCompanyAddress->email : config('app.company_email', 'Company Email')
                 ]);
             } catch (\Exception $e) {
                 // Fallback to config values if MegaCompanyAddress fails
                 $invoice->billFrom()->create([
                     'name' => config('app.company_name', 'Company Name'),
                     'full_address' => config('app.company_address', 'Company Address'),
-                    'phone_number' => config('app.company_phone', 'Company Phone')
+                    'phone_number' => config('app.company_phone', 'Company Phone'),
+                    'email' => config('app.company_email', 'Company Email')
                 ]);
             }
 
@@ -480,7 +482,8 @@ class OrderController extends Controller
             $invoice->billTo()->create([
                 'name' => $order->customer->name,
                 'full_address' => $order->shippingAdd->full_address,
-                'phone_number' => $order->customer->phone_number
+                'phone_number' => $order->customer->phone_number,
+                'email' => $order->customer->email
             ]);
 
             $this->emailVerificationService->sendInvoiceEmail($invoice);
