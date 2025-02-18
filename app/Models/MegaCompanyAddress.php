@@ -10,6 +10,8 @@ class MegaCompanyAddress extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'mega_company_addresses';
+
     protected $fillable = [
         'name',
         'full_address',
