@@ -140,6 +140,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::put('orders/{id}', [OrderController::class, 'updateStatus']);
     Route::post('/checkout/order', [OrderController::class, 'checkout']);
     Route::post('/order/{orderId}/payment-proof', [OrderController::class, 'uploadPaymentProof']);
+    Route::delete('orders/{id}', [OrderController::class, 'destroy']);
 
     // Cart routes
     Route::get('cart', [CartController::class, 'index']);
@@ -159,7 +160,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
         Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
     });
-    
+
     // Analytics routes
     Route::middleware(['role:admin'])->prefix('analytics')->group(function () {
         Route::get('widget-summary', [AnalyticsController::class, 'getWidgetSummary']);
@@ -168,4 +169,3 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
     });
 });
-
