@@ -189,14 +189,70 @@ public function userInvoices(Request $request, String $userId)
 
     public function update(Request $request, string $id): JsonResponse
     {
+        // Validate the request
         $validated = $request->validate([
-            'amount' => 'required|numeric',
+            'invoiceTo' => 'required|array',
+            'invoiceTo.name' => 'required|string',
+            'invoiceTo.fullAddress' => 'required|string',
+            'invoiceTo.phoneNumber' => 'required|string',
+            'items' => 'required|array',
+            'items.*.title' => 'required|string',
+            'items.*.service' => 'required|string',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.price' => 'required|numeric|min:0',
+            'items.*.total' => 'required|numeric|min:0',
+            'items.*.description' => 'nullable|string',
+            'taxes' => 'required|numeric|min:0',
             'status' => 'required|string',
+            'discount' => 'required|numeric|min:0',
+            'shipping' => 'required|numeric|min:0',
+            'totalAmount' => 'required|numeric|min:0',
+            'dueDate' => 'required|date',
+            'createdAt' => 'required|date'
         ]);
 
-        $invoice = Invoice::findOrFail($id);
-        $invoice->update($validated);
-        return response()->json($invoice);
+        \DB::beginTransaction();
+        try {
+            $invoice = Invoice::findOrFail($id);
+
+            // Update invoice main details
+            $invoice->update([
+                'status' => $validated['status'],
+                'taxes' => $validated['taxes'],
+                'discount' => $validated['discount'],
+                'shipping' => $validated['shipping'],
+                'total_amount' => $validated['totalAmount'],
+                'due_date' => $validated['dueDate'],
+                'create_date' => $validated['createdAt']
+            ]);
+
+            // Update invoice items
+            $invoice->items()->delete(); // Remove old items
+            foreach ($validated['items'] as $item) {
+                $invoice->items()->create([
+                    'title' => $item['title'],
+                    'service' => $item['service'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'total' => $item['total'],
+                    'description' => $item['description'] ?? null,
+                ]);
+            }
+
+            // Update billing information
+            $invoice->billTo()->update([
+                'name' => $validated['invoiceTo']['name'],
+                'full_address' => $validated['invoiceTo']['fullAddress'],
+                'phone_number' => $validated['invoiceTo']['phoneNumber'],
+            ]);
+
+            \DB::commit();
+
+            return response()->json(new InvoiceResource($invoice->load('items', 'billTo', 'billFrom')), 200);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json(['message' => 'Failed to update invoice', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function destroy(string $id): JsonResponse
