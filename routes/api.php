@@ -153,7 +153,11 @@ Route::middleware(['jwt'])->group(function () {
     Route::apiResource('companies', CompanyController::class);
     Route::get('companies/vendor/{id}', [CompanyController::class, 'vendorCompany']);
     Route::put('companies/{company}/status', [CompanyController::class, 'updateStatus']);
-
+    Route::get('companies/mega-company/addresses', [CompanyController::class, 'getMegaCompanyAddresses']);
+    Route::post('companies/mega-company/addresses', [CompanyController::class, 'addMegaCompanyAddress']);
+    Route::put('companies/mega-company/addresses/{id}', [CompanyController::class, 'updateMegaCompanyAddress']);
+    Route::delete('companies/mega-company/addresses/{id}', [CompanyController::class, 'deleteMegaCompanyAddress']);
+    Route::get('companies/mega-company/addresses/{id}', [CompanyController::class, 'getMegaCompanyAddress']);
     // Customer specific routes
     Route::middleware(['role:customer|admin|supplier'])->group(function () {
         Route::post('/checkout/orders', [OrderController::class, 'checkout']);

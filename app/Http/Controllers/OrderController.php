@@ -17,7 +17,7 @@ use App\Http\Resources\OrderResource;
 use App\Http\Resources\OrderCollection;
 use App\Services\EmailVerificationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-
+use App\Models\MegaCompanyAddress;
 
 class OrderController extends Controller
 {
@@ -459,12 +459,22 @@ class OrderController extends Controller
             ]);
 
 
-            // Create invoice from details
-            $invoice->billFrom()->create([
-                'name' => config('app.company_name', 'Company Name'),
-                'full_address' => config('app.company_address', 'Company Address'),
-                'phone_number' => config('app.company_phone', 'Company Phone')
-            ]);
+            try {
+                $megaCompanyAddress = MegaCompanyAddress::find(1);
+                // Create invoice from details
+                $invoice->billFrom()->create([
+                    'name' => $megaCompanyAddress ? $megaCompanyAddress->name : config('app.company_name', 'Company Name'),
+                    'full_address' => $megaCompanyAddress ? $megaCompanyAddress->full_address : config('app.company_address', 'Company Address'),
+                    'phone_number' => $megaCompanyAddress ? $megaCompanyAddress->phone_number : config('app.company_phone', 'Company Phone')
+                ]);
+            } catch (\Exception $e) {
+                // Fallback to config values if MegaCompanyAddress fails
+                $invoice->billFrom()->create([
+                    'name' => config('app.company_name', 'Company Name'),
+                    'full_address' => config('app.company_address', 'Company Address'),
+                    'phone_number' => config('app.company_phone', 'Company Phone')
+                ]);
+            }
 
             // Create invoice to details
             $invoice->billTo()->create([

@@ -189,7 +189,6 @@ public function userInvoices(Request $request, String $userId)
 
     public function update(Request $request, string $id): JsonResponse
     {
-        // Validate the request
         $validated = $request->validate([
             'invoiceTo' => 'required|array',
             'invoiceTo.name' => 'required|string',
@@ -215,7 +214,7 @@ public function userInvoices(Request $request, String $userId)
         try {
             $invoice = Invoice::findOrFail($id);
 
-            // Update invoice main details
+            // Update invoice main details with correct field names
             $invoice->update([
                 'status' => $validated['status'],
                 'taxes' => $validated['taxes'],
@@ -227,7 +226,7 @@ public function userInvoices(Request $request, String $userId)
             ]);
 
             // Update invoice items
-            $invoice->items()->delete(); // Remove old items
+            $invoice->items()->delete();
             foreach ($validated['items'] as $item) {
                 $invoice->items()->create([
                     'title' => $item['title'],
@@ -239,7 +238,7 @@ public function userInvoices(Request $request, String $userId)
                 ]);
             }
 
-            // Update billing information
+            // Update billing information with correct field names
             $invoice->billTo()->update([
                 'name' => $validated['invoiceTo']['name'],
                 'full_address' => $validated['invoiceTo']['fullAddress'],
@@ -248,9 +247,12 @@ public function userInvoices(Request $request, String $userId)
 
             \DB::commit();
 
-            return response()->json(new InvoiceResource($invoice->load('items', 'billTo', 'billFrom')), 200);
+            // Load relationships and return updated invoice
+            $invoice->load('items', 'billTo', 'billFrom');
+            return response()->json(new InvoiceResource($invoice), 200);
         } catch (\Exception $e) {
             \DB::rollBack();
+            \Log::error('Invoice update failed:', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Failed to update invoice', 'error' => $e->getMessage()], 500);
         }
     }

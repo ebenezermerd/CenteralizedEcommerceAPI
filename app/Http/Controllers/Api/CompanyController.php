@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Requests\CompanyRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MegaCompanyAddress;
+use App\Http\Resources\MegaCompanyAddressResource;
 
 class CompanyController extends Controller
 {
@@ -126,8 +128,71 @@ class CompanyController extends Controller
         $company->load('owner');
 
         return response()->json([
+            'success' => true,
             'message' => 'Company status updated successfully',
             'company' => $company
         ]);
+    }
+
+    public function getMegaCompanyAddresses()
+    {
+        $addresses = MegaCompanyAddress::all();
+        return response()->json(MegaCompanyAddressResource::collection($addresses), 200);
+    }
+
+    public function getMegaCompanyAddress(string $id)
+    {
+        $address = MegaCompanyAddress::findOrFail($id);
+        if (!$address) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Address not found'
+            ], 404);
+        }
+        return response()->json(new MegaCompanyAddressResource($address), 200);
+    }
+
+    public function addMegaCompanyAddress(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'full_address' => 'required|string',
+            'phone_number' => 'required|string',
+            'email' => 'required|email',
+            'is_default' => 'required|boolean',
+            'type' => 'required|string',
+        ]);
+
+        $address = MegaCompanyAddress::create($data);
+        $address->refresh();
+        return response()->json(new MegaCompanyAddressResource($address), 201);
+    }
+
+    public function updateMegaCompanyAddress(Request $request, MegaCompanyAddress $address)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'full_address' => 'required|string',
+            'phone_number' => 'required|string',
+            'email' => 'required|email',
+            'is_default' => 'required|boolean',
+            'type' => 'required|string',
+        ]);
+
+        $address->update($data);
+        $address->refresh();
+        return response()->json(new MegaCompanyAddressResource($address), 200);
+    }
+
+    public function deleteMegaCompanyAddress(MegaCompanyAddress $address)
+    {
+        $address->delete();
+        return response()->json(
+            [
+                'success' => true,
+                'message' => 'Address deleted successfully'
+            ],
+            204
+        );
     }
 }
