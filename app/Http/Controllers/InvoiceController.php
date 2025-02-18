@@ -194,6 +194,12 @@ public function userInvoices(Request $request, String $userId)
             'invoiceTo.name' => 'required|string',
             'invoiceTo.fullAddress' => 'required|string',
             'invoiceTo.phoneNumber' => 'required|string',
+            'invoiceTo.email' => 'nullable|string',
+            'invoiceFrom' => 'required|array',
+            'invoiceFrom.name' => 'required|string',
+            'invoiceFrom.fullAddress' => 'required|string',
+            'invoiceFrom.phoneNumber' => 'required|string',
+            'invoiceFrom.email' => 'required|string',
             'items' => 'required|array',
             'items.*.title' => 'required|string',
             'items.*.service' => 'required|string',
@@ -243,6 +249,14 @@ public function userInvoices(Request $request, String $userId)
                 'name' => $validated['invoiceTo']['name'],
                 'full_address' => $validated['invoiceTo']['fullAddress'],
                 'phone_number' => $validated['invoiceTo']['phoneNumber'],
+                'email' => $validated['invoiceTo']['email'] ?? null,
+            ]);
+
+            $invoice->billFrom()->update([
+                'name' => $validated['invoiceFrom']['name'],
+                'full_address' => $validated['invoiceFrom']['fullAddress'],
+                'phone_number' => $validated['invoiceFrom']['phoneNumber'],
+                'email' => $validated['invoiceFrom']['email'] ?? null,
             ]);
 
             \DB::commit();
