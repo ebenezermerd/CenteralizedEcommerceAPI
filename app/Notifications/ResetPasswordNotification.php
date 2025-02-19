@@ -34,13 +34,13 @@ class ResetPasswordNotification extends Notification
 
         // Build the reset URL
         // $baseUrl = $this->redirectTo . '/auth/jwt/update-password';
-        $baseUrl = $this->redirectTo;
+        $baseUrl = $this->resetUrl;
 
         // The token is already a JWT token containing user_id and reset_token
         $url = $baseUrl . '?token=' . $this->token;
-        if ($this->redirectTo) {
-            $url .= '&redirectTo=' . urlencode($this->redirectTo);
-        }
+        // if ($this->resetUrl) {
+        //     $url .= '&resetUrl=' . urlencode($this->resetUrl);
+        // }
 
         return (new MailMessage)
             ->subject('Reset Password Notification')
