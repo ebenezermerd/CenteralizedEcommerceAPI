@@ -50,8 +50,7 @@ class ResetPasswordController extends Controller
                 'password' => [
                     'required',
                     'confirmed',
-                    'min:8',
-                    'regex:/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/'
+                    'min:6'
                 ],
                 'redirectTo' => 'sometimes|url'
             ], $messages);
@@ -144,7 +143,7 @@ class ResetPasswordController extends Controller
                     'message' => 'Current password is incorrect'
                 ], 400);
             }
-            
+
             $user->password = bcrypt($request->newPassword);
             $user->save();
 
