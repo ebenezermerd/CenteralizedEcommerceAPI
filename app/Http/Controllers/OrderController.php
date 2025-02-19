@@ -170,7 +170,16 @@ class OrderController extends Controller
             ], 200);
         }
 
-        return response()->json(new OrderResource($orders), 200);
+        return response()->json(
+            [
+                'orders' => OrderResource::collection($orders),
+                'pagination' => [
+                    'total' => $orders->total() ?? 0,
+                    'per_page' => $orders->perPage() ?? 10,
+                    'current_page' => $orders->currentPage() ?? 1,
+                    'last_page' => $orders->lastPage() ?? 1
+                ]
+            ], 200);
     }
 
 
