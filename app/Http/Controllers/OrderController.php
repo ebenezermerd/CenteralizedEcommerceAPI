@@ -152,7 +152,10 @@ class OrderController extends Controller
 
     public function myOrders(Request $request): JsonResponse
     {
-        \Log::info('Order my orders request received', ['user_id' => auth()->id()]);
+        \Log::info('Order my orders request received', [
+            'user_id' => auth()->id(),
+            'user_roles' => auth()->user()->roles->pluck('name')
+        ]);
 
         $orders = Order::with([
             'history',
@@ -161,25 +164,25 @@ class OrderController extends Controller
             'customer',
             'delivery',
             'productItems',
-        ])->where('user_id', auth()->id())->get();
+        ])
+        ->where('user_id', auth()->id())
+        ->paginate(10); // Use paginate instead of get()
 
-        if (!$orders) {
-            return response()->json([
-                'message' => 'No orders found',
-                'orders' => []
-            ], 200);
-        }
+        \Log::info('Orders query result', [
+            'count' => $orders->count(),
+            'total' => $orders->total(),
+            'has_orders' => $orders->isNotEmpty()
+        ]);
 
-        return response()->json(
-            [
-                'orders' => OrderResource::collection($orders),
-                'pagination' => [
-                    'total' => $orders->total() ?? 0,
-                    'per_page' => $orders->perPage() ?? 10,
-                    'current_page' => $orders->currentPage() ?? 1,
-                    'last_page' => $orders->lastPage() ?? 1
-                ]
-            ], 200);
+        return response()->json([
+            'orders' => OrderResource::collection($orders),
+            'pagination' => [
+                'total' => $orders->total(),
+                'per_page' => $orders->perPage(),
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage()
+            ]
+        ], 200);
     }
 
 
