@@ -33,7 +33,7 @@ class ResetPasswordNotification extends Notification
         $expireInMinutes = config('auth.passwords.users.expire', 60);
 
         // Build the reset URL
-        $baseUrl = config('app.frontend_url') . '/auth/jwt/update-password';
+        $baseUrl = $this->redirectTo . '/auth/jwt/update-password';
 
         // The token is already a JWT token containing user_id and reset_token
         $url = $baseUrl . '?token=' . $this->token;

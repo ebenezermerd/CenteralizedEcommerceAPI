@@ -125,7 +125,7 @@ public function index(Request $request)
         ->withAvg('reviews', 'rating')
         ->latest()
         ->paginate(12);
-    }   
+    }
 
         // Log the result for debugging
     \Log::info('Products Data', $products->toArray());
