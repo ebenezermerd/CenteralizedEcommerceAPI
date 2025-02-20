@@ -38,7 +38,8 @@ class ChapaController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Payment verified successfully',
-                    'data' => $verificationResponse['data']
+                    'data' => $verificationResponse['data'],
+                    'response' => $verificationResponse
                 ]);
             }
 
