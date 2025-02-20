@@ -25,9 +25,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-         // Define the 'api' rate limiter
-         RateLimiter::for('api', function (Request $request) {
+        // Define the 'api' rate limiter
+        RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        // Add frontend URL to config
+        config(['app.frontend_url' => rtrim(env('FRONTEND_URL', 'https://www.korecha.com.et'), '/')]);
     }
 }

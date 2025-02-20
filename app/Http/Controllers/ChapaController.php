@@ -61,40 +61,26 @@ class ChapaController extends Controller
 
     public function handleReturn(Request $request)
     {
-        \Log::info('Payment return endpoint hit', [
-            'tx_ref' => $request->input('tx_ref'),
-            'return_url' => $request->query('return_url'),
-            'cancel_url' => $request->query('cancel_url')
-        ]);
+        \Log::info('Payment return endpoint hit', ['tx_ref' => $request->input('tx_ref')]);
 
         $txRef = $request->input('tx_ref');
         $payment = OrderPayment::where('tx_ref', $txRef)->first();
 
-        // Get the URLs from the request parameters
-        $successUrl = $request->query('return_url');
-        $cancelUrl = $request->query('cancel_url');
-
         if (!$payment) {
             \Log::warning('Payment not found', ['tx_ref' => $txRef]);
-            // Redirect to the cancel URL with error parameters
-            return redirect()->away($cancelUrl
-                . (parse_url($cancelUrl, PHP_URL_QUERY) ? '&' : '?')
-                . 'error=payment-not-found'
+            return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/failed'
+                . '?error=payment-not-found'
                 . '&tx_ref=' . $txRef);
         }
 
         if ($payment->status === 'completed') {
-            // Redirect to success URL with payment details
-            return redirect()->away($successUrl
-                . (parse_url($successUrl, PHP_URL_QUERY) ? '&' : '?')
-                . 'tx_ref=' . $payment->tx_ref
+            return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/success'
+                . '?tx_ref=' . $payment->tx_ref
                 . '&transaction_id=' . $payment->transaction_id
                 . '&status=success');
         } else {
-            // Redirect to cancel URL with payment details
-            return redirect()->away($cancelUrl
-                . (parse_url($cancelUrl, PHP_URL_QUERY) ? '&' : '?')
-                . 'tx_ref=' . $payment->tx_ref
+            return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/failed'
+                . '?tx_ref=' . $payment->tx_ref
                 . '&status=pending');
         }
     }
@@ -107,26 +93,8 @@ class ChapaController extends Controller
             // Always use the generated reference for new payments
             $reference = $this->reference;
 
-            // Get return and cancel URLs from request or fall back to config
-            $returnUrl = $request->return_url;
-            $cancelUrl = $request->cancel_url;
-
-            if (!filter_var($returnUrl, FILTER_VALIDATE_URL)) {
-                \Log::warning('Invalid return URL provided, using default', ['provided_url' => $returnUrl]);
-                $returnUrl = config('chapa.success_url');
-            }
-
-            if (!filter_var($cancelUrl, FILTER_VALIDATE_URL)) {
-                \Log::warning('Invalid cancel URL provided, using default', ['provided_url' => $cancelUrl]);
-                $cancelUrl = config('chapa.cancel_url');
-            }
-
             // Build the return URL with the reference
-            $chapaReturnUrl = route('chapa.return', [
-                'tx_ref' => $reference,
-                'return_url' => $returnUrl,
-                'cancel_url' => $cancelUrl
-            ]);
+            $chapaReturnUrl = route('chapa.return', ['tx_ref' => $reference]);
 
             // For callback, we still need the backend URL
             $callbackUrl = config('app.url') . '/api/chapa/callback/' . $reference;
@@ -150,9 +118,7 @@ class ChapaController extends Controller
             \Log::info('Chapa payment response', [
                 'response' => $chapaResponse,
                 'callback_url' => $callbackUrl,
-                'return_url' => $chapaReturnUrl,
-                'original_return_url' => $returnUrl,
-                'original_cancel_url' => $cancelUrl
+                'return_url' => $chapaReturnUrl
             ]);
 
             if ($chapaResponse['status'] !== 'success') {

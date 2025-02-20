@@ -392,9 +392,7 @@ class OrderController extends Controller
                     'currency' => $validated['payment']['currency'],
                     'email' => $validated['billing']['email'],
                     'title' => 'Order Payment',
-                    'description' => 'Payment for order ' . $order->order_number,
-                    'return_url' => $request->input('return_url', config('chapa.success_url')),
-                    'cancel_url' => $request->input('cancel_url', config('chapa.cancel_url'))
+                    'description' => 'Payment for order ' . $order->order_number
                 ]);
 
                 $chapaController = app(ChapaController::class);
@@ -406,11 +404,13 @@ class OrderController extends Controller
 
                 $paymentData['status'] = 'initiated';
                 $paymentData['tx_ref'] = $chapaResponse->getData()->tx_ref;
+
+                // Create payment record
+                $payment = $order->payment()->create($paymentData);
+                \Log::info('Payment record created', ['payment' => $payment->toArray()]);
+
+                // Continue with the rest of the order processing...
             }
-
-
-            $payment = $order->payment()->create($paymentData);
-            \Log::info('Payment record created', ['payment' => $payment->toArray()]);
 
             // OrderDelivery information
             $orderDelivery = $order->delivery()->create([
@@ -518,18 +518,11 @@ class OrderController extends Controller
             DB::commit();
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);
 
-            if ($validated['payment']['method'] === 'chapa') {
-                return response()->json([
-                    'status' => 'success',
-                    'order' => $order,
-                    'checkout_url' => $chapaResponse->getData()->checkout_url
-                ], 201);
-            } else {
-                return response()->json([
-                    'status' => 'success',
-                    'order' => $order,
-                ], 201);
-            }
+            return response()->json([
+                'status' => 'success',
+                'order' => $order,
+                'checkout_url' => isset($chapaResponse) ? $chapaResponse->getData()->checkout_url : null
+            ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Order processing failed', [
