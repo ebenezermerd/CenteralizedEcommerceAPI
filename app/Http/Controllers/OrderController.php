@@ -18,6 +18,7 @@ use App\Http\Resources\OrderCollection;
 use App\Services\EmailVerificationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\MegaCompanyAddress;
+use App\Http\Controllers\ChapaController;
 
 class OrderController extends Controller
 {
@@ -381,37 +382,28 @@ class OrderController extends Controller
             ];
 
             if ($validated['payment']['method'] === 'chapa') {
-                \Log::info('Initiating Chapa payment');
-                $paymentData['tx_ref'] = $validated['payment']['tx_ref'];
+                \Log::info('Initiating Chapa payment through ChapaController');
 
-                $chapaResponse = Chapa::initializePayment([
+                $chapaRequest = new Request([
                     'amount' => $validated['payment']['amount'],
                     'first_name' => explode(' ', $validated['billing']['name'])[0],
                     'last_name' => explode(' ', $validated['billing']['name'])[1] ?? '',
-                    'phone_number' => str_replace(' ', '', $validated['billing']['phoneNumber']),
+                    'phone_number' => $validated['billing']['phoneNumber'],
                     'currency' => $validated['payment']['currency'],
                     'email' => $validated['billing']['email'],
-                    'tx_ref' => $validated['payment']['tx_ref'],
-                    'callback_url' => route('chapa.callback') . '?tx_ref=' . $validated['payment']['tx_ref'],
-                    'return_url' => route('chapa.return') . '?tx_ref=' . $validated['payment']['tx_ref'],
-                    'customization' => [
-                        'title' => 'Order Payment',
-                        'description' => 'Payment for order ' . $order->order_number,
-                    ],
+                    'title' => 'Order Payment',
+                    'description' => 'Payment for order ' . $order->order_number,
                 ]);
 
-                \Log::info('Chapa payment response', ['response' => $chapaResponse]);
+                $chapaController = app(ChapaController::class);
+                $chapaResponse = $chapaController->initializePayment($chapaRequest);
 
-                if ($chapaResponse['status'] !== 'success') {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Chapa Payment initialization failed',
-                        'error' => $chapaResponse['message']
-                    ], 400);
-                    \Log::error('Chapa payment initialization failed', ['response' => $chapaResponse]);
+                if ($chapaResponse->getStatusCode() !== 200) {
+                    throw new \Exception('Chapa payment initialization failed: ' . $chapaResponse->getData()->message);
                 }
 
                 $paymentData['status'] = 'initiated';
+                $paymentData['tx_ref'] = $chapaResponse->getData()->tx_ref;
             }
 
 
@@ -528,7 +520,7 @@ class OrderController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'order' => $order,
-                    'checkout_url' => $chapaResponse['data']['checkout_url']
+                    'checkout_url' => $chapaResponse->getData()->checkout_url
                 ], 201);
             } else {
                 return response()->json([
@@ -544,87 +536,6 @@ class OrderController extends Controller
                 'request_data' => $request->all()
             ]);
             return response()->json(['message' => 'Error processing order', 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function handleWebhook(Request $request): JsonResponse
-    {
-        \Log::info('Chapa webhook received', [
-            'headers' => $request->headers->all(),
-            'payload' => $request->all()
-        ]);
-
-        try {
-            $signature = strtolower($request->header('X-Chapa-Signature'));
-            $payload = $request->getContent();
-            $secret = config('chapa.webhookSecret');
-
-            \Log::info('Verifying webhook signature', [
-                'received_signature' => $signature,
-                'payload_length' => strlen($payload),
-                'payload' => $payload,
-                'secret' => $secret
-            ]);
-
-            $calculatedSignature = strtolower(hash_hmac('sha256', $payload, $secret));
-
-            \Log::info('Webhook Verification Debug', [
-                'secret' => $secret,
-                'payload' => $payload,
-                'received_signature' => $signature,
-                'calculated_signature' => $calculatedSignature
-            ]);
-
-            if (!hash_equals($signature, $calculatedSignature)) {
-                \Log::error('Invalid webhook signature', [
-                    'received_signature' => $signature,
-                    'calculated_signature' => $calculatedSignature
-                ]);
-
-                return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
-            }
-
-            $txnRef = $request->input('tx_ref');
-            $status = $request->input('status');
-
-            \Log::info('Processing webhook payment update', [
-                'tx_ref' => $txnRef,
-                'status' => $status
-            ]);
-
-            $payment = OrderPayment::where('tx_ref', $txnRef)->firstOrFail();
-
-            \Log::info('Found payment record', [
-                'payment_id' => $payment->id,
-                'current_status' => $payment->status,
-                'new_status' => $status
-            ]);
-
-            if ($status === 'success') {
-                $payment->status = 'completed';
-                \Log::info('Payment marked as completed', ['payment_id' => $payment->id]);
-            } else {
-                $payment->status = 'failed';
-                \Log::warning('Payment marked as failed', [
-                    'payment_id' => $payment->id,
-                    'failure_reason' => $request->input('failure_reason')
-                ]);
-            }
-
-            $payment->save();
-            \Log::info('Payment status updated successfully', [
-                'payment_id' => $payment->id,
-                'final_status' => $payment->status
-            ]);
-
-            return response()->json(['status' => 'success', 'message' => 'Webhook processed successfully']);
-        } catch (\Exception $e) {
-            \Log::error('Webhook processing failed', [
-                'error_message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString(),
-                'payload' => $request->all()
-            ]);
-            return response()->json(['status' => 'error', 'message' => 'Error processing webhook', 'error' => $e->getMessage()], 500);
         }
     }
 

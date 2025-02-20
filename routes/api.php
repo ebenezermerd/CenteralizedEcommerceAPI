@@ -49,8 +49,9 @@ Route::post('/auth/email/verify/resend', [EmailVerificationController::class, 'r
 Route::post('/auth/email/send-otp', [EmailVerificationController::class, 'sendVerificationOTP']);
 
 
-Route::post('chapa/callback', [ChapaController::class, 'handleCallback'])->name('chapa.callback');
-Route::post('chapa/webhook', [OrderController::class, 'handleWebhook'])->name('chapa.webhook');
+Route::post('chapa/initialize', [ChapaController::class, 'initializePayment'])->name('chapa.initialize');
+Route::get('chapa/callback/{reference}', [ChapaController::class, 'handleCallback'])->name('callback');
+Route::post('chapa/webhook', [ChapaController::class, 'handleWebhook'])->name('chapa.webhook');
 Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');
 
 // Protected routes
