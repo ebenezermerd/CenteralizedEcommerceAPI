@@ -165,8 +165,8 @@ class OrderController extends Controller
             'delivery',
             'productItems',
         ])
-        ->where('user_id', auth()->id())
-        ->paginate(10); // Use paginate instead of get()
+            ->where('user_id', auth()->id())
+            ->paginate(10); // Use paginate instead of get()
 
         \Log::info('Orders query result', [
             'count' => $orders->count(),
@@ -380,7 +380,6 @@ class OrderController extends Controller
                 'status' => $validated['payment']['status'] ?? 'pending'
             ];
 
-            $chapaResponse = null;
             if ($validated['payment']['method'] === 'chapa') {
                 \Log::info('Initiating Chapa payment');
                 $paymentData['tx_ref'] = $validated['payment']['tx_ref'];
@@ -526,13 +525,14 @@ class OrderController extends Controller
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);
 
             if ($validated['payment']['method'] === 'chapa') {
-                // return response()->json([
-                //     'order' => $order,
-                //     'checkout_url' => $chapaResponse['data']['checkout_url']
-                // ], 201);
-                return redirect($chapaResponse['data']['checkout_url']);
+                return response()->json([
+                    'status' => 'success',
+                    'order' => $order,
+                    'checkout_url' => $chapaResponse['data']['checkout_url']
+                ], 201);
             } else {
                 return response()->json([
+                    'status' => 'success',
                     'order' => $order,
                 ], 201);
             }
