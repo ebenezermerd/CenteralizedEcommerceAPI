@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\OrderPayment;
 use App\Models\Invoice;
-use App\Services\Chapa;
+use Chapa\Chapa\Facades\Chapa as Chapa;
 use Illuminate\Http\JsonResponse;
 
 class ChapaController extends Controller
