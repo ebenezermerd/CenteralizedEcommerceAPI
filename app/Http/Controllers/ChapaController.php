@@ -32,14 +32,15 @@ class ChapaController extends Controller
             \Log::info('Chapa verification response', ['response' => $verificationResponse]);
 
             if ($verificationResponse['status'] === 'success') {
-                \Log::info('Payment verification successful', ['reference' => $reference]);
+                \Log::info('Payment verification successful', ['reference' => $reference,
+                    'response' => $verificationResponse
+                ]);
 
                 // Only verify and return success - actual updates happen in webhook
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Payment verified successfully',
                     'data' => $verificationResponse['data'],
-                    'response' => $verificationResponse
                 ]);
             }
 
