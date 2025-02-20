@@ -52,6 +52,7 @@ Route::post('/auth/email/send-otp', [EmailVerificationController::class, 'sendVe
 Route::post('chapa/initialize', [ChapaController::class, 'initializePayment'])->name('chapa.initialize');
 Route::get('chapa/callback/{reference}', [ChapaController::class, 'callback'])->name('callback');
 Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');
+Route::post('chapa/webhook', [ChapaController::class, 'handleWebhook'])->name('chapa.webhook');
 
 // Protected routes
 Route::middleware(['jwt'])->group(function () {

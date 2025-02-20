@@ -184,4 +184,39 @@ class ChapaController extends Controller
                 . '&status=pending');
         }
     }
+
+    public function handleWebhook(Request $request): JsonResponse
+    {
+        \Log::info('Chapa webhook received', [
+            'headers' => $request->headers->all(),
+            'payload' => $request->all()
+        ]);
+
+        try {
+            // Verify webhook signature
+            $signature = strtolower($request->header('X-Chapa-Signature'));
+            $payload = $request->getContent();
+            $secret = config('chapa.webhookSecret');
+
+            $calculatedSignature = strtolower(hash_hmac('sha256', $payload, $secret));
+
+            if (!hash_equals($signature, $calculatedSignature)) {
+                \Log::error('Invalid webhook signature');
+                return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
+            }
+
+            // Let Chapa SDK handle the email notifications
+            // We just need to acknowledge receipt of the webhook
+            return response()->json(['status' => 'success', 'message' => 'Webhook received']);
+        } catch (\Exception $e) {
+            \Log::error('Webhook processing failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error processing webhook'
+            ], 500);
+        }
+    }
 }
