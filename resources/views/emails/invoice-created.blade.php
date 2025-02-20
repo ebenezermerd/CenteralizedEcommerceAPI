@@ -3,96 +3,168 @@
 <head>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background-color: #f9f9f9; /* Added a light background color for a clean look */
+            color: #2d3748;
+            background-color: #f7fafc;
+            margin: 0;
+            padding: 0;
         }
         .container {
             max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Added a subtle shadow for depth */
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
         .header {
             text-align: center;
-            padding: 20px 0;
-            background-color: #f8f9fa;
-            border-radius: 8px 8px 0 0; /* Rounded corners for a card-like look */
+            padding: 30px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
         .logo {
-            max-width: 200px;
-            margin: auto; /* Center the logo horizontally */
-            padding: 20px 0; /* Added padding for better spacing */
+            width: 150px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 30px;
+            background: #ffffff;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: #2d3748;
         }
         .invoice-details {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 25px;
             margin: 20px 0;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Added a subtle shadow for depth */
         }
         .amount-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .amount-row:last-child {
+            border-bottom: none;
+        }
+        .amount-label {
+            color: #4a5568;
+            font-weight: 500;
+        }
+        .amount-value {
+            font-family: 'Courier New', monospace;
+            color: #2d3748;
         }
         .total {
-            font-size: 18px;
-            font-weight: bold;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            background: {{ $invoice->status === 'paid' ? '#C6F6D5' : '#FED7D7' }};
+            color: {{ $invoice->status === 'paid' ? '#276749' : '#9B2C2C' }};
             margin-top: 15px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #4a5568;
+            font-size: 14px;
+        }
+        .contact-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #edf2f7;
+            border-radius: 6px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">
-                <img src="{{ asset('images/logo/full-logo.png') }}" alt="Koricha Logo">
-            </div>
-            <h1>Invoice Created</h1>
-            <p>Thank you for your business with Koricha</p>
+            <img src="{{ asset('images/logo/full-logo.png') }}" alt="Korecha Logo" class="logo">
+            <h1>Invoice #{{ $invoice->invoice_number }}</h1>
+            <p>Thank you for choosing Korecha</p>
         </div>
 
         <div class="content">
-            <p>Dear Valued Customer,</p>
-
-            <p>Your invoice has been created successfully. Please find the details below:</p>
+            <div class="greeting">
+                <p>Dear {{ $invoice->billTo->name }},</p>
+                <p>Your invoice has been created successfully. Here are the details:</p>
+            </div>
 
             <div class="invoice-details">
                 <div class="amount-row">
-                    <span>Subtotal:</span>
-                    <span>ETB {{ number_format($invoice->subtotal, 2) }}</span>
+                    <span class="amount-label">Subtotal</span>
+                    <span class="amount-value">ETB {{ number_format($invoice->subtotal, 2) }}</span>
                 </div>
 
                 <div class="amount-row">
-                    <span>Taxes:</span>
-                    <span>ETB {{ number_format($invoice->taxes, 2) }}</span>
+                    <span class="amount-label">Taxes</span>
+                    <span class="amount-value">ETB {{ number_format($invoice->taxes, 2) }}</span>
                 </div>
 
                 <div class="amount-row">
-                    <span>Shipping:</span>
-                    <span>ETB {{ number_format($invoice->shipping, 2) }}</span>
+                    <span class="amount-label">Shipping</span>
+                    <span class="amount-value">ETB {{ number_format($invoice->shipping, 2) }}</span>
                 </div>
 
+                @if($invoice->discount > 0)
                 <div class="amount-row">
-                    <span>Discount:</span>
-                    <span>-ETB {{ number_format($invoice->discount, 2) }}</span>
+                    <span class="amount-label">Discount</span>
+                    <span class="amount-value">-ETB {{ number_format($invoice->discount, 2) }}</span>
                 </div>
+                @endif
 
                 <div class="amount-row total">
-                    <span>Total Amount:</span>
-                    <span>ETB {{ number_format($invoice->total_amount, 2) }}</span>
+                    <span class="amount-label">Total Amount</span>
+                    <span class="amount-value">ETB {{ number_format($invoice->total_amount, 2) }}</span>
                 </div>
 
-                <p style="margin-top: 20px;">Status: <span style="text-transform: uppercase; color: #007bff;">{{ $invoice->status }}</span></p>
+                <div class="status-badge">
+                    {{ $invoice->status }}
+                </div>
             </div>
 
-            <p>If you have any questions or concerns, please don't hesitate to contact our support team.</p>
+            <div class="contact-info">
+                <strong>Need Help?</strong><br>
+                Email: support@korecha.com<br>
+                Phone: +251 911 123 456<br>
+                Hours: Monday - Friday, 9:00 AM - 6:00 PM EAT
+            </div>
 
-            <p>Best regards,<br>
-            The Koricha Team</p>
+            <div class="footer">
+                <p>Thank you for your business! We appreciate your trust in Korecha.</p>
+                <p>Best regards,<br>The Korecha Team</p>
+            </div>
         </div>
     </div>
 </body>
