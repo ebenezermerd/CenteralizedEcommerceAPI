@@ -392,7 +392,7 @@ class OrderController extends Controller
                     'currency' => $validated['payment']['currency'],
                     'email' => $validated['billing']['email'],
                     'tx_ref' => $validated['payment']['tx_ref'],
-                    'callback_url' => route('chapa.callback'),
+                    'callback_url' => route('chapa.callback') . '?tx_ref=' . $validated['payment']['tx_ref'],
                     'return_url' => route('chapa.return') . '?tx_ref=' . $validated['payment']['tx_ref'],
                     'customization' => [
                         'title' => 'Order Payment',
