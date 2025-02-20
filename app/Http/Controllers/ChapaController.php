@@ -72,15 +72,20 @@ class ChapaController extends Controller
                 . '?error=payment-not-found'
                 . '&tx_ref=' . $txRef);
         }
+        \Log::info('Payment found', ['payment' => $payment->toArray()]);
 
         if ($payment->status === 'completed') {
             return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/success'
                 . '?tx_ref=' . $payment->tx_ref
                 . '&transaction_id=' . $payment->transaction_id
+                . '&amount=' . $payment->amount
+                . '&currency=' . $payment->currency
                 . '&status=success');
         } else {
             return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/failed'
                 . '?tx_ref=' . $payment->tx_ref
+                . '&amount=' . $payment->amount
+                . '&currency=' . $payment->currency
                 . '&status=pending');
         }
     }
@@ -94,10 +99,15 @@ class ChapaController extends Controller
             $reference = $this->reference;
 
             // Build the return URL with the reference
-            $chapaReturnUrl = route('chapa.return', ['tx_ref' => $reference]);
+            $chapaReturnUrl = route('chapa.return', ['tx_ref' => $reference], true); // true for absolute URL
 
-            // For callback, we still need the backend URL
-            $callbackUrl = config('app.url') . '/api/chapa/callback/' . $reference;
+            // Build the callback URL - make sure it's absolute and matches the route
+            $callbackUrl = route('callback', ['reference' => $reference], true); // true for absolute URL
+
+            \Log::debug('URLs generated for Chapa', [
+                'return_url' => $chapaReturnUrl,
+                'callback_url' => $callbackUrl
+            ]);
 
             $chapaResponse = Chapa::initializePayment([
                 'amount' => $request->amount,
@@ -180,6 +190,8 @@ class ChapaController extends Controller
                     'transaction_id' => $request->input('transaction_id'),
                     'payment_date' => now(),
                 ]);
+
+                \Log::info('Payment updated', ['payment' => $payment->toArray()]);
 
                 if ($status === 'success') {
                     // 2. Update Order
