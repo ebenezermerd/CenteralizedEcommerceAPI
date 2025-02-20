@@ -103,8 +103,8 @@ public function index(Request $request)
 {
     $user = auth()->user();
 
-    //guest user can see only published products
-    if (!$user) {
+    // Customers can see only published products
+    if ($user && $user->hasRole('customer')) {
         $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
             $query->select('id', 'firstName', 'lastName', 'phone', 'email')
                 ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
@@ -114,11 +114,22 @@ public function index(Request $request)
         ->withAvg('reviews', 'rating')
         ->latest()
         ->paginate(12);
-    } else {
-        //admin and supplier can see all products
+    } else if ($request->url() == 'https://www.korecha.com.et/') {
+        // Guests accessing from specific URL can see only published products
         $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
             $query->select('id', 'firstName', 'lastName', 'phone', 'email')
-                ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+                ->selectRaw("CONCAT(firstName, ' ', LastName) as name");
+        }])
+        ->published()
+        ->withCount('reviews')
+        ->withAvg('reviews', 'rating')
+        ->latest()
+        ->paginate(12);
+    } else {
+        // Admin and supplier can see all products
+        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+            $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                ->selectRaw("CONCAT(firstName, ' ', LastName) as name");
         }])
         ->viewableBy($user)
         ->withCount('reviews')
