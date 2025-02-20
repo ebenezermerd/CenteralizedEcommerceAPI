@@ -25,6 +25,9 @@ return [
      * Secret for webhook
      *
      */
-    'webhookSecret' => env('CHAPA_WEBHOOK_SECRET')
+    'webhookSecret' => env('CHAPA_WEBHOOK_SECRET'),
 
+    // Default URLs if not provided in the request
+    'success_url' => env('CHAPA_SUCCESS_URL', '/payment/success'),
+    'cancel_url' => env('CHAPA_CANCEL_URL', '/payment/failed'),
 ];
