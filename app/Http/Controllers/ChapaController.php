@@ -68,22 +68,22 @@ class ChapaController extends Controller
 
         if (!$payment) {
             \Log::warning('Payment not found', ['tx_ref' => $txRef]);
-            // Get cancel URL from query parameters or fall back to config
-            $cancelUrl = $request->query('cancel_url', config('chapa.cancel_url'));
-            return redirect()->to($cancelUrl . '?error=payment-not-found&tx_ref=' . $txRef);
+            // Use the cancel URL directly from the request
+            $cancelUrl = $request->query('cancel_url');
+            return redirect()->away($cancelUrl . '?error=payment-not-found&tx_ref=' . $txRef);
         }
 
-        // Get URLs from query parameters or fall back to config
-        $successUrl = $request->query('return_url', config('chapa.success_url'));
-        $cancelUrl = $request->query('cancel_url', config('chapa.cancel_url'));
+        // Use the URLs directly from the request
+        $successUrl = $request->query('return_url');
+        $cancelUrl = $request->query('cancel_url');
 
         if ($payment->status === 'completed') {
-            return redirect()->to($successUrl
+            return redirect()->away($successUrl
                 . '?tx_ref=' . $payment->tx_ref
                 . '&transaction_id=' . $payment->transaction_id
                 . '&status=success');
         } else {
-            return redirect()->to($cancelUrl
+            return redirect()->away($cancelUrl
                 . '?tx_ref=' . $payment->tx_ref
                 . '&status=pending');
         }
@@ -101,14 +101,11 @@ class ChapaController extends Controller
             $returnUrl = $request->return_url ?? config('chapa.success_url');
             $cancelUrl = $request->cancel_url ?? config('chapa.cancel_url');
 
-            // Ensure return and callback URLs are absolute URLs
-            $chapaReturnUrl = url(route('chapa.return', [
-                'tx_ref' => $reference,
-                'return_url' => $returnUrl,
-                'cancel_url' => $cancelUrl
-            ], false));
+            // Build the return URL without using Laravel's URL helpers
+            $chapaReturnUrl = $returnUrl . '?tx_ref=' . $reference;
 
-            $callbackUrl = url(route('callback', ['reference' => $reference], false));
+            // For callback, we still need the backend URL
+            $callbackUrl = config('app.url') . '/api/chapa/callback/' . $reference;
 
             $chapaResponse = Chapa::initializePayment([
                 'amount' => $request->amount,
