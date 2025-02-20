@@ -158,6 +158,10 @@ class ChapaController extends Controller
             // Always use the generated reference for new payments
             $reference = $this->reference;
 
+            // Ensure return and callback URLs are absolute URLs
+            $returnUrl = url(route('chapa.return', [], false)) . '?tx_ref=' . $reference;
+            $callbackUrl = url(route('callback', ['reference' => $reference], false));
+
             $chapaResponse = Chapa::initializePayment([
                 'amount' => $request->amount,
                 'first_name' => $request->first_name,
@@ -166,15 +170,19 @@ class ChapaController extends Controller
                 'currency' => $request->currency ?? 'ETB',
                 'email' => $request->email,
                 'tx_ref' => $reference,
-                'callback_url' => route('callback', ['reference' => $reference]),
-                'return_url' => route('chapa.return') . '?tx_ref=' . $reference,
+                'callback_url' => $callbackUrl,
+                'return_url' => $returnUrl,
                 'customization' => [
                     'title' => $request->title ?? 'Order Payment',
                     'description' => $request->description ?? 'Payment for order',
                 ],
             ]);
 
-            \Log::info('Chapa payment response', ['response' => $chapaResponse]);
+            \Log::info('Chapa payment response', [
+                'response' => $chapaResponse,
+                'callback_url' => $callbackUrl,
+                'return_url' => $returnUrl
+            ]);
 
             if ($chapaResponse['status'] !== 'success') {
                 \Log::error('Chapa payment initialization failed', ['response' => $chapaResponse]);
