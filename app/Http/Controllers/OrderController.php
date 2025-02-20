@@ -380,6 +380,7 @@ class OrderController extends Controller
                 'status' => $validated['payment']['status'] ?? 'pending'
             ];
 
+            $chapaResponse = null;
             if ($validated['payment']['method'] === 'chapa') {
                 \Log::info('Initiating Chapa payment');
                 $paymentData['tx_ref'] = $validated['payment']['tx_ref'];
@@ -403,8 +404,12 @@ class OrderController extends Controller
                 \Log::info('Chapa payment response', ['response' => $chapaResponse]);
 
                 if ($chapaResponse['status'] !== 'success') {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Chapa Payment initialization failed',
+                        'error' => $chapaResponse['message']
+                    ], 400);
                     \Log::error('Chapa payment initialization failed', ['response' => $chapaResponse]);
-                    throw new \Exception('Payment initialization failed');
                 }
 
                 $paymentData['status'] = 'initiated';
@@ -521,10 +526,11 @@ class OrderController extends Controller
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);
 
             if ($validated['payment']['method'] === 'chapa') {
-                return response()->json([
-                    'order' => $order,
-                    'checkout_url' => $chapaResponse['data']['checkout_url']
-                ], 201);
+                // return response()->json([
+                //     'order' => $order,
+                //     'checkout_url' => $chapaResponse['data']['checkout_url']
+                // ], 201);
+                return redirect($chapaResponse['data']['checkout_url']);
             } else {
                 return response()->json([
                     'order' => $order,
