@@ -18,133 +18,144 @@ class ProductController extends Controller
 {
 
 
-  /**
- * @group Products
- *
- * Retrieve a list of products with their details.
- *
- * This endpoint returns a paginated list of products including their reviews,
- * categories, images, and vendor information. The user needs to be authenticated
- * to view the products.
- *
- * @queryParam page int optional The page number (default: 1).
- * @queryParam per_page int optional The number of items per page (default: 12).
- *
- * @response 201 {
- *  "products": [
- *      {
- *          "id": "string",
- *          "name": "string",
- *          "sku": "string",
- *          "code": "string",
- *          "description": "string",
- *          "subDescription": "string",
- *          "publish": "string",
- *          "vendor": {
- *              "id": "string",
- *              "name": "string",
- *              "email": "string",
- *              "phone": "string"
- *          },
- *          "coverUrl": "string|null",
- *          "images": ["string"],
- *          "price": "float",
- *          "priceSale": "float",
- *          "taxes": "float",
- *          "tags": ["string"],
- *          "sizes": ["string"],
- *          "colors": ["string"],
- *          "gender": ["string"],
- *          "inventoryType": "string",
- *          "quantity": "int",
- *          "available": "boolean",
- *          "totalSold": "int",
- *          "category": "string|null",
- *          "totalRatings": "float",
- *          "totalReviews": "int",
- *          "reviews": [
- *              {
- *                  "id": "string",
- *                  "name": "string",
- *                  "postedAt": "string",
- *                  "comment": "string",
- *                  "isPurchased": "boolean",
- *                  "rating": "float",
- *                  "avatarUrl": "string|null",
- *                  "helpful": "int",
- *                  "attachments": ["string"]
- *              }
- *          ],
- *          "ratings": [
- *              {
- *                  "name": "string",
- *                  "starCount": "int",
- *                  "reviewCount": "int"
- *              }
- *          ],
- *          "newLabel": {
- *              "enabled": "boolean",
- *              "content": "string"
- *          },
- *          "saleLabel": {
- *              "enabled": "boolean",
- *              "content": "string"
- *          },
- *          "createdAt": "string"
- *      }
- *  ]
- * }
- *
- * @response 401 {
- *  "message": "Unauthenticated."
- * }
- */
-public function index(Request $request)
-{
-    $user = auth()->user();
+    /**
+     * @group Products
+     *
+     * Retrieve a list of products with their details.
+     *
+     * This endpoint returns a paginated list of products including their reviews,
+     * categories, images, and vendor information. The user needs to be authenticated
+     * to view the products.
+     *
+     * @queryParam page int optional The page number (default: 1).
+     * @queryParam per_page int optional The number of items per page (default: 12).
+     *
+     * @response 201 {
+     *  "products": [
+     *      {
+     *          "id": "string",
+     *          "name": "string",
+     *          "sku": "string",
+     *          "code": "string",
+     *          "description": "string",
+     *          "subDescription": "string",
+     *          "publish": "string",
+     *          "vendor": {
+     *              "id": "string",
+     *              "name": "string",
+     *              "email": "string",
+     *              "phone": "string"
+     *          },
+     *          "coverUrl": "string|null",
+     *          "images": ["string"],
+     *          "price": "float",
+     *          "priceSale": "float",
+     *          "taxes": "float",
+     *          "tags": ["string"],
+     *          "sizes": ["string"],
+     *          "colors": ["string"],
+     *          "gender": ["string"],
+     *          "inventoryType": "string",
+     *          "quantity": "int",
+     *          "available": "boolean",
+     *          "totalSold": "int",
+     *          "category": "string|null",
+     *          "totalRatings": "float",
+     *          "totalReviews": "int",
+     *          "reviews": [
+     *              {
+     *                  "id": "string",
+     *                  "name": "string",
+     *                  "postedAt": "string",
+     *                  "comment": "string",
+     *                  "isPurchased": "boolean",
+     *                  "rating": "float",
+     *                  "avatarUrl": "string|null",
+     *                  "helpful": "int",
+     *                  "attachments": ["string"]
+     *              }
+     *          ],
+     *          "ratings": [
+     *              {
+     *                  "name": "string",
+     *                  "starCount": "int",
+     *                  "reviewCount": "int"
+     *              }
+     *          ],
+     *          "newLabel": {
+     *              "enabled": "boolean",
+     *              "content": "string"
+     *          },
+     *          "saleLabel": {
+     *              "enabled": "boolean",
+     *              "content": "string"
+     *          },
+     *          "createdAt": "string"
+     *      }
+     *  ]
+     * }
+     *
+     * @response 401 {
+     *  "message": "Unauthenticated."
+     * }
+     */
+    public function index(Request $request)
+    {
+        $user = auth()->user();
 
-    // Customers can see only published products
-    if ($user && $user->hasRole('customer')) {
-        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
-            $query->select('id', 'firstName', 'lastName', 'phone', 'email')
-                ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
-        }])
-        ->published()
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->latest()
-        ->paginate(12);
-    } else if ($request->url() == 'https://www.korecha.com.et/') {
-        // Guests accessing from specific URL can see only published products
-        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
-            $query->select('id', 'firstName', 'lastName', 'phone', 'email')
-                ->selectRaw("CONCAT(firstName, ' ', LastName) as name");
-        }])
-        ->published()
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->latest()
-        ->paginate(12);
-    } else {
-        // Admin and supplier can see all products
-        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
-            $query->select('id', 'firstName', 'lastName', 'phone', 'email')
-                ->selectRaw("CONCAT(firstName, ' ', LastName) as name");
-        }])
-        ->viewableBy($user)
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->latest()
-        ->paginate(12);
-    }
+        // Customers can see only published products
+        if ($user && $user->hasRole('customer')) {
+            $products = Product::with(['reviews', 'category', 'images', 'vendor' => function ($query) {
+                $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                    ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+            }])
+                ->published()
+                ->withCount('reviews')
+                ->withAvg('reviews', 'rating')
+                ->latest()
+                ->paginate(12);
+        } else if ($request->url() == 'https://www.korecha.com.et/') {
+            // Guests accessing from specific URL can see only published products
+            $products = Product::with(['reviews', 'category', 'images', 'vendor' => function ($query) {
+                $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                    ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+            }])
+                ->published()
+                ->withCount('reviews')
+                ->withAvg('reviews', 'rating')
+                ->latest()
+                ->paginate(12);
+        } else if ($user) {
+            // Admin and supplier can see all products
+            $products = Product::with(['reviews', 'category', 'images', 'vendor' => function ($query) {
+                $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                    ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+            }])
+                ->viewableBy($user)
+                ->withCount('reviews')
+                ->withAvg('reviews', 'rating')
+                ->latest()
+                ->paginate(12);
+        } else {
+            // Default guest access (from non-specific URLs)
+            $products = Product::with(['reviews', 'category', 'images', 'vendor' => function ($query) {
+                $query->select('id', 'firstName', 'lastName', 'phone', 'email')
+                    ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
+            }])
+                ->published()
+                ->withCount('reviews')
+                ->withAvg('reviews', 'rating')
+                ->latest()
+                ->paginate(12);
+        }
 
         // Log the result for debugging
-    \Log::info('Products Data', $products->toArray());
+        \Log::info('Products Data', $products->toArray());
 
-    return response()->json([
-        'products' => ProductResource::collection($products)
-    ], 201);
-}
+        return response()->json([
+            'products' => ProductResource::collection($products)
+        ], 200); // Changed from 201 to 200 as this is a GET request
+    }
 
     public function store(Request $request)
     {
@@ -185,7 +196,7 @@ public function index(Request $request)
                 'tags' => 'required|array|min:1',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
-                'coverUrl' => ['nullable', function($attribute, $value, $fail) {
+                'coverUrl' => ['nullable', function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('The cover url must be either a valid URL or an image file.');
@@ -199,7 +210,7 @@ public function index(Request $request)
                     }
                 }],
                 'images' => 'nullable|array',
-                'images.*' => [function($attribute, $value, $fail) {
+                'images.*' => [function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('Each image must be either a valid URL or an image file.');
@@ -306,7 +317,6 @@ public function index(Request $request)
                 'message' => 'Product created successfully',
                 'product' => new ProductResource($product)
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error creating product with brand data', [
@@ -541,7 +551,7 @@ public function index(Request $request)
                 'tags' => 'required|array|min:1',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
-                'coverUrl' => ['nullable', function($attribute, $value, $fail) {
+                'coverUrl' => ['nullable', function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('The cover url must be either a valid URL or an image file.');
@@ -555,7 +565,7 @@ public function index(Request $request)
                     }
                 }],
                 'images' => 'nullable|array',
-                'images.*' => [function($attribute, $value, $fail) {
+                'images.*' => [function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('Each image must be either a valid URL or an image file.');
@@ -642,7 +652,7 @@ public function index(Request $request)
                 return response()->json(['error' => $processedImages['error']], 500);
             }
 
-            if($processedImages['coverUrl']){
+            if ($processedImages['coverUrl']) {
                 $product->coverUrl = $processedImages['coverUrl'];
             }
 
@@ -677,7 +687,6 @@ public function index(Request $request)
                 'message' => 'Product updated successfully',
                 'product' => new ProductResource($product)
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error updating product with brand data', [
@@ -755,7 +764,6 @@ public function index(Request $request)
                 'message' => 'Product vendor transferred successfully',
                 'product' => new ProductResource($product)
             ]);
-
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error transferring product vendor', 'error' => $e->getMessage()], 500);
         }
@@ -791,7 +799,6 @@ public function index(Request $request)
                 'message' => 'Product visibility updated successfully',
                 'product' => new ProductResource($product)
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error updating product publish status', [
                 'product_id' => $id,
