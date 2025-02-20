@@ -9,7 +9,7 @@ use Chapa\Chapa\Facades\Chapa as Chapa;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
-
+use App\Services\EmailVerificationService;
 class ChapaController extends Controller
 {
     /**
@@ -17,11 +17,13 @@ class ChapaController extends Controller
      * @var string
      */
     protected $reference;
+    protected $emailVerificationService;
 
-    public function __construct()
+    public function __construct(EmailVerificationService $emailVerificationService)
     {
         // Initialize reference on construction
         $this->reference = Chapa::generateReference();
+        $this->emailVerificationService = $emailVerificationService;
     }
 
     public function initializePayment(Request $request): JsonResponse
@@ -38,6 +40,7 @@ class ChapaController extends Controller
                 'email' => $request->email,
                 'tx_ref' => $reference,
                 'callback_url' => route('callback', [$reference]),
+                'return_url' => route('chapa.return', ['tx_ref' => $reference]),
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'phone_number' => str_replace(' ', '', $request->phone_number),
@@ -130,6 +133,8 @@ class ChapaController extends Controller
                     $invoice->update([
                         'status' => 'paid'
                     ]);
+                    //send email to customer
+                    $this->emailVerificationService->sendInvoiceEmail($invoice);
                 }
 
                 return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/success'
@@ -157,13 +162,37 @@ class ChapaController extends Controller
 
     public function handleReturn(Request $request)
     {
-        \Log::info('Payment return endpoint hit', ['tx_ref' => $request->input('tx_ref')]);
+        \Log::info('Payment return endpoint hit', [
+            'tx_ref' => $request->input('tx_ref'),
+            'all_params' => $request->all()
+        ]);
 
         $txRef = $request->input('tx_ref');
+
+        try {
+            // Verify the transaction when returning from receipt
+            $data = Chapa::verifyTransaction($txRef);
+            \Log::info('Verification on return', ['data' => $data]);
+
+            if ($data['status'] === 'success') {
+                return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/success'
+                    . '?tx_ref=' . $txRef
+                    . '&transaction_id=' . ($data['data']['transaction_id'] ?? '')
+                    . '&amount=' . ($data['data']['amount'] ?? '')
+                    . '&currency=' . ($data['data']['currency'] ?? '')
+                    . '&status=success');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Return verification failed', [
+                'error' => $e->getMessage(),
+                'tx_ref' => $txRef
+            ]);
+        }
+
+        // If verification fails or throws error, check payment record
         $payment = OrderPayment::where('tx_ref', $txRef)->first();
 
         if (!$payment) {
-            \Log::warning('Payment not found', ['tx_ref' => $txRef]);
             return redirect()->to(config('app.frontend_url') . '/e-commerce/payment/failed'
                 . '?error=payment-not-found'
                 . '&tx_ref=' . $txRef);

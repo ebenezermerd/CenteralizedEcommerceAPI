@@ -48,7 +48,7 @@ Route::post('/auth/email/verify', [EmailVerificationController::class, 'verifyEm
 Route::post('/auth/email/verify/resend', [EmailVerificationController::class, 'resendVerificationEmail']);
 Route::post('/auth/email/send-otp', [EmailVerificationController::class, 'sendVerificationOTP']);
 
-
+// Chapa payment routes - these should be outside the auth middleware
 Route::post('chapa/initialize', [ChapaController::class, 'initializePayment'])->name('chapa.initialize');
 Route::get('chapa/callback/{reference}', [ChapaController::class, 'callback'])->name('callback');
 Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');

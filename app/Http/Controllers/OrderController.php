@@ -521,8 +521,10 @@ class OrderController extends Controller
                 'phone_number' => $order->customer->phone_number,
                 'email' => $order->customer->email
             ]);
-
-            $this->emailVerificationService->sendInvoiceEmail($invoice);
+            //send email if payment method is other than chapa
+            if ($validated['payment']['method'] !== 'chapa') {
+                $this->emailVerificationService->sendInvoiceEmail($invoice);
+            }
 
             \Log::info('Invoice created', ['invoice' => $invoice->toArray()]);
             // Create invoice items
