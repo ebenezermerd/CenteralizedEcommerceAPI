@@ -54,27 +54,27 @@
             <div class="invoice-details">
                 <div class="amount-row">
                     <span>Subtotal:</span>
-                    <span>${{ number_format($invoice->subtotal, 2) }}</span>
+                    <span>ETB {{ number_format($invoice->subtotal, 2) }}</span>
                 </div>
 
                 <div class="amount-row">
                     <span>Taxes:</span>
-                    <span>${{ number_format($invoice->taxes, 2) }}</span>
+                    <span>ETB {{ number_format($invoice->taxes, 2) }}</span>
                 </div>
 
                 <div class="amount-row">
                     <span>Shipping:</span>
-                    <span>${{ number_format($invoice->shipping, 2) }}</span>
+                    <span>ETB {{ number_format($invoice->shipping, 2) }}</span>
                 </div>
 
                 <div class="amount-row">
                     <span>Discount:</span>
-                    <span>-${{ number_format($invoice->discount, 2) }}</span>
+                    <span>-ETB {{ number_format($invoice->discount, 2) }}</span>
                 </div>
 
                 <div class="amount-row total">
                     <span>Total Amount:</span>
-                    <span>${{ number_format($invoice->total_amount, 2) }}</span>
+                    <span>ETB {{ number_format($invoice->total_amount, 2) }}</span>
                 </div>
 
                 <p style="margin-top: 20px;">Status: <span style="text-transform: uppercase; color: #007bff;">{{ $invoice->status }}</span></p>

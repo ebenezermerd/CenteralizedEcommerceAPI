@@ -19,6 +19,7 @@ use App\Services\EmailVerificationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\MegaCompanyAddress;
 use App\Http\Controllers\ChapaController;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -260,50 +261,75 @@ class OrderController extends Controller
      */
     public function checkout(Request $request): JsonResponse
     {
-        // Log the incoming request
         \Log::info('Order checkout initiated', [
             'request_data' => $request->all(),
             'user_id' => auth()->id()
         ]);
 
-        $validated = $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.price' => 'required|numeric',
-            'items.*.name' => 'required|string',
-            'items.*.coverUrl' => 'nullable|string',
-            'billing' => 'required|array',
-            'billing.name' => 'required|string',
-            'billing.email' => 'required|email',
-            'billing.fullAddress' => 'required|string',
-            'billing.phoneNumber' => 'required|string',
-            'billing.company' => 'nullable|string',
-            'billing.addressType' => 'nullable|string',
-            'shipping' => 'required|array',
-            'shipping.address' => 'required|string',
-            'shipping.method.description' => 'nullable|string',
-            'shipping.method.label' => 'required|string',
-            'shipping.method.value' => 'required|numeric',
-            'payment' => 'required|array',
-            'payment.method' => 'required|string',
-            'payment.amount' => 'required|numeric',
-            'payment.currency' => 'required|string',
-            'payment.tx_ref' => 'nullable|string',
-            'status' => 'required|string|in:pending,completed,cancelled,refunded',
-            'total' => 'required|numeric',
-            'subtotal' => 'required|numeric',
-        ]);
-
-
-        if (!$validated) {
-            \Log::error('Validation failed', ['errors' => $request->validator->errors()]);
-        } else {
-            \Log::info('Validation passed', ['validated_data' => $validated]);
-        }
-
-        DB::beginTransaction();
         try {
+            $validated = $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.price' => 'required|numeric',
+                'items.*.name' => 'required|string',
+                'items.*.coverUrl' => 'nullable|string',
+                'billing' => 'required|array',
+                'billing.name' => 'required|string',
+                'billing.email' => 'required|email',
+                'billing.fullAddress' => 'required|string',
+                'billing.phoneNumber' => 'required|string',
+                'billing.company' => 'nullable|string',
+                'billing.addressType' => 'nullable|string',
+                'shipping' => 'required|array',
+                'shipping.address' => 'required|string',
+                'shipping.method.description' => 'nullable|string',
+                'shipping.method.label' => 'required|string',
+                'shipping.method.value' => 'required|numeric',
+                'payment' => 'required|array',
+                'payment.method' => 'required|string',
+                'payment.amount' => 'required|numeric',
+                'payment.currency' => 'required|string',
+                'payment.tx_ref' => 'nullable|string',
+                'status' => 'required|string|in:pending,completed,cancelled,refunded',
+                'total' => 'required|numeric',
+                'subtotal' => 'required|numeric',
+            ]);
+
+            // Check inventory availability before processing
+            $inventoryCheck = $this->validateInventory($validated['items']);
+            if (!$inventoryCheck['valid']) {
+                \Log::warning('Inventory validation failed during checkout', [
+                    'user_id' => auth()->id(),
+                    'failed_items' => $inventoryCheck['failed_items']
+                ]);
+
+                $errorMessages = [];
+                foreach ($inventoryCheck['failed_items'] as $item) {
+                    if ($item['available_quantity'] === 0) {
+                        $errorMessages[] = "{$item['name']} is out of stock.";
+                    } else {
+                        $errorMessages[] = "Only {$item['available_quantity']} units of {$item['name']} are available (you requested {$item['requested_quantity']}).";
+                    }
+                }
+
+                return response()->json([
+                    'status' => 'error',
+                    'code' => 'INVENTORY_ERROR',
+                    'message' => 'Some items in your cart are no longer available in the requested quantity.',
+                    'details' => [
+                        'unavailable_items' => $inventoryCheck['failed_items'],
+                        'error_messages' => $errorMessages
+                    ],
+                    'suggestions' => [
+                        'update_cart' => true,
+                        'available_alternatives' => $this->getAlternativeProducts($inventoryCheck['failed_items'])
+                    ]
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
             // Log calculation details
             $totalQuantity = collect($validated['items'])->sum('quantity');
             $taxes = collect($validated['items'])->sum(function ($item) {
@@ -523,16 +549,100 @@ class OrderController extends Controller
                 'order' => $order,
                 'checkout_url' => isset($chapaResponse) ? $chapaResponse->getData()->checkout_url : null
             ], 201);
+        } catch (ValidationException $e) {
+            \Log::warning('Checkout validation failed', [
+                'user_id' => auth()->id(),
+                'errors' => $e->errors()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'code' => 'VALIDATION_ERROR',
+                'message' => 'Please check your input and try again.',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Order processing failed', [
+                'user_id' => auth()->id(),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
+                'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['message' => 'Error processing order', 'error' => $e->getMessage()], 500);
+
+            return response()->json([
+                'status' => 'error',
+                'code' => 'PROCESSING_ERROR',
+                'message' => 'We encountered an error while processing your order. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
     }
+
+
+    protected function validateInventory(array $items): array
+    {
+        $result = [
+            'valid' => true,
+            'failed_items' => []
+        ];
+
+        foreach ($items as $item) {
+            $product = Product::find($item['id']);
+
+            if (!$product) {
+                $result['valid'] = false;
+                $result['failed_items'][] = [
+                    'id' => $item['id'],
+                    'name' => 'Product not found',
+                    'requested_quantity' => $item['quantity'],
+                    'available_quantity' => 0,
+                    'status' => 'NOT_FOUND',
+                    'error_type' => 'product_not_found'
+                ];
+                continue;
+            }
+
+            if ($product->quantity < $item['quantity']) {
+                $result['valid'] = false;
+                $result['failed_items'][] = [
+                    'id' => $item['id'],
+                    'name' => $product->name,
+                    'requested_quantity' => $item['quantity'],
+                    'available_quantity' => $product->quantity,
+                    'status' => $product->quantity === 0 ? 'OUT_OF_STOCK' : 'INSUFFICIENT_STOCK',
+                    'error_type' => $product->quantity === 0 ? 'out_of_stock' : 'insufficient_quantity'
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    protected function getAlternativeProducts(array $failedItems): array
+    {
+        $alternatives = [];
+
+        foreach ($failedItems as $item) {
+            $product = Product::find($item['id']);
+            if ($product) {
+                // Find similar products with available stock
+                $similarProducts = Product::where('category_id', $product->category_id)
+                    ->where('id', '!=', $product->id)
+                    ->where('quantity', '>', 0)
+                    ->where('price', '>=', $product->price * 0.8)
+                    ->where('price', '<=', $product->price * 1.2)
+                    ->limit(3)
+                    ->get(['id', 'name', 'price', 'quantity', 'cover_url']);
+
+                if ($similarProducts->isNotEmpty()) {
+                    $alternatives[$item['id']] = $similarProducts;
+                }
+            }
+        }
+
+        return $alternatives;
+    }
+
 
     public function destroy(string $id): JsonResponse
     {
