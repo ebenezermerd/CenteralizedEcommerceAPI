@@ -393,8 +393,8 @@ class OrderController extends Controller
                     'email' => $validated['billing']['email'],
                     'title' => 'Order Payment',
                     'description' => 'Payment for order ' . $order->order_number,
-                    'return_url' => $request->input('return_url'),
-                    'cancel_url' => $request->input('cancel_url')
+                    'return_url' => $request->input('return_url', config('chapa.success_url')),
+                    'cancel_url' => $request->input('cancel_url', config('chapa.cancel_url'))
                 ]);
 
                 $chapaController = app(ChapaController::class);
