@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('payment_method');
+            $table->string('transaction_id')->nullable();
+            $table->timestamp('payment_date')->nullable();
             $table->decimal('amount', 8, 2);
             $table->string('currency');
             $table->string('tx_ref')->nullable();
             $table->string('status')->default('pending');
             $table->string('bank_account')->nullable();
-            $table->string('mobile_banking_number')->nullable();
-            $table->string('proof_of_payment')->nullable();
             $table->timestamps();
         });
     }
