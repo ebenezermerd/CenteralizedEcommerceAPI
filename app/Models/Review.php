@@ -21,6 +21,9 @@ class Review extends Model
         'is_purchased'
     ];
 
+    public $incrementing = false; // Disable auto-incrementing
+    protected $keyType = 'string'; // Set the key type to string
+
     public function product()
     {
         return $this->belongsTo(Product::class);

@@ -37,8 +37,8 @@ class ReviewController extends Controller
         $validated = $request->validate([
             'comment' => 'required|string|max:1000',
             'name' => 'required|string|max:255',
-            'product_id' => 'required|uuid|exists:products,id', // Assuming product_id is a UUID
-            'rating' => 'required|integer|between:1,5', // Assuming rating is between 1 and 5
+            'product_id' => 'required|uuid|exists:products,id',
+            'rating' => 'required|integer|between:1,5',
         ]);
 
         try {
@@ -48,10 +48,6 @@ class ReviewController extends Controller
                 'name' => $validated['name'],
                 'product_id' => $validated['product_id'],
                 'rating' => $validated['rating'],
-                'posted_at' => now(),
-                'is_purchased' => true,
-                'helpful' => 0,
-                'avatar_url' => auth()->user()->avatarUrl ?? null,
                 'user_id' => auth()->id(), // Assuming you want to associate the review with the authenticated user
             ]);
 

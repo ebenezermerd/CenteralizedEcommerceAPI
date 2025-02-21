@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('product_reviews', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->uuid('product_id');
 
             $table->foreignId('user_id')->constrained();
@@ -27,9 +27,9 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('product_id')
-            ->references('id')
-            ->on('products')
-            ->onDelete('cascade');
+                ->references('id')
+                ->on('products')
+                ->onDelete('cascade');
         });
     }
 
