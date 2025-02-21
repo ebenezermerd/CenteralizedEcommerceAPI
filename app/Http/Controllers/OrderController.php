@@ -177,12 +177,12 @@ class OrderController extends Controller
         ]);
 
         return response()->json([
-            'orders' => OrderResource::collection($orders),
+            'orders' => OrderResource::collection($orders) ?? [],
             'pagination' => [
-                'total' => $orders->total(),
-                'per_page' => $orders->perPage(),
-                'current_page' => $orders->currentPage(),
-                'last_page' => $orders->lastPage()
+                'total' => $orders->total() ?? 0,
+                'per_page' => $orders->perPage() ?? 10,
+                'current_page' => $orders->currentPage() ?? 1,
+                'last_page' => $orders->lastPage() ?? 1
             ]
         ], 200);
     }
