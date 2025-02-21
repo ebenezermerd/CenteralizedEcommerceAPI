@@ -32,6 +32,11 @@ class ReviewController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        //check user authentication
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthorized user please login to continue review'], 401);
+        }
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'rating' => 'required|numeric|min:1|max:5',
@@ -59,7 +64,7 @@ class ReviewController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $review = ProductReview::findOrFail($id);
-        
+
         // Check if user owns the review or is admin
         if ($review->user_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -94,7 +99,7 @@ class ReviewController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $review = ProductReview::findOrFail($id);
-        
+
         // Check if user owns the review or is admin
         if ($review->user_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
             return response()->json(['message' => 'Unauthorized'], 403);
