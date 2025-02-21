@@ -150,6 +150,10 @@ Route::middleware(['jwt'])->group(function () {
     Route::put('cart/{id}', [CartController::class, 'update']);
     Route::delete('cart/{id}', [CartController::class, 'destroy']);
 
+    Route::post('/checkout/orders', [OrderController::class, 'checkout']);
+    Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
+    Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
+
     // Company routes with proper authentication
     Route::apiResource('companies', CompanyController::class);
     Route::get('companies/vendor/{id}', [CompanyController::class, 'vendorCompany']);
@@ -159,12 +163,6 @@ Route::middleware(['jwt'])->group(function () {
     Route::put('companies/mega-company/addresses/{id}', [CompanyController::class, 'updateMegaCompanyAddress']);
     Route::delete('companies/mega-company/addresses/{id}', [CompanyController::class, 'deleteMegaCompanyAddress']);
     Route::get('companies/mega-company/addresses/{id}', [CompanyController::class, 'getMegaCompanyAddress']);
-    // Customer specific routes
-    Route::middleware(['role:customer|admin|supplier'])->group(function () {
-        Route::post('/checkout/orders', [OrderController::class, 'checkout']);
-        Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
-        Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
-    });
 
     // Analytics routes
     Route::middleware(['role:admin'])->prefix('analytics')->group(function () {
