@@ -37,7 +37,6 @@ class ReviewController extends Controller
     {
         Log::info('Review controller store', [
             'request' => $request->all(),
-
         ]);
 
         // Validate the incoming request
@@ -49,22 +48,19 @@ class ReviewController extends Controller
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
-        $user = User::find($validated['user_id']);
-        Log::info('User found', ['user' => $user]);
-
         try {
-            // Log the user ID before creating the review
-            Log::info('Creating review with user_id', ['user_id' => $user->id]);
+            // Log the validated data
+            Log::info('Validated data for review creation', ['validated' => $validated]);
 
             // Create a new review
             $review = ProductReview::create([
-                'user_id' => $user->id,
+                'user_id' => $validated['user_id'],
                 'comment' => $validated['comment'],
                 'name' => $validated['name'],
                 'product_id' => $validated['product_id'],
                 'posted_at' => now(),
                 'helpful' => 0,
-                'avatar_url' => $user->avatarUrl,
+                'avatar_url' => User::find($validated['user_id'])->avatarUrl ?? null,
                 'rating' => $validated['rating'],
             ]);
 
@@ -75,8 +71,12 @@ class ReviewController extends Controller
                 'review' => $review,
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Failed to create review', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Failed to create review'], 500);
+            Log::error('Failed to create review', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Failed to create review', 'error' => $e->getMessage()], 500);
         }
     }
 
