@@ -26,6 +26,8 @@ class ProductReview extends Model
     ];
 
     protected $casts = [
+        'id' => 'string',
+        'user_id' => 'integer',
         'rating' => 'float',
         'helpful' => 'integer',
         'is_purchased' => 'boolean',
@@ -36,7 +38,7 @@ class ProductReview extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($model) {
             $model->id = (string) Str::uuid();
         });
@@ -49,6 +51,6 @@ class ProductReview extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }
