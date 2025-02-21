@@ -30,23 +30,40 @@ class AddressBookController extends Controller
     {
         \Log::info('Creating address book entry', [
             'user_id' => $userId,
-            'data' => $request->validated()
+            'request_data' => $request->all()
         ]);
 
+        // Get the user with their basic information
         $user = User::findOrFail($userId);
 
+        // Map the data using request parameters and user information
         $mappedData = [
             'user_id' => $userId,
-            'name' => $request->name,
-            'email' => $request->email,
-            'company' => $request->company,
-            'is_primary' => $request->primary,
-            'full_address' => $request->fullAddress,
-            'phone_number' => $request->phoneNumber,
-            'address_type' => strtolower($request->addressType)
+            'is_primary' => $request->input('is_primary', false),
+            'full_address' => $request->input('fullAddress'),
+            'address_type' => strtolower($request->input('addressType')),
+            // Combine first and last name
+            'name' => $user->firstName . ' ' . $user->lastName,
+            'email' => $user->email,
+            'phone_number' => $user->phone
         ];
 
+        // If setting as primary, update existing primary addresses
+        if ($mappedData['is_primary']) {
+            $user->addressBooks()
+                ->where('is_primary', true)
+                ->update(['is_primary' => false]);
+
+            \Log::info('Reset existing primary addresses for user', ['user_id' => $userId]);
+        }
+
         $address = $user->addressBooks()->create($mappedData);
+
+        \Log::info('Address created successfully', [
+            'address_id' => $address->id,
+            'is_primary' => $address->is_primary
+        ]);
+
         return response()->json(new AddressResource($address), 201);
     }
 
@@ -62,13 +79,12 @@ class AddressBookController extends Controller
         $address = $user->addressBooks()->findOrFail($addressId);
 
         $mappedData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'company' => $request->company,
-            'is_primary' => $request->primary,
-            'full_address' => $request->fullAddress,
-            'phone_number' => $request->phoneNumber,
-            'address_type' => strtolower($request->addressType)
+            'name' => $user->firstName . ' ' . $user->lastName,
+            'email' => $user->email,
+            'is_primary' => $request->input('is_primary', false),
+            'full_address' => $request->input('fullAddress'),
+            'phone_number' => $request->input('phoneNumber'),
+            'address_type' => strtolower($request->input('addressType'))
         ];
 
         $address->update($mappedData);

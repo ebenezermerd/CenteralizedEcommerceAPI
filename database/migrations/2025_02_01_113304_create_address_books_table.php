@@ -16,11 +16,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('email');
-            $table->string('company')->nullable();
             $table->boolean('is_primary')->default(false);
             $table->text('full_address');
             $table->string('phone_number');
-            $table->enum('address_type', ['home', 'office']);
+            $table->enum('address_type', ['home', 'office', 'other']);
             $table->timestamps();
         });
     }

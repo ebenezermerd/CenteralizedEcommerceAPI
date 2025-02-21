@@ -19,6 +19,7 @@ use Spatie\Activitylog\Facades\LogActivity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
+use App\Models\AddressBook;
 use App\Services\EmailVerificationService;
 
 /**
@@ -117,6 +118,16 @@ class AuthController extends Controller
                 ]);
                 $user->save();
             }
+
+            $addressBook = AddressBook::create([
+                'user_id' => $user->id,
+                'name' => $user->firstName . ' ' . $user->lastName,
+                'email' => $user->email,
+                'phone_number' => $user->phone,
+                'address_type' => 'other',
+                'full_address' => $user->address,
+                'is_primary' => true
+            ]);
 
             //   // Send registration email
             $this->emailVerificationService->sendRegistrationEmail($user);
