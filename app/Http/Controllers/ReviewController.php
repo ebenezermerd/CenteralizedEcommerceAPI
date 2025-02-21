@@ -47,6 +47,7 @@ class ReviewController extends Controller
                 'comment' => $validated['comment'],
                 'name' => $validated['name'],
                 'product_id' => $validated['product_id'],
+                'avatar_url' => auth()->user()->avatarUrl,
                 'rating' => $validated['rating'],
                 'user_id' => auth()->id(), // Assuming you want to associate the review with the authenticated user
             ]);
