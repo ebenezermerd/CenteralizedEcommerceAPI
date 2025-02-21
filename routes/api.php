@@ -26,9 +26,9 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 Route::get('/health', [HealthController::class, 'check']);
 Route::get('/products/list', [ProductController::class, 'index']);
 // Public routes
-Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/product/details', [ProductController::class, 'show']);
 Route::get('/products/search', [ProductController::class, 'search']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
 
 /**
  * @group Authentication
