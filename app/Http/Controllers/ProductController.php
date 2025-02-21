@@ -13,6 +13,8 @@ use App\Models\Category;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use App\Mail\CompanyApprovalRequired;
+use Illuminate\Support\Facades\Mail;
 
 class ProductController extends Controller
 {
@@ -157,8 +159,53 @@ class ProductController extends Controller
         ], 200); // Changed from 201 to 200 as this is a GET request
     }
 
+    private function checkSupplierEligibility()
+    {
+        $user = auth()->user();
+
+        if (!$user->hasRole('supplier')) {
+            return [
+                'eligible' => false,
+                'message' => 'Only suppliers can create products',
+                'status' => 403
+            ];
+        }
+
+        $company = $user->company;
+
+        if (!$company) {
+            return [
+                'eligible' => false,
+                'message' => 'No company found for this supplier',
+                'status' => 404
+            ];
+        }
+
+        if ($company->status !== 'active') {
+            // Send email notification
+            Mail::to($user->email)
+                ->send(new CompanyApprovalRequired($company));
+
+            return [
+                'eligible' => false,
+                'message' => 'Your company account requires approval before you can create products. Please check your email for more information.',
+                'status' => 403
+            ];
+        }
+
+        return ['eligible' => true];
+    }
+
     public function store(Request $request)
     {
+        // Check supplier eligibility
+        $eligibilityCheck = $this->checkSupplierEligibility();
+        if (!$eligibilityCheck['eligible']) {
+            return response()->json([
+                'message' => $eligibilityCheck['message']
+            ], $eligibilityCheck['status']);
+        }
+
         try {
             DB::beginTransaction();
             Log::info('Starting product creation', ['request' => $request->except(['coverUrl', 'images'])]);
@@ -293,7 +340,7 @@ class ProductController extends Controller
             // Log final brand data after save
             Log::info('Final brand data after save', [
                 'product_id' => $product->id,
-                'final_brand' => $product->fresh()->brand
+                'final_brand' => $product->brand
             ]);
 
             // 5. Store additional images

@@ -13,22 +13,30 @@
         .container {
             max-width: 600px;
             margin: 20px auto;
-            background: #ffffff;
+            background: #f5f5f5;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(4px);
+            transition: transform 0.3s ease;
         }
         .header {
             text-align: center;
             padding: 30px 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            color: #2d3748;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(4px);
+            transition: transform 0.3s ease;
         }
         .logo {
             width: 150px;
             height: auto;
             margin: 0 auto 15px;
             display: block;
+            transform: translateY(4px);
+            transition: transform 0.3s ease;
         }
         .header h1 {
             margin: 0;
@@ -42,7 +50,7 @@
         }
         .content {
             padding: 30px;
-            background: #ffffff;
+            background: #f5f5f5;
         }
         .greeting {
             font-size: 18px;
@@ -50,10 +58,13 @@
             color: #2d3748;
         }
         .invoice-details {
-            background: #f8fafc;
+            background: #e0e0e0;
             border-radius: 8px;
             padding: 25px;
             margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(4px);
+            transition: transform 0.3s ease;
         }
         .amount-row {
             display: flex;
@@ -90,6 +101,9 @@
             background: {{ $invoice->status === 'paid' ? '#C6F6D5' : '#FED7D7' }};
             color: {{ $invoice->status === 'paid' ? '#276749' : '#9B2C2C' }};
             margin-top: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(4px);
+            transition: transform 0.3s ease;
         }
         .footer {
             margin-top: 30px;
@@ -104,6 +118,9 @@
             background: #edf2f7;
             border-radius: 6px;
             font-size: 14px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(4px);
+            transition: transform 0.3s ease;
         }
     </style>
 </head>

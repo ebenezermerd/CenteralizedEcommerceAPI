@@ -37,8 +37,8 @@ class AuthController extends Controller
     public function __construct(EmailVerificationService $emailVerificationService)
     {
         $this->emailVerificationService = $emailVerificationService;
-        $this->ACCESS_TOKEN_TTL = 60;
-        $this->REFRESH_TOKEN_TTL = 10080;
+        $this->ACCESS_TOKEN_TTL = 2880; // 2 days in minutes
+        $this->REFRESH_TOKEN_TTL = 10080; // 7 days in minutes
     }
 
     /**
@@ -118,8 +118,9 @@ class AuthController extends Controller
                 $user->save();
             }
 
-            //   // Send email verification
-            //   $this->emailVerificationService->sendVerificationEmail($user);
+            //   // Send registration email
+            $this->emailVerificationService->sendRegistrationEmail($user);
+
 
             Log::info('User registered successfully', [
                 'user_id' => $user->id,

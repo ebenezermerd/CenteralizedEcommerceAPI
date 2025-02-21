@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\EmailVerificationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Mail\UserRoleUpdated;
+use App\Mail\UserAccountDeleted;
+use Illuminate\Support\Facades\Mail;
 
 
 class UserController extends Controller
@@ -64,7 +67,7 @@ class UserController extends Controller
                 Log::info('Uploading new image for user');
                 $validated['image'] = $request->file('image')->store('users/avatars', 'public');
             }
-             // verified status if provided
+            // verified status if provided
             if (isset($validated['isVerified'])) {
                 $validated['verified'] = filter_var($validated['isVerified'], FILTER_VALIDATE_BOOLEAN);
                 unset($validated['isVerified']);
@@ -137,6 +140,9 @@ class UserController extends Controller
         try {
             $user = User::findOrFail($id);
 
+            // Store current role for comparison
+            $oldRole = $user->roles->first()?->name;
+
             $validated = $request->validate([
                 'firstName' => 'sometimes|string|max:255',
                 'lastName' => 'sometimes|string|max:255',
@@ -168,10 +174,20 @@ class UserController extends Controller
             }
 
             // Handle role update
-            if (isset($validated['role'])) {
-                $role = $validated['role'];
+            if (isset($validated['role']) && $validated['role'] !== $oldRole) {
+                $newRole = $validated['role'];
                 unset($validated['role']);
-                $user->syncRoles([$role]); // Sync roles with Spatie's permission package
+                $user->syncRoles([$newRole]);
+
+                // Send role update notification
+                Mail::to($user->email)
+                    ->send(new UserRoleUpdated($user, $oldRole, $newRole));
+
+                Log::info('User role updated', [
+                    'user_id' => $user->id,
+                    'old_role' => $oldRole,
+                    'new_role' => $newRole
+                ]);
             }
             // Update verified status if provided
             if (isset($validated['isVerified'])) {
@@ -223,11 +239,20 @@ class UserController extends Controller
     {
         try {
             $user = User::findOrFail($id);
+
+            // Store email before deletion
+            $userEmail = $user->email;
+
+            // Send deletion notification
+            Mail::to($userEmail)
+                ->send(new UserAccountDeleted($user));
+
             $user->delete();
 
-            Log::info('User deleted', [
+            Log::info('User deleted and notified', [
                 'admin_id' => auth()->id(),
                 'deleted_user_id' => $id,
+                'user_email' => $userEmail,
                 'ip' => request()->ip()
             ]);
 

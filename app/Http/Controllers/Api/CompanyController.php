@@ -10,9 +10,19 @@ use App\Http\Requests\CompanyRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MegaCompanyAddress;
 use App\Http\Resources\MegaCompanyAddressResource;
+use App\Services\EmailVerificationService;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CompanyStatusChanged;
+use App\Mail\CompanyUpdated;
+use App\Mail\CompanyDeleted;
 
 class CompanyController extends Controller
 {
+    public function __construct(private EmailVerificationService $emailVerificationService)
+    {
+        $this->emailVerificationService = $emailVerificationService;
+    }
+
     public function index(Request $request)
     {
         $query = Company::with('owner');
@@ -51,6 +61,8 @@ class CompanyController extends Controller
 
         $company = Company::create($data);
         $company->load('owner');
+
+        $this->emailVerificationService->sendRegistrationEmail($company->owner);
 
         return response()->json($company, 201);
     }
@@ -92,8 +104,23 @@ class CompanyController extends Controller
         }
 
         $data = $request->validated();
+
+        // Get changed fields
+        $changedFields = array_intersect_key(
+            $data,
+            array_flip(array_filter(array_keys($data), function ($key) use ($company, $data) {
+                return $company->{$key} !== $data[$key];
+            }))
+        );
+
         $company->update($data);
         $company->load('owner');
+
+        // Send email notification if there are changes
+        if (!empty($changedFields)) {
+            Mail::to($company->owner->email)
+                ->send(new CompanyUpdated($company, $changedFields));
+        }
 
         return response()->json($company);
     }
@@ -105,9 +132,33 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $company->delete();
+        try {
+            // Load owner relationship before deletion
+            $company->load('owner');
 
-        return response()->json(null, 204);
+            // Store email for sending notification after deletion
+            $ownerEmail = $company->owner->email;
+
+            // Send deletion notification
+            Mail::to($ownerEmail)->send(new CompanyDeleted($company));
+
+            // Delete the company
+            $company->delete();
+
+            return response()->json([
+                'message' => 'Company deleted successfully'
+            ], 204);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting company', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'message' => 'Error deleting company',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function updateStatus(Request $request, Company $company)
@@ -121,11 +172,17 @@ class CompanyController extends Controller
             'status' => 'required|string|in:pending,active,inactive,blocked'
         ]);
 
+        $previousStatus = $company->status;
+
         $company->update([
             'status' => $request->status
         ]);
 
         $company->load('owner');
+
+        // Send status change email
+        Mail::to($company->owner->email)
+            ->send(new CompanyStatusChanged($company, $previousStatus));
 
         return response()->json([
             'success' => true,

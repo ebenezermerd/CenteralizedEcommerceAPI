@@ -10,7 +10,7 @@ use App\Mail\SendOtpMail;
 use App\Mail\InvoiceCreated;
 use App\Models\Invoice;
 use App\Mail\MfaOtpMail;
-
+use App\Mail\RegistrationEmail;
 class EmailVerificationService
 {
     public function generateOTP(): string
@@ -62,4 +62,8 @@ class EmailVerificationService
         Mail::to($invoice->user->email)->send(new InvoiceCreated($invoice));
     }
 
+    public function sendRegistrationEmail(User $user)
+    {
+        Mail::to($user->email)->send(new RegistrationEmail($user));
+    }
 }

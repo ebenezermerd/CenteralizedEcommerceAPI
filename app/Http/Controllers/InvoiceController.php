@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\InvoiceCollection;
+use App\Mail\InvoiceStatusUpdated;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
@@ -45,129 +48,129 @@ class InvoiceController extends Controller
         return response()->json(new InvoiceResource($invoice) ?? [], 200);
     }
 
-/**
- * @group Invoices
- *
- * Retrieve a specific user's invoices.
- *
- * This endpoint retrieves all invoices associated with the given user ID.
- *
- * @param string $userId The ID of the user whose invoices are to be retrieved.
- *
- * @response 200 {
- *   "data": {
- *       "id": "string",
- *       "invoiceNumber": "string",
- *       "sent": "boolean",
- *       "taxes": "float",
- *       "status": "string",
- *       "subtotal": "float",
- *       "discount": "float",
- *       "shipping": "float",
- *       "totalAmount": "float",
- *       "createdAt": "string",
- *       "dueDate": "string",
- *       "items": [
- *           {
- *               "id": "string",
- *               "title": "string",
- *               "price": "float",
- *               "total": "float",
- *               "service": "string",
- *               "quantity": "int",
- *               "description": "string"
- *           }
- *       ],
- *       "invoiceFrom": {
- *           "name": "string",
- *           "fullAddress": "string",
- *           "phoneNumber": "string"
- *       },
- *       "invoiceTo": {
- *           "name": "string",
- *           "fullAddress": "string",
- *           "phoneNumber": "string"
- *       }
- *   }
- * }
- *
- * @response 404 {
- *   "message": "No invoices found for this user."
- * }
- */
-public function showByUserId(Request $request, String $userId)
-{
-    $invoices = Invoice::where('user_id', $userId)->get();
-    return response()->json(new InvoiceResource($invoices) ?? [], 200);
-}
+    /**
+     * @group Invoices
+     *
+     * Retrieve a specific user's invoices.
+     *
+     * This endpoint retrieves all invoices associated with the given user ID.
+     *
+     * @param string $userId The ID of the user whose invoices are to be retrieved.
+     *
+     * @response 200 {
+     *   "data": {
+     *       "id": "string",
+     *       "invoiceNumber": "string",
+     *       "sent": "boolean",
+     *       "taxes": "float",
+     *       "status": "string",
+     *       "subtotal": "float",
+     *       "discount": "float",
+     *       "shipping": "float",
+     *       "totalAmount": "float",
+     *       "createdAt": "string",
+     *       "dueDate": "string",
+     *       "items": [
+     *           {
+     *               "id": "string",
+     *               "title": "string",
+     *               "price": "float",
+     *               "total": "float",
+     *               "service": "string",
+     *               "quantity": "int",
+     *               "description": "string"
+     *           }
+     *       ],
+     *       "invoiceFrom": {
+     *           "name": "string",
+     *           "fullAddress": "string",
+     *           "phoneNumber": "string"
+     *       },
+     *       "invoiceTo": {
+     *           "name": "string",
+     *           "fullAddress": "string",
+     *           "phoneNumber": "string"
+     *       }
+     *   }
+     * }
+     *
+     * @response 404 {
+     *   "message": "No invoices found for this user."
+     * }
+     */
+    public function showByUserId(Request $request, String $userId)
+    {
+        $invoices = Invoice::where('user_id', $userId)->get();
+        return response()->json(new InvoiceResource($invoices) ?? [], 200);
+    }
 
-/**
- * @group Invoices
- *
- * Retrieve all invoices for a specific user with detailed information.
- *
- * This endpoint retrieves all invoices associated with the given user ID, including
- * related items, billing information, and pagination.
- *
- * @param string $userId The ID of the user whose invoices are to be retrieved.
- *
- * @response 200 {
- *   "invoices": [
- *       {
- *           "id": "string",
- *           "invoiceNumber": "string",
- *           "sent": "boolean",
- *           "taxes": "float",
- *           "status": "string",
- *           "subtotal": "float",
- *           "discount": "float",
- *           "shipping": "float",
- *           "totalAmount": "float",
- *           "createdAt": "string",
- *           "dueDate": "string",
- *           "items": [
- *               {
- *                   "id": "string",
- *                   "title": "string",
- *                   "price": "float",
- *                   "total": "float",
- *                   "service": "string",
- *                   "quantity": "int",
- *                   "description": "string"
- *               }
- *           ],
- *           "invoiceFrom": {
- *               "name": "string",
- *               "fullAddress": "string",
- *               "phoneNumber": "string"
- *           },
- *           "invoiceTo": {
- *               "name": "string",
- *               "fullAddress": "string",
- *               "phoneNumber": "string"
- *           }
- *       }
- *   ],
- *   "pagination": {
- *       "total": "int",
- *       "perPage": "int",
- *       "currentPage": "int",
- *       "lastPage": "int"
- *   }
- * }
- *
- * @response 404 {
- *   "message": "No invoices found for this user."
- * }
- */
-public function userInvoices(Request $request, String $userId)
-{
-    $invoices = Invoice::whereHas('user', function($query) use ($userId) {
-        $query->where('id', $userId);
-    })->with('items', 'billFrom', 'billTo')->get();
+    /**
+     * @group Invoices
+     *
+     * Retrieve all invoices for a specific user with detailed information.
+     *
+     * This endpoint retrieves all invoices associated with the given user ID, including
+     * related items, billing information, and pagination.
+     *
+     * @param string $userId The ID of the user whose invoices are to be retrieved.
+     *
+     * @response 200 {
+     *   "invoices": [
+     *       {
+     *           "id": "string",
+     *           "invoiceNumber": "string",
+     *           "sent": "boolean",
+     *           "taxes": "float",
+     *           "status": "string",
+     *           "subtotal": "float",
+     *           "discount": "float",
+     *           "shipping": "float",
+     *           "totalAmount": "float",
+     *           "createdAt": "string",
+     *           "dueDate": "string",
+     *           "items": [
+     *               {
+     *                   "id": "string",
+     *                   "title": "string",
+     *                   "price": "float",
+     *                   "total": "float",
+     *                   "service": "string",
+     *                   "quantity": "int",
+     *                   "description": "string"
+     *               }
+     *           ],
+     *           "invoiceFrom": {
+     *               "name": "string",
+     *               "fullAddress": "string",
+     *               "phoneNumber": "string"
+     *           },
+     *           "invoiceTo": {
+     *               "name": "string",
+     *               "fullAddress": "string",
+     *               "phoneNumber": "string"
+     *           }
+     *       }
+     *   ],
+     *   "pagination": {
+     *       "total": "int",
+     *       "perPage": "int",
+     *       "currentPage": "int",
+     *       "lastPage": "int"
+     *   }
+     * }
+     *
+     * @response 404 {
+     *   "message": "No invoices found for this user."
+     * }
+     */
+    public function userInvoices(Request $request, String $userId)
+    {
+        $invoices = Invoice::whereHas('user', function ($query) use ($userId) {
+            $query->where('id', $userId);
+        })->with('items', 'billFrom', 'billTo')->get();
 
-    return response()->json(new InvoiceCollection($invoices) ?? [], 200);
-}
+        return response()->json(new InvoiceCollection($invoices) ?? [], 200);
+    }
 
     public function store(Request $request): JsonResponse
     {
@@ -208,7 +211,7 @@ public function userInvoices(Request $request, String $userId)
             'items.*.total' => 'required|numeric|min:0',
             'items.*.description' => 'nullable|string',
             'taxes' => 'required|numeric|min:0',
-            'status' => 'required|string',
+            'status' => 'required|string|in:pending,paid,overdue,cancelled,draft',
             'discount' => 'required|numeric|min:0',
             'shipping' => 'required|numeric|min:0',
             'totalAmount' => 'required|numeric|min:0',
@@ -220,7 +223,22 @@ public function userInvoices(Request $request, String $userId)
         try {
             $invoice = Invoice::findOrFail($id);
 
-            // Update invoice main details with correct field names
+            // Store previous status for notification
+            $previousStatus = $invoice->status;
+
+            // If status is changing, send notification
+            if ($validated['status'] !== $previousStatus) {
+                Mail::to($invoice->user->email)
+                    ->send(new InvoiceStatusUpdated($invoice, $previousStatus));
+
+                Log::info('Invoice status updated', [
+                    'invoice_id' => $invoice->id,
+                    'previous_status' => $previousStatus,
+                    'new_status' => $validated['status']
+                ]);
+            }
+
+            // Update invoice
             $invoice->update([
                 'status' => $validated['status'],
                 'taxes' => $validated['taxes'],
