@@ -44,7 +44,7 @@ class ReviewController extends Controller
             'name' => 'required|string|max:255',
             'product_id' => 'required|uuid|exists:products,id',
             'rating' => 'required|integer|between:1,5',
-            'user_id' => 'required|uuid|exists:users,id',
+            'user_id' => 'required|integer|exists:users,id',
         ]);
 
         $user = User::find($validated['user_id']);
