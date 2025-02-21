@@ -152,39 +152,81 @@ class OrderController extends Controller
         return response()->json(new OrderResource($order), 200);
     }
 
+    /**
+     * Get orders for the authenticated user
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function myOrders(Request $request): JsonResponse
     {
-        \Log::info('Order my orders request received', [
-            'user_id' => auth()->id(),
-            'user_roles' => auth()->user()->roles->pluck('name')
-        ]);
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized access',
+                'orders' => [],
+                'pagination' => [
+                    'total' => 0,
+                    'per_page' => 10,
+                    'current_page' => 1,
+                    'last_page' => 1
+                ]
+            ], 401);
+        }
 
-        $orders = Order::with([
-            'history',
-            'payment',
-            'shippingAdd',
-            'customer',
-            'delivery',
-            'productItems',
-        ])
-            ->where('user_id', auth()->id())
-            ->paginate(10); // Use paginate instead of get()
+        try {
+            \Log::info('Order my orders request received', [
+                'user_id' => auth()->id(),
+                'user_roles' => auth()->user()->roles->pluck('name')
+            ]);
 
-        \Log::info('Orders query result', [
-            'count' => $orders->count(),
-            'total' => $orders->total(),
-            'has_orders' => $orders->isNotEmpty()
-        ]);
+            $orders = Order::with([
+                'history',
+                'payment',
+                'shippingAdd',
+                'customer',
+                'delivery',
+                'productItems',
+            ])
+                ->where('user_id', auth()->id())
+                ->paginate(10);
 
-        return response()->json([
-            'orders' => OrderResource::collection($orders) ?? [],
-            'pagination' => [
-                'total' => $orders->total() ?? 0,
-                'per_page' => $orders->perPage() ?? 10,
-                'current_page' => $orders->currentPage() ?? 1,
-                'last_page' => $orders->lastPage() ?? 1
-            ]
-        ], 200);
+            \Log::info('Orders query result', [
+                'count' => $orders->count(),
+                'total' => $orders->total(),
+                'has_orders' => $orders->isNotEmpty()
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'orders' => OrderResource::collection($orders) ?? [],
+                'pagination' => [
+                    'total' => $orders->total() ?? 0,
+                    'per_page' => $orders->perPage() ?? 10,
+                    'current_page' => $orders->currentPage() ?? 1,
+                    'last_page' => $orders->lastPage() ?? 1
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching user orders', [
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch orders',
+                'orders' => [],
+                'pagination' => [
+                    'total' => 0,
+                    'per_page' => 10,
+                    'current_page' => 1,
+                    'last_page' => 1
+                ]
+            ], 500);
+        }
     }
 
 
