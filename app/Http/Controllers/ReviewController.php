@@ -35,9 +35,13 @@ class ReviewController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasRole('customer')) {
+        // Log the user information
+        Log::info('Authenticated user', ['user' => $user]);
+
+        if (!$user || !$user->hasRole('customer')) {
             return response()->json(['message' => 'Unauthorized to create a review'], 403);
         }
+
         Log::info('Review controller store', [
             'request' => $request->all(),
             'user' => $user,
@@ -52,6 +56,9 @@ class ReviewController extends Controller
         ]);
 
         try {
+            // Log the user ID before creating the review
+            Log::info('Creating review with user_id', ['user_id' => $user->id]);
+
             // Create a new review
             $review = ProductReview::create([
                 'user_id' => $user->id,
