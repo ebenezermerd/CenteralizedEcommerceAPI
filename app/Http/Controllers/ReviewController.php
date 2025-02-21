@@ -60,7 +60,6 @@ class ReviewController extends Controller
                 'product_id' => $validated['product_id'],
                 'posted_at' => now(),
                 'helpful' => 0,
-                'avatar_url' => User::find($validated['user_id'])->avatarUrl ?? null,
                 'rating' => $validated['rating'],
             ]);
 

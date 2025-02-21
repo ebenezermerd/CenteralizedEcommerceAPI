@@ -16,13 +16,11 @@ class ProductReview extends Model
     protected $fillable = [
         'product_id',
         'name',
+        'user_id',
         'rating',
         'comment',
         'helpful',
-        'avatar_url',
         'posted_at',
-        'is_purchased',
-        'attachments'
     ];
 
     protected $casts = [
@@ -30,8 +28,6 @@ class ProductReview extends Model
         'user_id' => 'integer',
         'rating' => 'float',
         'helpful' => 'integer',
-        'is_purchased' => 'boolean',
-        'attachments' => 'array',
         'posted_at' => 'datetime'
     ];
 

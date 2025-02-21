@@ -19,7 +19,6 @@ return new class extends Migration
             $table->integer('rating');
             $table->text('comment')->nullable();
             $table->integer('helpful')->default(0);
-            $table->string('avatar_url')->nullable();
             $table->timestamp('posted_at')->useCurrent();
             $table->timestamps();
 
