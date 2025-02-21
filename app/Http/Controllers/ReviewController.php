@@ -7,7 +7,7 @@ use App\Http\Resources\ProductReviewResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Log;
 class ReviewController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -34,31 +34,39 @@ class ReviewController extends Controller
     {
         //check user authentication
         if (!Auth::check()) {
+            Log::error('Unauthorized user attempting to submit review', ['request_data' => $request->all()]);
             return response()->json(['message' => 'Unauthorized user please login to continue review'], 401);
         }
 
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'rating' => 'required|numeric|min:1|max:5',
-            'comment' => 'required|string|min:10',
-            'name' => 'required|string|max:255',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'nullable|string|url'
-        ]);
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'rating' => 'required|numeric|min:1|max:5',
+                'comment' => 'required|string|min:10',
+                'name' => 'required|string|max:255',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'nullable|string|url'
+            ]);
 
-        $review = ProductReview::create([
-            ...$validated,
-            'user_id' => Auth::id(),
-            'posted_at' => now(),
-            'is_purchased' => true, // You might want to check if user has purchased the product
-            'helpful' => 0,
-            'avatar_url' => Auth::user()->avatarUrl ?? null,
-        ]);
+            $review = ProductReview::create([
+                ...$validated,
+                'user_id' => Auth::id(),
+                'posted_at' => now(),
+                'is_purchased' => true, // You might want to check if user has purchased the product
+                'helpful' => 0,
+                'avatar_url' => Auth::user()->avatarUrl ?? null,
+            ]);
 
-        return response()->json([
-            'message' => 'Review submitted successfully',
-            'review' => new ProductReviewResource($review)
-        ], 201);
+            Log::info('Review submitted successfully', ['review_id' => $review->id, 'user_id' => Auth::id()]);
+
+            return response()->json([
+                'message' => 'Review submitted successfully',
+                'review' => new ProductReviewResource($review)
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Failed to submit review', ['error' => $e->getMessage(), 'request_data' => $request->all()]);
+            return response()->json(['message' => 'Failed to submit review'], 500);
+        }
     }
 
     public function update(Request $request, string $id): JsonResponse
