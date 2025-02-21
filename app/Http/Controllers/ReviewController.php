@@ -33,6 +33,12 @@ class ReviewController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $user = auth()->user();
+
+        if (!$user->hasRole('customer')) {
+            return response()->json(['message' => 'Unauthorized to create a review'], 403);
+        }
+
         // Validate the incoming request
         $validated = $request->validate([
             'comment' => 'required|string|max:1000',
