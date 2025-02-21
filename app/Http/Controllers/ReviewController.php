@@ -38,6 +38,10 @@ class ReviewController extends Controller
         if (!$user->hasRole('customer')) {
             return response()->json(['message' => 'Unauthorized to create a review'], 403);
         }
+        Log::info('Review controller store', [
+            'request' => $request->all(),
+            'user' => $user,
+        ]);
 
         // Validate the incoming request
         $validated = $request->validate([
