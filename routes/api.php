@@ -139,7 +139,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::get('orders/list', [OrderController::class, 'index']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::put('orders/{id}', [OrderController::class, 'updateStatus']);
-    Route::get('orders/my-orders-list', [OrderController::class, 'myOrders']);
+    Route::get('orders/user', [OrderController::class, 'myOrders']);
     Route::post('/checkout/order', [OrderController::class, 'checkout']);
     Route::post('/order/{orderId}/payment-proof', [OrderController::class, 'uploadPaymentProof']);
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
@@ -152,7 +152,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::delete('cart/{id}', [CartController::class, 'destroy']);
 
     Route::post('/checkout/orders', [OrderController::class, 'checkout']);
-    Route::get('/orders/my-orders/{id}', [OrderController::class, 'show']);
+    Route::get('/orders/user/{id}', [OrderController::class, 'show']);
 
     // Company routes with proper authentication
     Route::apiResource('companies', CompanyController::class);
