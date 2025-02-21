@@ -122,7 +122,7 @@ Route::middleware(['jwt'])->group(function () {
     // Review routes
     Route::prefix('reviews')->group(function () {
         Route::get('/', [ReviewController::class, 'index']);
-        Route::post('/create', [ReviewController::class, 'store']);
+        Route::post('/', [ReviewController::class, 'store']);
         Route::put('/{id}', [ReviewController::class, 'update']);
         Route::delete('/{id}', [ReviewController::class, 'destroy']);
         Route::post('/{id}/helpful', [ReviewController::class, 'helpful']);
