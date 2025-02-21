@@ -163,34 +163,36 @@ class ProductController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->hasRole('supplier')) {
+        if (!$user->hasRole('supplier') && !$user->hasRole('admin')) {
             return [
                 'eligible' => false,
-                'message' => 'Only suppliers can create products',
+                'message' => 'Only suppliers and admins can create products',
                 'status' => 403
             ];
         }
 
-        $company = $user->company;
+        if ($user->hasRole('supplier')) {
+            $company = $user->company;
 
-        if (!$company) {
-            return [
-                'eligible' => false,
-                'message' => 'No company found for this supplier',
-                'status' => 404
-            ];
-        }
+            if (!$company) {
+                return [
+                    'eligible' => false,
+                    'message' => 'No company found for this supplier',
+                    'status' => 404
+                ];
+            }
 
-        if ($company->status !== 'active') {
-            // Send email notification
-            Mail::to($user->email)
-                ->send(new CompanyApprovalRequired($company));
+            if ($company->status !== 'active') {
+                // Send email notification
+                Mail::to($user->email)
+                    ->send(new CompanyApprovalRequired($company));
 
-            return [
-                'eligible' => false,
-                'message' => 'Your company account requires approval before you can create products. Please check your email for more information.',
-                'status' => 403
-            ];
+                return [
+                    'eligible' => false,
+                    'message' => 'Your company account requires approval before you can create products. Please check your email for more information.',
+                    'status' => 403
+                ];
+            }
         }
 
         return ['eligible' => true];
