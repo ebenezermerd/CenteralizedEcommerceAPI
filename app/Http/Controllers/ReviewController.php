@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+
 class ReviewController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         $reviews = ProductReview::with('product')
-            ->when($request->product_id, function($query) use ($request) {
+            ->when($request->product_id, function ($query) use ($request) {
                 $query->where('product_id', $request->product_id);
             })
             ->latest()
@@ -32,40 +33,37 @@ class ReviewController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        //check user authentication
-        if (!Auth::check()) {
-            Log::error('Unauthorized user attempting to submit review', ['request_data' => $request->all()]);
-            return response()->json(['message' => 'Unauthorized user please login to continue review'], 401);
-        }
+        // Validate the incoming request
+        $validated = $request->validate([
+            'comment' => 'required|string|max:1000',
+            'name' => 'required|string|max:255',
+            'product_id' => 'required|uuid|exists:products,id', // Assuming product_id is a UUID
+            'rating' => 'required|integer|between:1,5', // Assuming rating is between 1 and 5
+        ]);
 
         try {
-            $validated = $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'rating' => 'required|numeric|min:1|max:5',
-                'comment' => 'required|string|min:10',
-                'name' => 'required|string|max:255',
-                'attachments' => 'nullable|array',
-                'attachments.*' => 'nullable|string|url'
-            ]);
-
+            // Create a new review
             $review = ProductReview::create([
-                ...$validated,
-                'user_id' => Auth::id(),
+                'comment' => $validated['comment'],
+                'name' => $validated['name'],
+                'product_id' => $validated['product_id'],
+                'rating' => $validated['rating'],
                 'posted_at' => now(),
-                'is_purchased' => true, // You might want to check if user has purchased the product
+                'is_purchased' => true,
                 'helpful' => 0,
-                'avatar_url' => Auth::user()->avatarUrl ?? null,
+                'avatar_url' => auth()->user()->avatarUrl ?? null,
+                'user_id' => auth()->id(), // Assuming you want to associate the review with the authenticated user
             ]);
 
-            Log::info('Review submitted successfully', ['review_id' => $review->id, 'user_id' => Auth::id()]);
+            Log::info('Review created successfully', ['review_id' => $review->id]);
 
             return response()->json([
-                'message' => 'Review submitted successfully',
-                'review' => new ProductReviewResource($review)
+                'message' => 'Review created successfully',
+                'review' => $review,
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Failed to submit review', ['error' => $e->getMessage(), 'request_data' => $request->all()]);
-            return response()->json(['message' => 'Failed to submit review'], 500);
+            Log::error('Failed to create review', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to create review'], 500);
         }
     }
 
