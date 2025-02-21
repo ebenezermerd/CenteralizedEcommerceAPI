@@ -878,4 +878,43 @@ class ProductController extends Controller
             Log::warning('Failed to cleanup old images', ['error' => $e->getMessage()]);
         }
     }
+
+    /**
+     * @group Products
+     *
+     * Search published products by name
+     *
+     * @queryParam q string required Search query
+     *
+     * @response 200 {
+     *   "products": [
+     *     {
+     *       "id": "string",
+     *       "name": "string",
+     *       "coverImg": "string",
+     *       "price": "float",
+     *       "priceSale": "float",
+     *       "caption": "string"
+     *     }
+     *   ]
+     * }
+     */
+    public function search(Request $request)
+    {
+        $query = $request->input('q', '');
+
+        if (empty($query)) {
+            return response()->json(['products' => []]);
+        }
+
+        $products = Product::where('publish', 'published')
+            ->where('name', 'LIKE', "%{$query}%")
+            ->with(['category', 'images'])
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'products' => ProductResource::collection($products)
+        ]);
+    }
 }
