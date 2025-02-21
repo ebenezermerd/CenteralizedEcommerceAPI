@@ -33,18 +33,9 @@ class ReviewController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $user = auth()->user();
-
-        // Log the user information
-        Log::info('Authenticated user', ['user' => $user]);
-
-        if (!$user || !$user->hasRole('customer')) {
-            return response()->json(['message' => 'Unauthorized to create a review'], 403);
-        }
-
         Log::info('Review controller store', [
             'request' => $request->all(),
-            'user' => $user,
+
         ]);
 
         // Validate the incoming request
@@ -53,7 +44,11 @@ class ReviewController extends Controller
             'name' => 'required|string|max:255',
             'product_id' => 'required|uuid|exists:products,id',
             'rating' => 'required|integer|between:1,5',
+            'user_id' => 'required|uuid|exists:users,id',
         ]);
+
+        $user = User::find($validated['user_id']);
+        Log::info('User found', ['user' => $user]);
 
         try {
             // Log the user ID before creating the review
