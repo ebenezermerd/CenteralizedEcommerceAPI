@@ -54,12 +54,14 @@ class ReviewController extends Controller
         try {
             // Create a new review
             $review = ProductReview::create([
+                'user_id' => $user->id,
                 'comment' => $validated['comment'],
                 'name' => $validated['name'],
                 'product_id' => $validated['product_id'],
+                'posted_at' => now(),
+                'helpful' => 0,
                 'avatar_url' => $user->avatarUrl,
                 'rating' => $validated['rating'],
-                'user_id' => $user->id,
             ]);
 
             Log::info('Review created successfully', ['review_id' => $review->id]);

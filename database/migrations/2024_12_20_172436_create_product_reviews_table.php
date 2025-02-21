@@ -21,8 +21,6 @@ return new class extends Migration
             $table->integer('helpful')->default(0);
             $table->string('avatar_url')->nullable();
             $table->timestamp('posted_at')->useCurrent();
-            $table->boolean('is_purchased')->default(false);
-            $table->json('attachments')->nullable();
             $table->timestamps();
 
             $table->foreign('product_id')

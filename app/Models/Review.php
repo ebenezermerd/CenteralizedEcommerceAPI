@@ -21,7 +21,6 @@ class Review extends Model
         'helpful',
         'avatar_url',
         'posted_at',
-        'is_purchased'
     ];
 
     public $incrementing = false; // Disable auto-incrementing
