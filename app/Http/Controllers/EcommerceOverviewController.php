@@ -213,12 +213,8 @@ class EcommerceOverviewController extends Controller
 
     private function getSaleByGender(): array
     {
-        // Define standard gender categories with proper labels
-        $genderCategories = [
-            'Men' => ['men', 'male', 'Men'],
-            'Women' => ['women', 'female', 'Women'],
-            'Kids' => ['kids', 'children', 'Kids'],
-        ];
+        // Define standard gender categories
+        $genderCategories = ['Women', 'Men', 'Kids'];
 
         $sales = Order::where('status', 'completed')
             ->join('order_product_items', 'orders.id', '=', 'order_product_items.order_id')
@@ -226,27 +222,23 @@ class EcommerceOverviewController extends Controller
             ->select('products.gender', DB::raw('COUNT(*) as count'))
             ->groupBy('products.gender')
             ->get()
-            ->map(function ($sale) use ($genderCategories) {
-                // Normalize gender to standard categories
-                $normalizedGender = 'Other';
-                foreach ($genderCategories as $category => $variants) {
-                    if (in_array(strtolower($sale->gender), array_map('strtolower', $variants))) {
-                        $normalizedGender = $category;
-                        break;
-                    }
-                }
-                return [
-                    'gender' => $normalizedGender,
-                    'count' => $sale->count
-                ];
+            ->flatMap(function ($sale) {
+                // Handle JSON array of genders
+                $genders = json_decode($sale->gender, true) ?? [];
+                // Map each gender to its count
+                return collect($genders)->mapWithKeys(function ($gender) use ($sale) {
+                    return [$gender => $sale->count];
+                });
             })
-            ->groupBy('gender')
-            ->map(function ($group) {
-                return $group->sum('count');
+            ->groupBy(function ($count, $gender) {
+                return $gender;
+            })
+            ->map(function ($counts) {
+                return $counts->sum();
             });
 
-        // Ensure all categories exist with at least 0 count
-        foreach ($genderCategories as $category => $variants) {
+        // Ensure all standard categories exist with at least 0 count
+        foreach ($genderCategories as $category) {
             if (!$sales->has($category)) {
                 $sales[$category] = 0;
             }
@@ -256,12 +248,16 @@ class EcommerceOverviewController extends Controller
 
         return [
             'total' => $total,
-            'series' => $sales->map(function ($count, $gender) use ($total) {
-                return [
-                    'label' => $gender,
-                    'value' => $total > 0 ? round(($count / $total) * 100, 1) : 0
-                ];
-            })->values()->toArray()
+            'series' => $sales
+                ->only($genderCategories) // Only include standard categories
+                ->map(function ($count, $gender) use ($total) {
+                    return [
+                        'label' => $gender,
+                        'value' => $total > 0 ? round(($count / $total) * 100, 1) : 0
+                    ];
+                })
+                ->values()
+                ->toArray()
         ];
     }
 
