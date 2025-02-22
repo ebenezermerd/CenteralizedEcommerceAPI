@@ -75,7 +75,14 @@ class AddressBookController extends Controller
                 'is_primary' => $address->is_primary
             ]);
 
-            return response()->json(new AddressResource($address), 201);
+            return response()->json(
+                [
+                    'status' => true,
+                    'message' => 'Address created successfully',
+                    'address' => new AddressResource($address)
+                ],
+                201
+            );
         } catch (ValidationException $e) {
             \Log::error('Validation failed for address creation', [
                 'user_id' => $userId,
