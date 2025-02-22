@@ -256,11 +256,13 @@ class EcommerceOverviewController extends Controller
                 ->whereMonth('created_at', $month)
                 ->sum('total_amount');
 
-            return match($type) {
+            $value = match($type) {
                 'expenses' => $amount * 0.9, // 90% to vendors
                 'income' => $amount,
                 default => $amount * 0.1 // 10% platform profit
             };
+
+            return round($value, 2); // Round to 2 decimal places
         })->toArray();
     }
 }
