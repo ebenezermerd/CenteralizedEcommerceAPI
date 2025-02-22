@@ -39,42 +39,49 @@ class EcommerceOverviewController extends Controller
         $now = Carbon::now();
         $lastMonth = Carbon::now()->subMonth();
 
-        // Product Sales
+        // Current period calculations
         $currentSales = Order::whereBetween('created_at', [$lastMonth, $now])
             ->where('status', 'completed')
             ->sum('total_amount');
 
-        $previousSales = Order::whereBetween('created_at', [
-            $lastMonth->copy()->subMonth(),
-            $lastMonth
-        ])->where('status', 'completed')
+        // Previous period calculations
+        $previousStart = $lastMonth->copy()->subMonth();
+        $previousEnd = $lastMonth;
+
+        $previousSales = Order::whereBetween('created_at', [$previousStart, $previousEnd])
+            ->where('status', 'completed')
             ->sum('total_amount');
 
-        // Calculate percentages and trends
-        $salesPercent = $previousSales > 0
-            ? (($currentSales - $previousSales) / $previousSales) * 100
-            : 0;
+        // Calculate percentages safely
+        $salesPercent = $this->calculatePercentageChange($currentSales, $previousSales);
+        $balancePercent = $this->calculatePercentageChange($currentSales * 0.9, $previousSales * 0.9);
+        $profitPercent = $this->calculatePercentageChange($currentSales * 0.1, $previousSales * 0.1);
 
         return [
             'productSold' => [
-                'total' => Order::where('status', 'completed')
-                    ->sum(DB::raw('total_amount')),
+                'total' => Order::where('status', 'completed')->sum('total_amount'),
                 'percent' => $salesPercent,
                 'chart' => $this->getMonthlySalesData()
             ],
             'totalBalance' => [
-                'total' => Order::where('status', 'completed')
-                    ->sum(DB::raw('total_amount - (total_amount * 0.1)')), // Assuming 10% platform fee
-                'percent' => $salesPercent,
+                'total' => Order::where('status', 'completed')->sum(DB::raw('total_amount * 0.9')),
+                'percent' => $balancePercent,
                 'chart' => $this->getMonthlySalesData()
             ],
             'salesProfit' => [
-                'total' => Order::where('status', 'completed')
-                    ->sum(DB::raw('total_amount * 0.1')), // Platform fee as profit
-                'percent' => $salesPercent,
+                'total' => Order::where('status', 'completed')->sum(DB::raw('total_amount * 0.1')),
+                'percent' => $profitPercent,
                 'chart' => $this->getMonthlySalesData()
             ]
         ];
+    }
+
+    private function calculatePercentageChange($current, $previous): float
+    {
+        if ($previous == 0) {
+            return $current > 0 ? 100.0 : 0.0;
+        }
+        return round((($current - $previous) / $previous) * 100, 2);
     }
 
     private function getLatestProducts(): array
@@ -101,14 +108,16 @@ class EcommerceOverviewController extends Controller
     {
         return User::role('supplier')
             ->withCount(['products as total_sales' => function ($query) {
-                $query->whereHas('orders', function ($q) {
-                    $q->where('status', 'completed');
-                });
+                $query->select(DB::raw('COALESCE(SUM(order_product_items.quantity), 0)'))
+                    ->join('order_product_items', 'products.id', '=', 'order_product_items.product_id')
+                    ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
+                    ->where('orders.status', 'completed');
             }])
             ->withSum(['products as total_amount' => function ($query) {
-                $query->whereHas('orders', function ($q) {
-                    $q->where('status', 'completed');
-                });
+                $query->select(DB::raw('COALESCE(SUM(order_product_items.subtotal), 0)'))
+                    ->join('order_product_items', 'products.id', '=', 'order_product_items.product_id')
+                    ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
+                    ->where('orders.status', 'completed');
             }], 'price')
             ->orderBy('total_amount', 'desc')
             ->take(5)
@@ -120,7 +129,7 @@ class EcommerceOverviewController extends Controller
                     'email' => $user->email,
                     'avatarUrl' => $user->avatar_url,
                     'category' => 'Supplier',
-                    'totalAmount' => $user->total_amount,
+                    'totalAmount' => $user->total_amount ?? 0,
                     'rank' => 'Top ' . ($index + 1),
                     'countryCode' => $user->country_code ?? 'ET'
                 ];
@@ -142,23 +151,24 @@ class EcommerceOverviewController extends Controller
 
     private function getSalesOverview(): array
     {
-        $total = Order::where('status', 'completed')->sum('total_amount');
+        $totalSales = Order::where('status', 'completed')->sum('total_amount');
+        $platformFee = 0.1; // 10% platform fee
 
         return [
             [
                 'label' => 'Total Income',
                 'value' => 100,
-                'totalAmount' => $total
+                'totalAmount' => $totalSales
             ],
             [
-                'label' => 'Total Expenses',
-                'value' => 25,
-                'totalAmount' => $total * 0.25
+                'label' => 'Vendor Payments',
+                'value' => round((1 - $platformFee) * 100),
+                'totalAmount' => $totalSales * (1 - $platformFee)
             ],
             [
-                'label' => 'Total Profit',
-                'value' => 75,
-                'totalAmount' => $total * 0.75
+                'label' => 'Platform Profit',
+                'value' => round($platformFee * 100),
+                'totalAmount' => $totalSales * $platformFee
             ]
         ];
     }
@@ -186,7 +196,8 @@ class EcommerceOverviewController extends Controller
     private function getSaleByGender(): array
     {
         $sales = Order::where('status', 'completed')
-            ->join('products', 'orders.product_id', '=', 'products.id')
+            ->join('order_product_items', 'orders.id', '=', 'order_product_items.order_id')
+            ->join('products', 'order_product_items.product_id', '=', 'products.id')
             ->select('products.gender', DB::raw('COUNT(*) as count'))
             ->groupBy('products.gender')
             ->get();
@@ -241,7 +252,11 @@ class EcommerceOverviewController extends Controller
                 ->whereMonth('created_at', $month)
                 ->sum('total_amount');
 
-            return $type === 'expenses' ? $amount * 0.25 : $amount;
+            return match($type) {
+                'expenses' => $amount * 0.9, // 90% to vendors
+                'income' => $amount,
+                default => $amount * 0.1 // 10% platform profit
+            };
         })->toArray();
     }
 }
