@@ -15,9 +15,9 @@ class ProductFactory extends Factory
 
     protected static $productsByCategory = [
         'Clothing' => [
-            'name' => ['Classic T-Shirt', 'Denim Jeans', 'Leather Jacket', 'Cotton Shirt', 'Wool Sweater'],
+            'name' => ['Shirts', 'T-shirts', 'Jeans', 'Leather Jacket', 'Dresses'],
             'sizes' => ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-            'colors' => ['#FF4842', '#1890FF', '#54D62C', '#FFC107', '#00AB55'],
+            'colors' => ['#FF4842', '#1890FF', '#00AB55', '#FFC107', '#7F00FF', '#000000'],
             'gender' => ['Men', 'Women', 'Kids']
         ],
         'Tailored' => [
@@ -27,10 +27,28 @@ class ProductFactory extends Factory
             'gender' => ['Men', 'Women']
         ],
         'Accessories' => [
-            'name' => ['Leather Belt', 'Silk Tie', 'Watch', 'Sunglasses', 'Wallet'],
+            'name' => ['Watches', 'Backpacks', 'Bracelets', 'Face Masks', 'Sunglasses', 'Belts'],
+            'sizes' => ['small', 'medium', 'large'],
+            'colors' => ['#FF4842', '#1890FF', '#54D62C', '#FFC107', '#7F00FF'],
+            'gender' => ['Men', 'Women', 'Kids']
+        ],
+        'Shoes' => [
+            'name' => ['Athletic Shoes', 'Formal Shoes', 'Sandals', 'Boots', 'Sneakers'],
+            'sizes' => ['7', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13'],
+            'colors' => ['#000000', '#FFFFFF', '#FF4842', '#1890FF', '#00AB55'],
+            'gender' => ['Men', 'Women', 'Kids']
+        ],
+        'Bags' => [
+            'name' => ['Backpacks', 'Handbags', 'Briefcases', 'Tote Bags', 'Travel Bags'],
+            'sizes' => ['small', 'medium', 'large'],
+            'colors' => ['#000000', '#2065D1', '#54D62C', '#FFC107'],
+            'gender' => ['Men', 'Women']
+        ],
+        'Electronics' => [
+            'name' => ['Smartphones', 'Laptops', 'Headphones', 'Smart Watches', 'Tablets'],
             'sizes' => ['OS'],
-            'colors' => ['#FF4842', '#1890FF', '#54D62C', '#FFC107'],
-            'gender' => ['Kids']
+            'colors' => ['#000000', '#FFFFFF', '#919EAB'],
+            'gender' => ['Unisex']
         ]
     ];
 
@@ -76,7 +94,32 @@ class ProductFactory extends Factory
             // Media
 
             // Attributes
-            'tags' => $this->faker->randomElements(['Technology', 'Marketing', 'Design', 'Photography', 'Art'], 2),
+            'tags' => $this->faker->randomElements([
+                'Technology',
+                'Health and Wellness',
+                'Travel',
+                'Finance',
+                'Education',
+                'Food and Beverage',
+                'Fashion',
+                'Home and Garden',
+                'Sports',
+                'Entertainment',
+                'Business',
+                'Science',
+                'Automotive',
+                'Beauty',
+                'Fitness',
+                'Lifestyle',
+                'Real Estate',
+                'Parenting',
+                'Pet Care',
+                'Environmental',
+                'DIY and Crafts',
+                'Gaming',
+                'Photography',
+                'Music'
+            ], 2),
             'sizes' => $categoryData['sizes'],
             'colors' => $categoryData['colors'],
             'gender' => $categoryData['gender'],

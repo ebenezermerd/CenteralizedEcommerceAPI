@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             CategorySeeder::class,
+            ProductSeeder::class,
         ]);
 
         // Create single admin user if not exists
