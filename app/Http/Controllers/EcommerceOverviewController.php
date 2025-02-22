@@ -182,12 +182,30 @@ class EcommerceOverviewController extends Controller
             'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
             'series' => [
                 [
-                    'name' => $lastYear,
-                    'data' => $this->getYearlyData($lastYear)
+                    'name' => (string)$lastYear,
+                    'data' => [
+                        [
+                            'name' => 'Total Income',
+                            'data' => $this->getMonthlyData($lastYear, 'income')
+                        ],
+                        [
+                            'name' => 'Total Expenses',
+                            'data' => $this->getMonthlyData($lastYear, 'expenses')
+                        ]
+                    ]
                 ],
                 [
-                    'name' => $currentYear,
-                    'data' => $this->getYearlyData($currentYear)
+                    'name' => (string)$currentYear,
+                    'data' => [
+                        [
+                            'name' => 'Total Income',
+                            'data' => $this->getMonthlyData($currentYear, 'income')
+                        ],
+                        [
+                            'name' => 'Total Expenses',
+                            'data' => $this->getMonthlyData($currentYear, 'expenses')
+                        ]
+                    ]
                 ]
             ]
         ];
@@ -227,20 +245,6 @@ class EcommerceOverviewController extends Controller
         return [
             'series' => $months,
             'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        ];
-    }
-
-    private function getYearlyData(int $year): array
-    {
-        return [
-            [
-                'name' => 'Total Income',
-                'data' => $this->getMonthlyData($year, 'income')
-            ],
-            [
-                'name' => 'Total Expenses',
-                'data' => $this->getMonthlyData($year, 'expenses')
-            ]
         ];
     }
 
