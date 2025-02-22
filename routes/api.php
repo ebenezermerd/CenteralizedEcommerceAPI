@@ -21,6 +21,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\EcommerceOverviewController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -74,6 +75,7 @@ Route::middleware(['jwt'])->group(function () {
     // Address routes
     Route::get('user/{userId}/addresses', [AddressBookController::class, 'index']);
     Route::post('user/{userId}/addresses/create', [AddressBookController::class, 'store']);
+    Route::get('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'show']);
     Route::put('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'update']);
     Route::delete('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'destroy']);
 
@@ -171,5 +173,10 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
         Route::get('website-visits', [AnalyticsController::class, 'getWebsiteVisits']);
         Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
+    });
+
+    // Ecommerce Overview routes
+    Route::prefix('ecommerce')->group(function () {
+        Route::get('overview', [EcommerceOverviewController::class, 'getOverviewData']);
     });
 });

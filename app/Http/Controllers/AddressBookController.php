@@ -99,6 +99,19 @@ class AddressBookController extends Controller
         }
     }
 
+    public function show($userId, $addressId): JsonResponse
+    {
+        \Log::info('Fetching address book entry', [
+            'user_id' => $userId,
+            'address_id' => $addressId
+        ]);
+
+        $user = User::findOrFail($userId);
+        $address = $user->addressBooks()->findOrFail($addressId);
+
+        return response()->json(new AddressResource($address), 200);
+    }
+
 
     public function update(Request $request, $userId, $addressId): JsonResponse
     {
