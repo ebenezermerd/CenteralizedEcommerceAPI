@@ -36,7 +36,7 @@ class AddressBookController extends Controller
             $validatedData = $request->validate([
                 'fullAddress'   => 'required|string|max:255',
                 'primary'       => 'required|boolean',
-                'address_type'  => 'required|string|in:home,office,other,Home,Office,Other',
+                'addressType'  => 'required|string|in:home,office,other,Home,Office,Other',
             ]);
 
             // Find user or return error response
@@ -54,7 +54,7 @@ class AddressBookController extends Controller
                 'phone_number'  => $user->phone,
                 'is_primary'    => $validatedData['primary'],
                 'full_address'  => $validatedData['fullAddress'],
-                'address_type'  => strtolower($validatedData['address_type']), // Ensures lowercase
+                'address_type'  => strtolower($validatedData['addressType']), // Ensures lowercase
             ];
 
             // Start transaction to ensure atomicity
