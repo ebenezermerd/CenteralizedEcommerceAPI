@@ -100,12 +100,12 @@ class AddressBookController extends Controller
     }
 
 
-    public function update(AddressRequest $request, $userId, $addressId): JsonResponse
+    public function update(Request $request, $userId, $addressId): JsonResponse
     {
         \Log::info('Updating address book entry', [
             'user_id' => $userId,
             'address_id' => $addressId,
-            'data' => $request->validated()
+            'data' => $request->all()
         ]);
 
         $user = User::findOrFail($userId);
