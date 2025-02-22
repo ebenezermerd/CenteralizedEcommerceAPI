@@ -111,17 +111,30 @@ class AddressBookController extends Controller
         $user = User::findOrFail($userId);
         $address = $user->addressBooks()->findOrFail($addressId);
 
+        if (!$address) {
+            return response()->json(['message' => 'Address not found'], 404);
+        }
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $validatedData = $request->validate([
+            'fullAddress' => 'required|string|max:255',
+            'primary' => 'required|boolean',
+            'addressType' => 'required|string|in:home,office,other,Home,Office,Other'
+        ]);
+
         $mappedData = [
             'name' => $user->firstName . ' ' . $user->lastName,
             'email' => $user->email,
-            'is_primary' => $request->input('is_primary', false),
-            'full_address' => $request->input('fullAddress'),
-            'phone_number' => $request->input('phoneNumber'),
-            'address_type' => strtolower($request->input('addressType'))
+            'is_primary' => $validatedData['primary'],
+            'full_address' => $validatedData['fullAddress'],
+            'phone_number' => $user->phone,
+            'address_type' => strtolower($validatedData['addressType'])
         ];
 
         $address->update($mappedData);
-        return response()->json(new AddressResource($address));
+        return response()->json(new AddressResource($address), 200);
     }
 
     public function destroy($userId, $addressId): JsonResponse
