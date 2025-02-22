@@ -33,7 +33,7 @@ class AddressBookController extends Controller
             $validatedData = $request->validate([
                 'fullAddress'   => 'required|string|max:255',
                 'primary'       => 'required|boolean',
-                'address_type'  => 'required|string|in:home,office,other',
+                'address_type'  => 'required|string|in:home,office,other,Home,Office,Other',
             ]);
 
             // Find user or return error response
