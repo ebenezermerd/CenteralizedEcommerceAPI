@@ -39,13 +39,12 @@ class AddressBookController extends Controller
         // Map the data using request parameters and user information
         $mappedData = [
             'user_id' => $userId,
-            'is_primary' => $request->input('is_primary', false),
-            'full_address' => $request->input('fullAddress'),
-            'address_type' => strtolower($request->input('addressType')),
-            // Combine first and last name
             'name' => $user->firstName . ' ' . $user->lastName,
             'email' => $user->email,
-            'phone_number' => $user->phone
+            'phone_number' => $user->phone,
+            'is_primary' => $request->input('primary', false),
+            'full_address' => $request->input('fullAddress'),
+            'address_type' => strtolower($request->input('addressType')),
         ];
 
         // If setting as primary, update existing primary addresses
