@@ -114,7 +114,7 @@ class EcommerceOverviewController extends Controller
                     ->where('orders.status', 'completed');
             }])
             ->withSum(['products as total_amount' => function ($query) {
-                $query->select(DB::raw('COALESCE(SUM(order_product_items.subtotal), 0)'))
+                $query->select(DB::raw('COALESCE(SUM(order_product_items.quantity * order_product_items.price), 0)'))
                     ->join('order_product_items', 'products.id', '=', 'order_product_items.product_id')
                     ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
                     ->where('orders.status', 'completed');
