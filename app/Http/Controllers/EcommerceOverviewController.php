@@ -213,23 +213,55 @@ class EcommerceOverviewController extends Controller
 
     private function getSaleByGender(): array
     {
+        // Define standard gender categories with proper labels
+        $genderCategories = [
+            'Men' => ['men', 'male', 'Men'],
+            'Women' => ['women', 'female', 'Women'],
+            'Kids' => ['kids', 'children', 'Kids'],
+        ];
+
         $sales = Order::where('status', 'completed')
             ->join('order_product_items', 'orders.id', '=', 'order_product_items.order_id')
             ->join('products', 'order_product_items.product_id', '=', 'products.id')
             ->select('products.gender', DB::raw('COUNT(*) as count'))
             ->groupBy('products.gender')
-            ->get();
+            ->get()
+            ->map(function ($sale) use ($genderCategories) {
+                // Normalize gender to standard categories
+                $normalizedGender = 'Other';
+                foreach ($genderCategories as $category => $variants) {
+                    if (in_array(strtolower($sale->gender), array_map('strtolower', $variants))) {
+                        $normalizedGender = $category;
+                        break;
+                    }
+                }
+                return [
+                    'gender' => $normalizedGender,
+                    'count' => $sale->count
+                ];
+            })
+            ->groupBy('gender')
+            ->map(function ($group) {
+                return $group->sum('count');
+            });
 
-        $total = $sales->sum('count');
+        // Ensure all categories exist with at least 0 count
+        foreach ($genderCategories as $category => $variants) {
+            if (!$sales->has($category)) {
+                $sales[$category] = 0;
+            }
+        }
+
+        $total = $sales->sum();
 
         return [
             'total' => $total,
-            'series' => $sales->map(function ($sale) use ($total) {
+            'series' => $sales->map(function ($count, $gender) use ($total) {
                 return [
-                    'label' => $sale->gender,
-                    'value' => ($sale->count / $total) * 100
+                    'label' => $gender,
+                    'value' => $total > 0 ? round(($count / $total) * 100, 1) : 0
                 ];
-            })->toArray()
+            })->values()->toArray()
         ];
     }
 
