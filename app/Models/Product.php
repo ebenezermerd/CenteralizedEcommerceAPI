@@ -167,6 +167,14 @@ class Product extends Model
         return $query->where('vendor_id', $vendorId);
     }
 
+    // Replace the existing orders() relationship with:
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class, 'order_product_items')
+            ->using(OrderProductItem::class)
+            ->withPivot(['quantity', 'price', 'subtotal']);
+    }
+
     // Scope for getting products viewable by user
     public function scopeViewableBy($query, User $user)
     {
