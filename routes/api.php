@@ -22,7 +22,7 @@ use App\Http\Controllers\MailController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\EcommerceOverviewController;
-
+use App\Http\Controllers\AppOverviewController;
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
 Route::get('/products/list', [ProductController::class, 'index']);
@@ -178,5 +178,10 @@ Route::middleware(['jwt'])->group(function () {
     // Ecommerce Overview routes
     Route::prefix('ecommerce')->group(function () {
         Route::get('overview', [EcommerceOverviewController::class, 'getOverviewData']);
+    });
+
+    // App Overview routes
+    Route::prefix('app')->group(function () {
+        Route::get('overview', [AppOverviewController::class, 'getOverviewData']);
     });
 });
