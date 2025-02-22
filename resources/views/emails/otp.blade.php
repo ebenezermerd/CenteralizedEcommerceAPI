@@ -121,7 +121,7 @@
 <body>
     <div class="container">
         <div class="logo">
-            <img src="{{ asset('images/logo/full-logo.png') }}" alt="Koricha Logo">
+            <img src="{{ asset('images/logo/full-logo.png') }}" alt="Korecha Logo">
         </div>
 
         <div class="header">
@@ -151,9 +151,9 @@
                 <a href="#">Twitter</a> • 
                 <a href="#">Instagram</a>
             </div>
-            © {{ date('Y') }} Koricha. All rights reserved.<br>
+            © {{ date('Y') }} Korecha. All rights reserved.<br>
             This is an automated message, please do not reply.<br>
-            <small>Sent with ❤️ from Koricha Team</small>
+            <small>Sent with ❤️ from Korecha Team</small>
         </div>
     </div>
 </body>

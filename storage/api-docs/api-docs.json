@@ -1,11 +1,11 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Koricha E-commerce API",
-        "description": "This is the API documentation for the Koricha E-commerce platform. It provides all the necessary endpoints and models for interacting with the system.",
+        "title": "Korecha E-commerce API",
+        "description": "This is the API documentation for the Korecha E-commerce platform. It provides all the necessary endpoints and models for interacting with the system.",
         "contact": {
-            "name": "Koricha E-commerce Support",
-            "email": "support@koricha-ecommerce.com"
+            "name": "Korecha E-commerce Support",
+            "email": "support@Korecha-ecommerce.com"
         },
         "license": {
             "name": "Apache 2.0",
@@ -15,11 +15,11 @@
     },
     "servers": [
         {
-            "url": "http://api.koricha-ecommerce.com",
+            "url": "http://api.Korecha-ecommerce.com",
             "description": "Production Server"
         },
         {
-            "url": "http://staging-api.koricha-ecommerce.com",
+            "url": "http://staging-api.Korecha-ecommerce.com",
             "description": "Staging Server"
         }
     ],

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KORICHA - Premium Leather Goods</title>
+    <title>Korecha - Premium Leather Goods</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -32,7 +32,7 @@
                 <div class="space-y-6">
                     <div class="mb-4">
                         <h1 class="animate-[pulse_3s_ease-in-out_infinite] bg-gradient-to-r from-coffee via-saddle to-latte bg-clip-text text-6xl font-extrabold text-transparent md:text-8xl">
-                            KORICHA
+                            Korecha
                         </h1>
                     </div>
                     <h1 class="text-4xl font-bold text-saddle md:text-5xl">Discover Premium Products In Our Ecommerce</h1>
@@ -93,7 +93,7 @@
                 <div class="space-y-6">
                     <h2 class="text-3xl font-bold text-saddle">Our Craftsmanship</h2>
                     <p class="text-lg text-coffee">
-                        At KORICHA, we blend traditional techniques with modern design to create leather goods that stand the test of time. Each piece is meticulously crafted to ensure the highest quality and durability.
+                        At Korecha, we blend traditional techniques with modern design to create leather goods that stand the test of time. Each piece is meticulously crafted to ensure the highest quality and durability.
                     </p>
                     <a href="#" class="inline-flex items-center rounded-full bg-saddle px-6 py-3 text-white transition-colors hover:bg-latte hover:text-saddle">
                         Learn More
@@ -177,7 +177,7 @@
                 </div>
             </div>
             <div class="mt-8 border-t border-saddle pt-8 text-center">
-                <p>&copy; {{ date('Y') }} KORICHA. All rights reserved.</p>
+                <p>&copy; {{ date('Y') }} Korecha. All rights reserved.</p>
             </div>
         </div>
     </footer>

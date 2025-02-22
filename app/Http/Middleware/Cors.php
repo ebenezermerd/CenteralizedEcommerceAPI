@@ -24,7 +24,7 @@ class Cors
             'http://localhost:5173',
             'https://korecha.com.et',
             'https://admin.korecha.com.et',
-            'http://api.koricha-ecommerce.com'
+            'http://api.Korecha-ecommerce.com'
         ];
 
         $origin = $request->headers->get('Origin');

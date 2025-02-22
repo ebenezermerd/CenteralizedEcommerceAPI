@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Koricha_Ecommerce'),
+    'name' => env('APP_NAME', 'Korecha_Ecommerce'),
 
     /*
     |--------------------------------------------------------------------------

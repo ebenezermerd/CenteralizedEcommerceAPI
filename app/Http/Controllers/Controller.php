@@ -9,12 +9,12 @@ use Illuminate\Routing\Controller as BaseController;
 
 /**
  * @OA\Info(
- *   title="Koricha E-commerce API",
+ *   title="Korecha E-commerce API",
  *   version="1.0.0",
- *   description="This is the API documentation for the Koricha E-commerce platform. It provides all the necessary endpoints and models for interacting with the system.",
+ *   description="This is the API documentation for the Korecha E-commerce platform. It provides all the necessary endpoints and models for interacting with the system.",
  *   @OA\Contact(
- *     email="support@koricha-ecommerce.com",
- *     name="Koricha E-commerce Support"
+ *     email="support@Korecha-ecommerce.com",
+ *     name="Korecha E-commerce Support"
  *   ),
  *   @OA\License(
  *     name="Apache 2.0",
@@ -22,11 +22,11 @@ use Illuminate\Routing\Controller as BaseController;
  *   )
  * ),
  * @OA\Server(
- *   url="http://api.koricha-ecommerce.com",
+ *   url="http://api.Korecha-ecommerce.com",
  *   description="Production Server"
  * ),
  * @OA\Server(
- *   url="http://staging-api.koricha-ecommerce.com",
+ *   url="http://staging-api.Korecha-ecommerce.com",
  *   description="Staging Server"
  * ),
  * @OA\SecurityScheme(

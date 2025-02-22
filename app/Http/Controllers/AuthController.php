@@ -124,7 +124,7 @@ class AuthController extends Controller
                 'name' => $user->firstName . ' ' . $user->lastName,
                 'email' => $user->email,
                 'phone_number' => $user->phone,
-                'address_type' => 'other',
+                'address_type' => 'home',
                 'full_address' => $user->address,
                 'is_primary' => true
             ]);

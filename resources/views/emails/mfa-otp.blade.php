@@ -60,7 +60,7 @@
     <div class="container">
         <div class="logo">
             <!-- Replace with your actual logo URL -->
-            <img src="{{ asset('images/logo/full-logo.png') }}" alt="Koricha Logo">
+            <img src="{{ asset('images/logo/full-logo.png') }}" alt="Korecha Logo">
         </div>
 
         <h1 style="text-align: center; color: #333;">Authentication Code</h1>
@@ -76,7 +76,7 @@
         </p>
 
         <div class="footer">
-            © {{ date('Y') }} Koricha. All rights reserved.<br>
+            © {{ date('Y') }} Korecha. All rights reserved.<br>
             This is an automated message, please do not reply.
         </div>
     </div>

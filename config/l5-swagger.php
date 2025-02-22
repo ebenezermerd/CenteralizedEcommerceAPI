@@ -50,7 +50,7 @@ return [
         ],
     ],
     'constants' => [
-        'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://api.koricha-ecommerce.com'),
+        'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://api.Korecha-ecommerce.com'),
     ],
     'defaults' => [
         'routes' => [
@@ -267,7 +267,7 @@ return [
          * Constants which can be used in annotations
          */
         'constants' => [
-            'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://api.koricha-ecommerce.com/'),
+            'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://api.Korecha-ecommerce.com/'),
         ],
     ],
 
