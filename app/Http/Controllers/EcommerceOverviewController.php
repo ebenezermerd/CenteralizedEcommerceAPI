@@ -255,21 +255,32 @@ class EcommerceOverviewController extends Controller
         return User::role('supplier')
             ->withCount(['products as total_products'])
             ->withSum(['orders as total_sales' => function($query) {
-                $query->where('status', 'completed');
+                $query->where('status', 'completed')
+                    ->whereYear('created_at', Carbon::now()->year);
             }], 'total_amount')
             ->orderByDesc('total_sales')
             ->take(5)
             ->get()
             ->map(function ($vendor, $index) {
+                $topCategory = Product::where('vendor_id', $vendor->id)
+                    ->join('order_product_items', 'products.id', '=', 'order_product_items.product_id')
+                    ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
+                    ->where('orders.status', 'completed')
+                    ->join('categories', 'products.categoryId', '=', 'categories.id')
+                    ->select('categories.name')
+                    ->groupBy('categories.id', 'categories.name')
+                    ->orderByRaw('COUNT(*) DESC')
+                    ->first();
+
                 return [
                     'id' => $vendor->id,
                     'name' => $vendor->firstName . ' ' . $vendor->lastName,
                     'email' => $vendor->email,
                     'avatarUrl' => $vendor->image ? url(Storage::url($vendor->image)) : null,
-                    'category' => 'Supplier',
-                    'totalAmount' => (float) $vendor->total_sales,
-                    'rank' => 'Top ' . ($index + 1),
-                    'countryCode' => $vendor->country ?? 'ET'
+                    'category' => $topCategory ? $topCategory->name : 'General',
+                    'countryCode' => strtoupper($vendor->country ?? 'ET'),
+                    'totalAmount' => round($vendor->total_sales ?? 0, 2),
+                    'rank' => 'Top ' . ($index + 1)
                 ];
             })
             ->toArray();
