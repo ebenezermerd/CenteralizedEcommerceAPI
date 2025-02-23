@@ -57,13 +57,13 @@ class EcommerceOverviewController extends Controller
     private function getWidgetSummary(?string $vendorId): array
     {
         $share = $vendorId ? config('ecommerce.shares.vendor') : config('ecommerce.shares.company');
-        
+
         // Product Sold Data
         $productSoldData = $this->getProductSoldData($vendorId);
-        
+
         // Total Balance Data
         $balanceData = $this->getBalanceData($vendorId, $share);
-        
+
         // Sales Profit Data
         $profitData = $this->getProfitData($vendorId, $share);
 
@@ -109,7 +109,7 @@ class EcommerceOverviewController extends Controller
         }
 
         $totalAmount = $query->sum('total_amount') * $share;
-        
+
         // Calculate percentages for each category
         $income = $totalAmount;
         $expenses = $totalAmount * 0.7;
@@ -118,17 +118,17 @@ class EcommerceOverviewController extends Controller
         return [
             [
                 'label' => 'Total Income',
-                'value' => 100, // Percentage for progress bar
+                'value' => $income != 0 ? 100 : 0,
                 'totalAmount' => round($income, 2)
             ],
             [
                 'label' => 'Total Expenses',
-                'value' => round(($expenses / $income) * 100, 2), // Percentage relative to income
+                'value' => $income != 0 ? round(($expenses / $income) * 100, 2) : 0,
                 'totalAmount' => round($expenses, 2)
             ],
             [
                 'label' => 'Total Profit',
-                'value' => round(($profit / $income) * 100, 2), // Percentage relative to income
+                'value' => $income != 0 ? round(($profit / $income) * 100, 2) : 0,
                 'totalAmount' => round($profit, 2)
             ]
         ];
@@ -157,7 +157,7 @@ class EcommerceOverviewController extends Controller
                 ]
             ];
         }
-        
+
         if (array_sum($currentYearData) > 0) {
             $series[] = [
                 'name' => (string)$currentYear,
@@ -179,7 +179,7 @@ class EcommerceOverviewController extends Controller
     private function getCurrentBalance(?string $vendorId): array
     {
         $share = $vendorId ? config('ecommerce.shares.vendor') : 1;
-        
+
         $query = Order::query();
         if ($vendorId) {
             $query->whereHas('items.product', fn($q) => $q->where('vendor_id', $vendorId));
@@ -212,7 +212,7 @@ class EcommerceOverviewController extends Controller
         $lastMonth = $query->whereMonth('created_at', Carbon::now()->subMonth()->month)->sum($field);
 
         if ($lastMonth == 0) return 0;
-        return (($currentMonth - $lastMonth) / $lastMonth) * 100;
+        return round((($currentMonth - $lastMonth) / $lastMonth) * 100, 2);
     }
 
     private function getChartData($query, $field, ?string $vendorId = null): array
@@ -530,7 +530,7 @@ class EcommerceOverviewController extends Controller
             ->sum('order_product_items.quantity');
 
         // Calculate growth percentage
-        $percent = $lastMonthTotal > 0 ? 
+        $percent = $lastMonthTotal > 0 ?
             (($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100 : 0;
 
         // Get monthly data for chart
@@ -553,7 +553,7 @@ class EcommerceOverviewController extends Controller
     private function getBalanceData(?string $vendorId, float $share): array
     {
         $query = Order::where('status', 'completed');
-        
+
         if ($vendorId) {
             $query->whereHas('items.product', fn($q) => $q->where('vendor_id', $vendorId));
         }
@@ -566,7 +566,7 @@ class EcommerceOverviewController extends Controller
             ->whereMonth('created_at', Carbon::now()->subMonth()->month)
             ->sum('total_amount') * $share;
 
-        $percent = $lastMonthTotal > 0 ? 
+        $percent = $lastMonthTotal > 0 ?
             (($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100 : 0;
 
         $monthlyData = collect(range(1, 12))->map(function($month) use ($query, $share) {
@@ -588,7 +588,7 @@ class EcommerceOverviewController extends Controller
     private function getProfitData(?string $vendorId, float $share): array
     {
         $query = Order::where('status', 'completed');
-        
+
         if ($vendorId) {
             $query->whereHas('items.product', fn($q) => $q->where('vendor_id', $vendorId));
         }
@@ -603,7 +603,7 @@ class EcommerceOverviewController extends Controller
             ->when($vendorId, fn($q) => $q->where('products.vendor_id', $vendorId))
             ->whereMonth('orders.created_at', Carbon::now()->month)
             ->sum(DB::raw('order_product_items.quantity * products.price'));
-        
+
         $currentMonthProfit = ($currentMonthRevenue - $currentMonthCosts) * $share;
 
         // Get last month data for growth calculation
@@ -616,11 +616,11 @@ class EcommerceOverviewController extends Controller
             ->when($vendorId, fn($q) => $q->where('products.vendor_id', $vendorId))
             ->whereMonth('orders.created_at', Carbon::now()->subMonth()->month)
             ->sum(DB::raw('order_product_items.quantity * products.price'));
-        
+
         $lastMonthProfit = ($lastMonthRevenue - $lastMonthCosts) * $share;
 
         // Calculate growth percentage
-        $percent = $lastMonthProfit != 0 ? 
+        $percent = $lastMonthProfit != 0 ?
             (($currentMonthProfit - $lastMonthProfit) / abs($lastMonthProfit)) * 100 : 0;
 
         // Get monthly data for chart
@@ -628,7 +628,7 @@ class EcommerceOverviewController extends Controller
             $monthlyRevenue = (clone $query)
                 ->whereMonth('created_at', $month)
                 ->sum('total_amount');
-            
+
             $monthlyCosts = DB::table('order_product_items')
                 ->join('products', 'order_product_items.product_id', '=', 'products.id')
                 ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
