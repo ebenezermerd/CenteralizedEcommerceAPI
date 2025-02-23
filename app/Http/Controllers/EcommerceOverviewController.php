@@ -150,21 +150,42 @@ class EcommerceOverviewController extends Controller
     private function getYearlySales(?string $vendorId): array
     {
         $currentYear = Carbon::now()->year;
-        $lastYear = $currentYear - 1;
+        $previousYear = $currentYear - 1;
         $share = $vendorId ? config('ecommerce.shares.vendor') : 1;
+
+        // Get data for both years
+        $previousYearData = $this->getYearlyData($previousYear, $vendorId, $share);
+        $currentYearData = $this->getYearlyData($currentYear, $vendorId, $share);
+
+        // Only include years that have data
+        $series = [];
+        if (array_sum($previousYearData) > 0) {
+            $series[] = [
+                'name' => (string)$previousYear,
+                'data' => [
+                    [
+                        'name' => 'Sales',
+                        'data' => $previousYearData
+                    ]
+                ]
+            ];
+        }
+        
+        if (array_sum($currentYearData) > 0) {
+            $series[] = [
+                'name' => (string)$currentYear,
+                'data' => [
+                    [
+                        'name' => 'Sales',
+                        'data' => $currentYearData
+                    ]
+                ]
+            ];
+        }
 
         return [
             'categories' => self::CHART_CATEGORIES,
-            'series' => [
-                [
-                    'year' => (string)$lastYear,
-                    'data' => $this->getYearlyData($lastYear, $vendorId, $share)
-                ],
-                [
-                    'year' => (string)$currentYear,
-                    'data' => $this->getYearlyData($currentYear, $vendorId, $share)
-                ]
-            ]
+            'series' => $series
         ];
     }
 
