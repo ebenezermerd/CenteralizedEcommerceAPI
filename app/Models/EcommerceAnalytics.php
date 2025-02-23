@@ -19,7 +19,6 @@ class EcommerceAnalytics extends Model
 
     protected $casts = [
         'metadata' => 'array',
-        'recorded_at' => 'datetime',
-        'amount' => 'decimal:2'
+        'recorded_at' => 'datetime'
     ];
 }

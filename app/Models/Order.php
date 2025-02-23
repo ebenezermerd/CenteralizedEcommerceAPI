@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\RecordsEcommerceAnalytics;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, RecordsEcommerceAnalytics;
 
     protected $fillable = [
         'user_id',
@@ -75,5 +76,24 @@ class Order extends Model
         $this->taxes = $this->subtotal * 0.15; // 15% tax
         $this->total_amount = $this->subtotal + $this->taxes + $this->shipping - $this->discount;
         $this->save();
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($order) {
+            $order->recordAnalytics('sale', $order->total_amount, [
+                'order_id' => $order->id,
+                'vendor_id' => $order->items->first()->product->vendor_id ?? null
+            ]);
+        });
+
+        static::updated(function ($order) {
+            if ($order->status === 'completed' && $order->getOriginal('status') !== 'completed') {
+                $order->recordAnalytics('revenue', $order->total_amount, [
+                    'order_id' => $order->id,
+                    'vendor_id' => $order->items->first()->product->vendor_id ?? null
+                ]);
+            }
+        });
     }
 }
