@@ -3,24 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Services\CategoryService;
+use App\Http\Requests\CategoryRequest;
+use App\Http\Resources\CategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class CategoryController extends Controller
 {
+    public function __construct(
+        private readonly CategoryService $categoryService
+    ) {}
+
     public function index(): JsonResponse
     {
-        $categories = Category::with('children')
-            ->whereNull('parentId')
-            ->get()
-            ->map(function ($category) {
-                return [
-                    'group' => $category->name,
-                    'classify' => $category->children->pluck('name')
-                ];
-            });
+        $categories = $this->categoryService->getAllCategories();
+        return response()->json(
+            CategoryResource::collection($categories),
+            Response::HTTP_OK
+        );
+    }
 
-        return response()->json($categories);
+    public function store(CategoryRequest $request): JsonResponse
+    {
+        $category = $this->categoryService->createCategory($request->validated());
+        return response()->json(
+            new CategoryResource($category),
+            Response::HTTP_CREATED
+        );
     }
 
     public function all(): JsonResponse

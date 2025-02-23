@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Log;
 
 class CategorySeeder extends Seeder
 {
@@ -51,6 +52,11 @@ class CategorySeeder extends Seeder
                     ]
                 );
             }
+
+            Log::channel('categories')->info('Category created', [
+                'category_id' => $mainCategory->id,
+                'user_id' => auth()->id()
+            ]);
         }
     }
 }

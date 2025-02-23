@@ -79,6 +79,13 @@ Route::middleware(['jwt'])->group(function () {
     Route::put('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'update']);
     Route::delete('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'destroy']);
 
+    // Category routes
+    Route::prefix('categories')->group(function () {
+        Route::get('/', [CategoryController::class, 'index']);
+        Route::post('/', [CategoryController::class, 'store']);
+        Route::get('/{id}', [CategoryController::class, 'show']);
+        Route::put('/{id}', [CategoryController::class, 'update']);
+    
     // Mail routes
     Route::prefix('mail')->group(function () {
         Route::get('list', [MailController::class, 'list']);
