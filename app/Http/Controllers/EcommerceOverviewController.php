@@ -345,11 +345,15 @@ class EcommerceOverviewController extends Controller
             });
         }
 
-        $currentMonth = $query->whereMonth('created_at', Carbon::now()->month)->count();
-        $lastMonth = $query->whereMonth('created_at', Carbon::now()->subMonth()->month)->count();
+        $currentMonth = (clone $query)
+            ->whereMonth('created_at', Carbon::now()->month)
+            ->count();
 
-        if ($lastMonth == 0) return 0;
-        return round((($currentMonth - $lastMonth) / $lastMonth) * 100, 2);
+        $lastMonth = (clone $query)
+            ->whereMonth('created_at', Carbon::now()->subMonth()->month)
+            ->count();
+
+        return $lastMonth > 0 ? round((($currentMonth - $lastMonth) / $lastMonth) * 100, 2) : 0;
     }
 
     private function calculateProductGrowth(?string $vendorId = null): float
@@ -560,5 +564,87 @@ class EcommerceOverviewController extends Controller
                 'categories' => self::CHART_CATEGORIES
             ]
         ];
+    }
+
+    private function getProfitData(?string $vendorId, float $share): array
+    {
+        $query = Order::where('status', 'completed');
+        
+        if ($vendorId) {
+            $query->whereHas('items.product', fn($q) => $q->where('vendor_id', $vendorId));
+        }
+
+        // Get current month data
+        $currentMonthQuery = (clone $query)->whereMonth('created_at', Carbon::now()->month);
+        $currentMonthRevenue = $currentMonthQuery->sum('total_amount');
+        $currentMonthCosts = DB::table('order_product_items')
+            ->join('products', 'order_product_items.product_id', '=', 'products.id')
+            ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->when($vendorId, fn($q) => $q->where('products.vendor_id', $vendorId))
+            ->whereMonth('orders.created_at', Carbon::now()->month)
+            ->sum(DB::raw('order_product_items.quantity * products.price'));
+        
+        $currentMonthProfit = ($currentMonthRevenue - $currentMonthCosts) * $share;
+
+        // Get last month data for growth calculation
+        $lastMonthQuery = (clone $query)->whereMonth('created_at', Carbon::now()->subMonth()->month);
+        $lastMonthRevenue = $lastMonthQuery->sum('total_amount');
+        $lastMonthCosts = DB::table('order_product_items')
+            ->join('products', 'order_product_items.product_id', '=', 'products.id')
+            ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->when($vendorId, fn($q) => $q->where('products.vendor_id', $vendorId))
+            ->whereMonth('orders.created_at', Carbon::now()->subMonth()->month)
+            ->sum(DB::raw('order_product_items.quantity * products.price'));
+        
+        $lastMonthProfit = ($lastMonthRevenue - $lastMonthCosts) * $share;
+
+        // Calculate growth percentage
+        $percent = $lastMonthProfit != 0 ? 
+            (($currentMonthProfit - $lastMonthProfit) / abs($lastMonthProfit)) * 100 : 0;
+
+        // Get monthly data for chart
+        $monthlyData = collect(range(1, 12))->map(function($month) use ($query, $vendorId, $share) {
+            $monthlyRevenue = (clone $query)
+                ->whereMonth('created_at', $month)
+                ->sum('total_amount');
+            
+            $monthlyCosts = DB::table('order_product_items')
+                ->join('products', 'order_product_items.product_id', '=', 'products.id')
+                ->join('orders', 'order_product_items.order_id', '=', 'orders.id')
+                ->where('orders.status', 'completed')
+                ->when($vendorId, fn($q) => $q->where('products.vendor_id', $vendorId))
+                ->whereMonth('orders.created_at', $month)
+                ->sum(DB::raw('order_product_items.quantity * products.price'));
+
+            return max(($monthlyRevenue - $monthlyCosts) * $share, 0); // Ensure no negative profits
+        });
+
+        return [
+            'total' => round(max($currentMonthProfit, 0), 2), // Ensure no negative profits
+            'percent' => round($percent, 2),
+            'chart' => [
+                'series' => $monthlyData->toArray(),
+                'categories' => self::CHART_CATEGORIES
+            ]
+        ];
+    }
+
+    private function getYearlyData(int $year, ?string $vendorId, float $share): array
+    {
+        return collect(range(1, 12))->map(function($month) use ($year, $vendorId, $share) {
+            $query = Order::where('status', 'completed')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month);
+
+            if ($vendorId) {
+                $query->whereHas('items.product', function ($q) use ($vendorId) {
+                    $q->where('vendor_id', $vendorId);
+                });
+            }
+
+            return round($query->sum('total_amount') * $share, 2);
+        })->toArray();
     }
 }
