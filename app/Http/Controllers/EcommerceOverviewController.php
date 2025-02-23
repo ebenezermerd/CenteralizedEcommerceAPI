@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
-use App\Models\EcommerceAnalytics;
+use App\Models\EcommerceAnalytics;  
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +20,7 @@ class EcommerceOverviewController extends Controller
     public function getOverviewData(): JsonResponse
     {
         $user = Auth::user();
-        $isSupplier = $user->role === 'supplier';
+        $isSupplier = $user->hasRole('supplier');
 
         try {
             return response()->json([
