@@ -100,49 +100,36 @@ class EcommerceOverviewController extends Controller
         $share = $vendorId ? config('ecommerce.shares.vendor') : 1;
         $currentYear = Carbon::now()->year;
 
-        $monthlyData = collect(range(1, 12))->map(function($month) use ($vendorId, $currentYear, $share) {
-            $query = Order::where('status', 'completed')
-                ->whereYear('created_at', $currentYear)
-                ->whereMonth('created_at', $month);
+        // Get total amounts for the entire year
+        $query = Order::where('status', 'completed')
+            ->whereYear('created_at', $currentYear);
 
-            if ($vendorId) {
-                $query->whereHas('items.product', fn($q) => $q->where('vendor_id', $vendorId));
-            }
+        if ($vendorId) {
+            $query->whereHas('items.product', fn($q) => $q->where('vendor_id', $vendorId));
+        }
 
-            $amount = $query->sum('total_amount') * $share;
-            $total = $amount;  // Store total for percentage calculation
-            
-            return [
-                'income' => $amount,
-                'expenses' => $amount * 0.7,
-                'profit' => $amount * 0.3,
-                'total' => $total
-            ];
-        });
-
-        $totalAmount = $monthlyData->sum('total');
+        $totalAmount = $query->sum('total_amount') * $share;
+        
+        // Calculate percentages for each category
+        $income = $totalAmount;
+        $expenses = $totalAmount * 0.7;
+        $profit = $totalAmount * 0.3;
 
         return [
             [
                 'label' => 'Total Income',
-                'value' => $monthlyData->sum('income'),
-                'totalAmount' => $monthlyData->sum('income'),
-                'percentage' => $totalAmount > 0 ? ($monthlyData->sum('income') / $totalAmount) * 100 : 0,
-                'data' => $monthlyData->pluck('income')->toArray()
+                'value' => 100, // Percentage for progress bar
+                'totalAmount' => round($income, 2)
             ],
             [
                 'label' => 'Total Expenses',
-                'value' => $monthlyData->sum('expenses'),
-                'totalAmount' => $monthlyData->sum('expenses'),
-                'percentage' => $totalAmount > 0 ? ($monthlyData->sum('expenses') / $totalAmount) * 100 : 0,
-                'data' => $monthlyData->pluck('expenses')->toArray()
+                'value' => round(($expenses / $income) * 100, 2), // Percentage relative to income
+                'totalAmount' => round($expenses, 2)
             ],
             [
                 'label' => 'Total Profit',
-                'value' => $monthlyData->sum('profit'),
-                'totalAmount' => $monthlyData->sum('profit'),
-                'percentage' => $totalAmount > 0 ? ($monthlyData->sum('profit') / $totalAmount) * 100 : 0,
-                'data' => $monthlyData->pluck('profit')->toArray()
+                'value' => round(($profit / $income) * 100, 2), // Percentage relative to income
+                'totalAmount' => round($profit, 2)
             ]
         ];
     }
