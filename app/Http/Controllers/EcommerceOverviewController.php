@@ -19,9 +19,11 @@ class EcommerceOverviewController extends Controller
 
     public function getOverviewData(): JsonResponse
     {
-        $user = Auth::user();
+        Log::info('Getting overview data');
+        $user = auth()->user();
         $isSupplier = $user->hasRole('supplier');
 
+        Log::info('User is supplier: ' . $isSupplier);
         try {
             return response()->json([
                 'widgetSummary' => $this->getWidgetSummary($isSupplier ? $user->id : null),
@@ -59,7 +61,16 @@ class EcommerceOverviewController extends Controller
                 'percent' => $this->calculateGrowthPercent($query, 'total_amount'),
                 'chart' => $this->getChartData($query, 'total_amount', $vendorId)
             ],
-            // ... similar adjustments for other metrics
+            'totalOrders' => [
+                'total' => $this->calculateOrderTotal($vendorId),
+                'percent' => $this->calculateGrowthPercent($query, 'total_amount'),
+                'chart' => $this->getChartData($query, 'total_amount', $vendorId)
+            ],
+            'totalProducts' => [
+                'total' => $this->calculateProductTotal($vendorId),
+                'percent' => $this->calculateGrowthPercent($query, 'total_amount'),
+                'chart' => $this->getChartData($query, 'total_amount', $vendorId)
+            ],
         ];
     }
 
