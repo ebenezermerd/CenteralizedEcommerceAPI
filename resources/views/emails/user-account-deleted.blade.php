@@ -16,7 +16,7 @@
             background: #f5f5f5;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+        }   
         .header {
             text-align: center;
             padding: 30px 0;
@@ -81,7 +81,7 @@
             <div class="contact-info">
                 <strong>Need Help?</strong><br>
                 Email: support@korecha.com<br>
-                Phone: +251 911 123 456<br>
+                Phone: +251 922 496 959<br>
                 Hours: Monday - Friday, 9:00 AM - 6:00 PM EAT
             </div>
 

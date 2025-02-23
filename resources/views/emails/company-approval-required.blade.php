@@ -101,15 +101,15 @@
             <p>Once your company is approved, you will have full access to:</p>
             <ul style="margin-left: 20px;">
                 <li>Product listing creation</li>
-                <li>Inventory management</li>
-                <li>Order processing</li>
+                <li>Company Information Management</li>
+                <li>Admin Dashboard</li>
                 <li>Sales analytics</li>
             </ul>
 
             <div class="contact-info">
                 <strong>Need Help?</strong><br>
                 Email: support@korecha.com<br>
-                Phone: +251 911 123 456<br>
+                Phone: +251 922 496 959<br>
                 Hours: Monday - Friday, 9:00 AM - 6:00 PM EAT
             </div>
 

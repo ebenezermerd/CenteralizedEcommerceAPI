@@ -150,22 +150,22 @@
             <div class="registration-details">
                 <div class="detail-row">
                     <span class="detail-label">Email</span>
-                    <span class="detail-value">{{ $user->email }}</span>
+                    <span class="detail-value">  {{ $user->email }}  </span>
                 </div>
 
                 <div class="detail-row">
                     <span class="detail-label">Phone Number</span>
-                    <span class="detail-value">{{ $user->phone }}</span>
+                    <span class="detail-value">  {{ $user->phone }}</span>
                 </div>
 
                 <div class="detail-row">
                     <span class="detail-label">Address</span>
-                    <span class="detail-value">{{ $user->address }}</span>
+                    <span class="detail-value">  {{ $user->address }}</span>
                 </div>
 
                 <div class="detail-row">
                     <span class="detail-label">Role</span>
-                    <span class="detail-value">{{ $user->getRoleNames()->first() }}</span>
+                    <span class="detail-value">  {{ $user->getRoleNames()->first() }}</span>
                 </div>
 
                 <div class="status-badge">
@@ -228,7 +228,7 @@
             <div class="contact-info">
                 <strong>Need Help?</strong><br>
                 Email: support@korecha.com<br>
-                Phone: +251 911 123 456<br>
+                Phone: +251 922 496 959<br>
                 Hours: Monday - Friday, 9:00 AM - 6:00 PM EAT
             </div>
 
