@@ -423,7 +423,7 @@ class EcommerceOverviewController extends Controller
                 ->join('products', 'order_product_items.product_id', '=', 'products.id')
                 ->when($vendorId, fn($q) => $q->where('products.vendor_id', $vendorId))
                 ->whereMonth('order_product_items.created_at', $month)
-                ->sum('quantity');
+                ->sum('order_product_items.quantity');
         });
 
         return ['series' => $data->toArray(), 'categories' => $this->monthlyCategories()];
