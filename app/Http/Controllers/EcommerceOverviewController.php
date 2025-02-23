@@ -21,7 +21,7 @@ class EcommerceOverviewController extends Controller
     {
         Log::info('Getting overview data');
         $user = auth()->user();
-        
+
         $isSupplier = $user->hasRole('supplier');
 
         Log::info('User is supplier: ' . $isSupplier);
@@ -72,6 +72,7 @@ class EcommerceOverviewController extends Controller
                 'percent' => $this->calculateGrowthPercent($query, 'total_amount'),
                 'chart' => $this->getChartData($query, 'total_amount', $vendorId)
             ],
+            
         ];
     }
 
@@ -126,6 +127,16 @@ class EcommerceOverviewController extends Controller
             'refunded' => $this->calculateRefunds($vendorId),
             'orderTotal' => $this->calculateOrderTotal($vendorId)
         ];
+    }
+
+    private function calculateProductTotal(?string $vendorId = null): int
+    {
+        $query = Product::query();
+        if ($vendorId) {
+            $query->where('vendor_id', $vendorId);
+        }
+    
+        return $query->count();
     }
 
     private function calculateGrowthPercent($query, $field): float
