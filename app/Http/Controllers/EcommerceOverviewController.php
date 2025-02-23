@@ -21,6 +21,7 @@ class EcommerceOverviewController extends Controller
     {
         Log::info('Getting overview data');
         $user = auth()->user();
+        
         $isSupplier = $user->hasRole('supplier');
 
         Log::info('User is supplier: ' . $isSupplier);

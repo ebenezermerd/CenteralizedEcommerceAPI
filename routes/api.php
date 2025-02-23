@@ -176,9 +176,8 @@ Route::middleware(['jwt'])->group(function () {
     });
 
     // Ecommerce Overview routes
-    Route::prefix('ecommerce')->group(function () {
-        Route::get('overview', [EcommerceOverviewController::class, 'getOverviewData'])
-            ->middleware('role:admin,supplier'); 
+    Route::middleware(['role:admin,supplier'])->prefix('ecommerce')->group(function () {
+        Route::get('overview', [EcommerceOverviewController::class, 'getOverviewData']);
     });
 
     // App Overview routes
