@@ -258,7 +258,7 @@ class EcommerceOverviewController extends Controller
             ->map(function ($item, $index) {
                 return [
                     'id' => $item->id,
-                    'name' => $item->name,
+                    'name' => $item->firstName . ' ' . $item->lastName,
                     'email' => $item->email,
                     'avatarUrl' => $item->avatar_url,
                     'category' => 'Customer',
