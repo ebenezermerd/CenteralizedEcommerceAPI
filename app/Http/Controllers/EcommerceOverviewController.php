@@ -454,7 +454,7 @@ class EcommerceOverviewController extends Controller
                 ->join('products', 'order_product_items.product_id', '=', 'products.id')
                 ->when($vendorId, fn($q) => $q->where('products.vendor_id', $vendorId))
                 ->whereMonth('order_product_items.created_at', $month)
-                ->sum(DB::raw('products.cost_price * order_product_items.quantity'));
+                ->sum(DB::raw('products.price * order_product_items.quantity'));
 
             $netProfit = ($gross - $costs) * ($vendorId ? self::VENDOR_SHARE : self::COMPANY_SHARE);
 
