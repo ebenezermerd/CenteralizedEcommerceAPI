@@ -21,7 +21,7 @@ class EcommerceOverviewController extends Controller
     {
         try {
             $user = auth()->user();
-            $isSupplier = $user->role === 'supplier';
+            $isSupplier = $user->hasRole('supplier');
             $vendorId = $isSupplier ? $user->id : null;
 
             return response()->json([
@@ -240,7 +240,7 @@ class EcommerceOverviewController extends Controller
 
     private function getBestSalesman(): array
     {
-        return DB::table('users')
+        return User::role('supplier')
             ->join('orders', 'users.id', '=', 'orders.user_id')
             ->select(
                 'users.id',
@@ -251,8 +251,7 @@ class EcommerceOverviewController extends Controller
                 DB::raw('COUNT(orders.id) as total_orders'),
                 DB::raw('SUM(orders.total_amount) as total_sales')
             )
-            ->where('users.role', 'customer')
-            ->groupBy('users.id')
+            ->groupBy(['users.id', 'users.firstName', 'users.lastName', 'users.email', 'users.image'])
             ->orderByDesc('total_sales')
             ->limit(5)
             ->get()
@@ -262,7 +261,7 @@ class EcommerceOverviewController extends Controller
                     'name' => $item->firstName . ' ' . $item->lastName,
                     'email' => $item->email,
                     'avatarUrl' => $item->image,
-                    'category' => 'Customer',
+                    'category' => 'Supplier',
                     'totalAmount' => (float) $item->total_sales,
                     'rank' => 'Top ' . ($index + 1),
                     'countryCode' => 'ET' // Default country code
