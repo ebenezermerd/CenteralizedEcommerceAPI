@@ -50,9 +50,9 @@ class EcommerceOverviewController extends Controller
             ->where('products.vendor_id', $vendorId);
 
         $currentMonthSold = (clone $productSoldQuery)->whereMonth('order_product_items.created_at', Carbon::now()->month)
-            ->sum('quantity');
+            ->sum('order_product_items.quantity');
         $lastMonthSold = (clone $productSoldQuery)->whereMonth('order_product_items.created_at', Carbon::now()->subMonth()->month)
-            ->sum('quantity');
+            ->sum('order_product_items.quantity');
         $productSoldGrowth = $lastMonthSold ? round(($currentMonthSold - $lastMonthSold) / $lastMonthSold * 100, 2) : 0;
 
         // Total Balance Calculation
