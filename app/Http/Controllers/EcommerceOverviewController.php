@@ -244,9 +244,10 @@ class EcommerceOverviewController extends Controller
             ->join('orders', 'users.id', '=', 'orders.user_id')
             ->select(
                 'users.id',
-                'users.name',
+                'users.firstName',
+                'users.lastName',
                 'users.email',
-                'users.avatar_url',
+                'users.image',
                 DB::raw('COUNT(orders.id) as total_orders'),
                 DB::raw('SUM(orders.total_amount) as total_sales')
             )
@@ -260,7 +261,7 @@ class EcommerceOverviewController extends Controller
                     'id' => $item->id,
                     'name' => $item->firstName . ' ' . $item->lastName,
                     'email' => $item->email,
-                    'avatarUrl' => $item->avatar_url,
+                    'avatarUrl' => $item->image,
                     'category' => 'Customer',
                     'totalAmount' => (float) $item->total_sales,
                     'rank' => 'Top ' . ($index + 1),
