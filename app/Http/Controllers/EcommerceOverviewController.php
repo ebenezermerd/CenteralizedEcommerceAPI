@@ -205,7 +205,10 @@ class EcommerceOverviewController extends Controller
             ->get()
             ->flatMap(function ($sale) {
                 // Handle JSON array of genders
-                $genders = json_decode($sale->gender, true) ?? [];
+                $genders = is_string($sale->gender) ? json_decode($sale->gender, true) : [];
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $genders = [];
+                }
                 // Map each gender to its count
                 return collect($genders)->mapWithKeys(function ($gender) use ($sale) {
                     return [$gender => $sale->count];
