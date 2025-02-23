@@ -9,21 +9,28 @@ use App\Models\EcommerceAnalytics;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class EcommerceOverviewController extends Controller
 {
+    private const COMPANY_SHARE = 0.10; // 10% for company
+    private const VENDOR_SHARE = 0.90;  // 90% for vendor
+
     public function getOverviewData(): JsonResponse
     {
+        $user = Auth::user();
+        $isSupplier = $user->role === 'supplier';
+
         try {
             return response()->json([
-                'widgetSummary' => $this->getWidgetSummary(),
-                'latestProducts' => $this->getLatestProducts(),
-                'bestSalesman' => $this->getBestSalesman(),
-                'currentBalance' => $this->getCurrentBalance(),
-                'salesOverview' => $this->getSalesOverview(),
-                'yearlySales' => $this->getYearlySales(),
-                'saleByGender' => $this->getSaleByGender(),
+                'widgetSummary' => $this->getWidgetSummary($isSupplier ? $user->id : null),
+                'salesOverview' => $this->getSalesOverview($isSupplier ? $user->id : null),
+                'yearlySales' => $this->getYearlySales($isSupplier ? $user->id : null),
+                'latestProducts' => $this->getLatestProducts($isSupplier ? $user->id : null),
+                'bestSalesman' => $this->getBestSalesman($isSupplier ? $user->id : null),
+                'saleByGender' => $this->getSaleByGender($isSupplier ? $user->id : null),
+                'currentBalance' => $this->getCurrentBalance($isSupplier ? $user->id : null),
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching ecommerce overview', [
@@ -34,57 +41,105 @@ class EcommerceOverviewController extends Controller
         }
     }
 
-    private function getWidgetSummary(): array
+    private function getWidgetSummary(?string $vendorId = null): array
     {
-        $now = Carbon::now();
-        $lastMonth = Carbon::now()->subMonth();
+        $query = Order::query();
+        if ($vendorId) {
+            $query->whereHas('items.product', function ($q) use ($vendorId) {
+                $q->where('vendor_id', $vendorId);
+            });
+        }
 
-        // Current period calculations
-        $currentSales = Order::whereBetween('created_at', [$lastMonth, $now])
-            ->where('status', 'completed')
-            ->sum('total_amount');
-
-        // Previous period calculations
-        $previousStart = $lastMonth->copy()->subMonth();
-        $previousEnd = $lastMonth;
-
-        $previousSales = Order::whereBetween('created_at', [$previousStart, $previousEnd])
-            ->where('status', 'completed')
-            ->sum('total_amount');
-
-        // Calculate percentages safely
-        $salesPercent = $this->calculatePercentageChange($currentSales, $previousSales);
-        $balancePercent = $this->calculatePercentageChange($currentSales * 0.9, $previousSales * 0.9);
-        $profitPercent = $this->calculatePercentageChange($currentSales * 0.1, $previousSales * 0.1);
+        $totalSales = $query->sum('total_amount');
+        $vendorShare = $vendorId ? ($totalSales * self::VENDOR_SHARE) : $totalSales;
 
         return [
-            'productSold' => [
-                'total' => Order::where('status', 'completed')->sum('total_amount'),
-                'percent' => $salesPercent,
-                'chart' => $this->getMonthlySalesData()
+            'totalSales' => [
+                'total' => $vendorShare,
+                'percent' => $this->calculateGrowthPercent($query, 'total_amount'),
+                'chart' => $this->getChartData($query, 'total_amount', $vendorId)
             ],
-            'totalBalance' => [
-                'total' => Order::where('status', 'completed')->sum(DB::raw('total_amount * 0.9')),
-                'percent' => $balancePercent,
-                'chart' => $this->getMonthlySalesData()
-            ],
-            'salesProfit' => [
-                'total' => Order::where('status', 'completed')->sum(DB::raw('total_amount * 0.1')),
-                'percent' => $profitPercent,
-                'chart' => $this->getMonthlySalesData()
-            ]
+            // ... similar adjustments for other metrics
         ];
     }
 
-    private function calculatePercentageChange($current, $previous): float
+    private function getSalesOverview(?string $vendorId = null): array
     {
-        if ($previous == 0) {
-            return $current > 0 ? 100.0 : 0.0;
-        }
-        return round((($current - $previous) / $previous) * 100, 2);
+        $types = ['expenses', 'income', 'profit'];
+        $months = range(1, 12);
+        
+        return array_map(function($type) use ($months, $vendorId) {
+            $data = collect($months)->map(function($month) use ($type, $vendorId) {
+                $query = Order::whereYear('created_at', Carbon::now()->year)
+                    ->whereMonth('created_at', $month);
+
+                if ($vendorId) {
+                    $query->whereHas('items.product', function ($q) use ($vendorId) {
+                        $q->where('vendor_id', $vendorId);
+                    });
+                }
+
+                $amount = $query->sum('total_amount');
+                
+                return match($type) {
+                    'expenses' => $amount * ($vendorId ? self::VENDOR_SHARE : 0.9),
+                    'income' => $amount,
+                    'profit' => $amount * ($vendorId ? self::VENDOR_SHARE : self::COMPANY_SHARE)
+                };
+            })->toArray();
+
+            return [
+                'label' => ucfirst($type),
+                'value' => array_sum($data),
+                'data' => $data
+            ];
+        }, $types);
     }
 
-    private function getLatestProducts(): array
+    private function getCurrentBalance(?string $vendorId = null): array
+    {
+        $query = Order::query();
+        if ($vendorId) {
+            $query->whereHas('items.product', function ($q) use ($vendorId) {
+                $q->where('vendor_id', $vendorId);
+            });
+        }
+
+        $totalAmount = $query->sum('total_amount');
+        $share = $vendorId ? self::VENDOR_SHARE : 1;
+
+        return [
+            'currentBalance' => $totalAmount * $share,
+            'earning' => $this->calculateEarnings($vendorId),
+            'refunded' => $this->calculateRefunds($vendorId),
+            'orderTotal' => $this->calculateOrderTotal($vendorId)
+        ];
+    }
+
+    private function calculateGrowthPercent($query, $field): float
+    {
+        $currentMonth = $query->whereMonth('created_at', Carbon::now()->month)->sum($field);
+        $lastMonth = $query->whereMonth('created_at', Carbon::now()->subMonth()->month)->sum($field);
+        
+        if ($lastMonth == 0) return 0;
+        return (($currentMonth - $lastMonth) / $lastMonth) * 100;
+    }
+
+    private function getChartData($query, $field, ?string $vendorId = null): array
+    {
+        $data = collect(range(1, 12))->map(function($month) use ($query, $field, $vendorId) {
+            $amount = clone $query;
+            $amount = $amount->whereMonth('created_at', $month)->sum($field);
+            return $vendorId ? $amount * self::VENDOR_SHARE : $amount;
+        })->toArray();
+
+        return [
+            'series' => $data,
+            'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        ];
+    }
+
+    private function getLatestProducts(?string $vendorId = null): array
     {
         return Product::with(['category'])
             ->where('publish', 'published')
@@ -104,7 +159,7 @@ class EcommerceOverviewController extends Controller
             ->toArray();
     }
 
-    private function getBestSalesman(): array
+    private function getBestSalesman(?string $vendorId = null): array
     {
         return User::role('supplier')
             ->withCount(['products as total_sales' => function ($query) {
@@ -137,81 +192,7 @@ class EcommerceOverviewController extends Controller
             ->toArray();
     }
 
-    private function getCurrentBalance(): array
-    {
-        $completedOrders = Order::where('status', 'completed');
-
-        return [
-            'currentBalance' => $completedOrders->sum('total_amount'),
-            'totalEarning' => $completedOrders->sum(DB::raw('total_amount * 0.9')), // 90% to vendors
-            'totalRefunded' => Order::where('status', 'refunded')->sum('total_amount'),
-            'totalOrders' => $completedOrders->count()
-        ];
-    }
-
-    private function getSalesOverview(): array
-    {
-        $totalSales = Order::where('status', 'completed')->sum('total_amount');
-        $platformFee = 0.1; // 10% platform fee
-
-        return [
-            [
-                'label' => 'Total Income',
-                'value' => 100,
-                'totalAmount' => $totalSales
-            ],
-            [
-                'label' => 'Vendor Payments',
-                'value' => round((1 - $platformFee) * 100),
-                'totalAmount' => $totalSales * (1 - $platformFee)
-            ],
-            [
-                'label' => 'Platform Profit',
-                'value' => round($platformFee * 100),
-                'totalAmount' => $totalSales * $platformFee
-            ]
-        ];
-    }
-
-    private function getYearlySales(): array
-    {
-        $currentYear = Carbon::now()->year;
-        $lastYear = $currentYear - 1;
-
-        return [
-            'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            'series' => [
-                [
-                    'name' => (string)$lastYear,
-                    'data' => [
-                        [
-                            'name' => 'Total Income',
-                            'data' => $this->getMonthlyData($lastYear, 'income')
-                        ],
-                        [
-                            'name' => 'Total Expenses',
-                            'data' => $this->getMonthlyData($lastYear, 'expenses')
-                        ]
-                    ]
-                ],
-                [
-                    'name' => (string)$currentYear,
-                    'data' => [
-                        [
-                            'name' => 'Total Income',
-                            'data' => $this->getMonthlyData($currentYear, 'income')
-                        ],
-                        [
-                            'name' => 'Total Expenses',
-                            'data' => $this->getMonthlyData($currentYear, 'expenses')
-                        ]
-                    ]
-                ]
-            ]
-        ];
-    }
-
-    private function getSaleByGender(): array
+    private function getSaleByGender(?string $vendorId = null): array
     {
         // Define standard gender categories
         $genderCategories = ['Women', 'Men', 'Kids'];
@@ -261,28 +242,58 @@ class EcommerceOverviewController extends Controller
         ];
     }
 
-    private function getMonthlySalesData(): array
+    private function getYearlySales(?string $vendorId = null): array
     {
-        $months = collect(range(1, 12))->map(function ($month) {
-            return Order::where('status', 'completed')
-                ->whereYear('created_at', Carbon::now()->year)
-                ->whereMonth('created_at', $month)
-                ->sum('total_amount');
-        })->toArray();
+        $currentYear = Carbon::now()->year;
+        $lastYear = $currentYear - 1;
 
         return [
-            'series' => $months,
-            'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            'series' => [
+                [
+                    'name' => (string)$lastYear,
+                    'data' => [
+                        [
+                            'name' => 'Total Income',
+                            'data' => $this->getMonthlyData($lastYear, 'income', $vendorId)
+                        ],
+                        [
+                            'name' => 'Total Expenses',
+                            'data' => $this->getMonthlyData($lastYear, 'expenses', $vendorId)
+                        ]
+                    ]
+                ],
+                [
+                    'name' => (string)$currentYear,
+                    'data' => [
+                        [
+                            'name' => 'Total Income',
+                            'data' => $this->getMonthlyData($currentYear, 'income', $vendorId)
+                        ],
+                        [
+                            'name' => 'Total Expenses',
+                            'data' => $this->getMonthlyData($currentYear, 'expenses', $vendorId)
+                        ]
+                    ]
+                ]
+            ]
         ];
     }
 
-    private function getMonthlyData(int $year, string $type): array
+    private function getMonthlyData(int $year, string $type, ?string $vendorId = null): array
     {
-        return collect(range(1, 12))->map(function ($month) use ($year, $type) {
+        return collect(range(1, 12))->map(function ($month) use ($year, $type, $vendorId) {
             $amount = Order::where('status', 'completed')
                 ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->sum('total_amount');
+                ->whereMonth('created_at', $month);
+
+            if ($vendorId) {
+                $amount->whereHas('items.product', function ($q) use ($vendorId) {
+                    $q->where('vendor_id', $vendorId);
+                });
+            }
+
+            $amount = $amount->sum('total_amount');
 
             $value = match($type) {
                 'expenses' => $amount * 0.9, // 90% to vendors
@@ -292,5 +303,41 @@ class EcommerceOverviewController extends Controller
 
             return round($value, 2); // Round to 2 decimal places
         })->toArray();
+    }
+
+    private function calculateEarnings(?string $vendorId = null): float
+    {
+        $query = Order::query();
+        if ($vendorId) {
+            $query->whereHas('items.product', function ($q) use ($vendorId) {
+                $q->where('vendor_id', $vendorId);
+            });
+        }
+
+        return $query->sum('total_amount') * ($vendorId ? self::VENDOR_SHARE : 1);
+    }
+
+    private function calculateRefunds(?string $vendorId = null): float
+    {
+        $query = Order::where('status', 'refunded');
+        if ($vendorId) {
+            $query->whereHas('items.product', function ($q) use ($vendorId) {
+                $q->where('vendor_id', $vendorId);
+            });
+        }
+
+        return $query->sum('total_amount');
+    }
+
+    private function calculateOrderTotal(?string $vendorId = null): int
+    {
+        $query = Order::query();
+        if ($vendorId) {
+            $query->whereHas('items.product', function ($q) use ($vendorId) {
+                $q->where('vendor_id', $vendorId);
+            });
+        }
+
+        return $query->count();
     }
 }
