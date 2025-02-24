@@ -199,4 +199,5 @@ Route::middleware(['jwt'])->group(function () {
     // Product filtering routes
     Route::get('/products/filter', [ProductFilterController::class, 'filter']);
     Route::get('/products/categories', [ProductFilterController::class, 'getCategories']);
+    Route::get('/categories/{categoryId}/brands', [ProductFilterController::class, 'getCategoryBrands']);
 });

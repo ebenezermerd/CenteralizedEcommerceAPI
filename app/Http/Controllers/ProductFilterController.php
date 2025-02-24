@@ -21,19 +21,15 @@ class ProductFilterController extends Controller
                 ->with(['reviews', 'category', 'brand', 'images', 'vendor'])
                 ->published();
 
-            // Apply category filter using categoryId
-            if ($request->has('category')) {
-                $category = Category::where('name', $request->category)->first();
-                if ($category) {
-                    $query->where('categoryId', $category->id);
-                }
+            // Filter by category ID
+            if ($request->has('categoryId')) {
+                $query->where('categoryId', $request->categoryId);
             }
 
-            // Apply brand filter using brandId
-            if ($request->has('brands') && !empty($request->brands)) {
-                $brandNames = json_decode($request->brands);
-                $brandIds = Brand::whereIn('name', $brandNames)->pluck('id');
-                if ($brandIds->isNotEmpty()) {
+            // Filter by brand IDs
+            if ($request->has('brandIds')) {
+                $brandIds = json_decode($request->brandIds);
+                if (!empty($brandIds)) {
                     $query->whereIn('brandId', $brandIds);
                 }
             }
@@ -116,9 +112,15 @@ class ProductFilterController extends Controller
                 ->get(['id', 'name', 'coverImg'])
                 ->map(function ($category) {
                     return [
+                        'id' => $category->id,
                         'name' => $category->name,
                         'coverImg' => $category->coverImg,
-                        'brands' => $category->brands->pluck('name')
+                        'brands' => $category->brands->map(function ($brand) {
+                            return [
+                                'id' => $brand->id,
+                                'name' => $brand->name
+                            ];
+                        })
                     ];
                 });
 
@@ -130,6 +132,41 @@ class ProductFilterController extends Controller
             Log::error('Failed to fetch categories', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => 'Failed to fetch categories',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get brands for a specific category by ID
+     */
+    public function getCategoryBrands($categoryId)
+    {
+        try {
+            $category = Category::findOrFail($categoryId);
+
+            $brands = $category->brands()
+                ->select('id', 'name', 'description', 'logo')
+                ->get()
+                ->map(function ($brand) {
+                    return [
+                        'id' => $brand->id,
+                        'name' => $brand->name,
+                        'description' => $brand->description,
+                        'logo' => $brand->logo
+                    ];
+                });
+
+            return response()->json($brands);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch category brands', [
+                'categoryId' => $categoryId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to fetch brands',
                 'message' => $e->getMessage()
             ], 500);
         }
