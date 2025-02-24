@@ -291,6 +291,8 @@ class ProductController extends Controller
 
             $category = Category::where('name', $request->category)->first();
             $brandId = $this->handleBrand($request->brand, $request->category);
+            
+            Log::info('Brand ID', ['brand_id' => $brandId]);
 
             // 3. Create product
             $product = new Product();
@@ -902,6 +904,7 @@ class ProductController extends Controller
 
     protected function validateCategoryAndBrand(array $data): void
     {
+        Log::info('Validating category and brand', ['data' => $data]);
         if (!isset($data['category'])) {
             throw new ValidationException('Category is required');
         }
@@ -919,6 +922,7 @@ class ProductController extends Controller
             $brandExists = $category->brands()
                 ->where('brands.id', $data['brand'])
                 ->exists();
+            Log::info('Brand exists', ['brand_exists' => $brandExists]);
 
             if (!$brandExists) {
                 throw new ValidationException("Invalid brand ID for category {$data['category']}");
