@@ -7,6 +7,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
 use App\Exceptions\CategoryNotFoundException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Log;
 
 class CategoryService
 {
@@ -66,15 +68,27 @@ class CategoryService
     public function getCategoryBrands(string $categoryName): array
     {
         return Cache::remember("category.brands.{$categoryName}", self::CACHE_TTL, function () use ($categoryName) {
-            // You might want to implement your own brand logic here
-            // This is just an example based on your current structure
-            $brands = config("brands.{$categoryName}", []);
-            return array_map(function ($brand) {
-                return [
-                    'name' => $brand['name'],
-                    'description' => $brand['description']
-                ];
-            }, $brands);
+            try {
+                $category = Category::where('name', $categoryName)->firstOrFail();
+                
+                // Get brands from configuration or database
+                $brands = config("brands.{$category->name}", []);
+                
+                if (empty($brands)) {
+                    Log::info('No brands found for category', ['category' => $categoryName]);
+                    return [];
+                }
+
+                return array_map(function ($brand) {
+                    return [
+                        'name' => $brand['name'],
+                        'description' => $brand['description']
+                    ];
+                }, $brands);
+            } catch (ModelNotFoundException $e) {
+                Log::error('Category not found while fetching brands', ['category' => $categoryName]);
+                return [];
+            }
         });
     }
 }

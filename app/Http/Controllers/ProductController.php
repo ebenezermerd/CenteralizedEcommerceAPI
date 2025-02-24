@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 use App\Mail\CompanyApprovalRequired;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
+use App\Services\CategoryService;
 
 class ProductController extends Controller
 {
@@ -209,6 +211,10 @@ class ProductController extends Controller
         }
 
         try {
+
+            $data = $request->validated();
+            $this->validateCategoryAndBrand($data);
+
             DB::beginTransaction();
             Log::info('Starting product creation', ['request' => $request->except(['coverUrl', 'images'])]);
 
@@ -377,9 +383,15 @@ class ProductController extends Controller
                 'message' => 'Error creating product',
                 'error' => $e->getMessage()
             ], 500);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
         }
     }
 
+    // Validate the request
     protected function validateRequest(Request $request): array
     {
         $validator = Validator::make($request->all(), [
@@ -916,5 +928,27 @@ class ProductController extends Controller
         return response()->json([
             'products' => ProductResource::collection($products)
         ]);
+    }
+
+    protected function validateCategoryAndBrand(array $data): void
+    {
+        if (!isset($data['category'])) {
+            throw new ValidationException('Category is required');
+        }
+
+        $category = Category::where('name', $data['category'])->first();
+        if (!$category) {
+            throw new ValidationException("Invalid category: {$data['category']}");
+        }
+
+        if (isset($data['brand'])) {
+            $brand = is_string($data['brand']) ? json_decode($data['brand'], true) : $data['brand'];
+            $availableBrands = app(CategoryService::class)->getCategoryBrands($data['category']);
+            
+            $brandExists = collect($availableBrands)->contains('name', $brand['name']);
+            if (!$brandExists) {
+                throw new ValidationException("Invalid brand for category {$data['category']}");
+            }
+        }
     }
 }
