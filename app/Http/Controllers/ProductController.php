@@ -277,7 +277,7 @@ class ProductController extends Controller
                 }],
                 'saleLabel' => 'required|json',
                 'newLabel' => 'required|json',
-                'brand' => 'nullable|string|exists:brands,id'
+                'brand' => 'nullable|string'
             ]);
 
             if ($validated->fails()) {
@@ -428,7 +428,7 @@ class ProductController extends Controller
             'images.*' => 'required',
             'saleLabel' => 'required|json',
             'newLabel' => 'required|json',
-            'brand' => 'nullable|string|exists:brands,id'
+            'brand' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -624,7 +624,7 @@ class ProductController extends Controller
                 }],
                 'saleLabel' => 'required|json',
                 'newLabel' => 'required|json',
-                'brand' => 'nullable|string|exists:brands,id'
+                'brand' => 'nullable|string'
             ]);
 
             if ($validated->fails()) {
@@ -918,8 +918,8 @@ class ProductController extends Controller
             throw new ValidationException("Invalid category: {$data['category']}");
         }
 
-        // Validate brand ID if provided
-        if (isset($data['brand']) && $data['brand'] !== null) {
+        // Only validate brand if it's provided and not null
+        if (isset($data['brand']) && $data['brand'] !== null && $data['brand'] !== 'null') {
             $brandExists = $category->brands()
                 ->where('brands.id', $data['brand'])
                 ->exists();
@@ -933,7 +933,10 @@ class ProductController extends Controller
 
     protected function handleBrand($brandId, $category)
     {
-        if (!$brandId) return null;
+        // Return null if brandId is null or 'null' string
+        if ($brandId === null || $brandId === 'null' || !$brandId) {
+            return null;
+        }
 
         $brand = Brand::where('id', $brandId)
             ->whereHas('categories', function($query) use ($category) {
@@ -945,7 +948,7 @@ class ProductController extends Controller
             throw new ValidationException("Brand not found or not associated with category");
         }
 
-        return $brand->id; // Returns string ID
+        return $brand->id;
     }
 
     protected function validateBrandData($brand, $category)
