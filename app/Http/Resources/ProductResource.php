@@ -90,9 +90,9 @@ class ProductResource extends JsonResource
             ],
 
             'createdAt' => $this->created_at,
-            'brand' => $this->when($this->category && $this->category->brands->isNotEmpty(), 
+            'brand' => $this->when($this->category && $this->category->brands->isNotEmpty(),
                 $this->brand ? [
-                    'id' => (string) $this->brand->id,
+                    // 'id' => (string) $this->brand->id,
                     'name' => $this->brand->name,
                     'description' => $this->brand->description,
                     'logo' => $this->brand->logo
