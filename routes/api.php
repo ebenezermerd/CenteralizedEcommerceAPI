@@ -24,6 +24,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\EcommerceOverviewController;
 use App\Http\Controllers\AppOverviewController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ProductFilterController;
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
 Route::get('/products/list', [ProductController::class, 'index']);
@@ -194,4 +195,8 @@ Route::middleware(['jwt'])->group(function () {
     Route::prefix('app')->group(function () {
         Route::get('overview', [AppOverviewController::class, 'getOverviewData']);
     });
+
+    // Product filtering routes
+    Route::get('/products/filter', [ProductFilterController::class, 'filter']);
+    Route::get('/products/categories', [ProductFilterController::class, 'getCategories']);
 });
