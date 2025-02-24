@@ -287,14 +287,10 @@ class ProductController extends Controller
                 return response()->json(['errors' => $validated->errors()], 422);
             }
 
-            $this->validateCategoryAndBrand($request->all());
+            // Get validated category and brand IDs
+            $validatedIds = $this->validateCategoryAndBrand($request->all());
 
-            $category = Category::where('name', $request->category)->first();
-            $brandId = $this->handleBrand($request->brand, $request->category);
-
-            Log::info('Brand ID', ['brand_id' => $brandId]);
-
-            // 3. Create product
+            // Create product with proper ID fields
             $product = new Product();
             $product->fill([
                 'name' => $request->name,
@@ -311,12 +307,12 @@ class ProductController extends Controller
                 'sizes' => $request->sizes,
                 'gender' => $request->gender,
                 'tags' => $request->tags,
-                'categoryId' => $category->id,
+                'categoryId' => $validatedIds['categoryId'],
+                'brandId' => $validatedIds['brandId'],
                 'publish' => $request->publish,
                 'saleLabel' => json_decode($request->saleLabel, true),
                 'newLabel' => json_decode($request->newLabel, true),
                 'vendor_id' => auth()->id(),
-                'brand' => $brandId,
             ]);
 
             // 4. Handle images
@@ -325,7 +321,6 @@ class ProductController extends Controller
                 return response()->json(['error' => $processedImages['error']], 500);
             }
 
-            $product->brand = $brandId;
             $product->coverUrl = $processedImages['coverUrl'];
             $product->save();
 
@@ -903,7 +898,7 @@ class ProductController extends Controller
         ]);
     }
 
-    protected function validateCategoryAndBrand(array $data): void
+    protected function validateCategoryAndBrand(array $data): array
     {
         Log::info('Validating category and brand', ['data' => $data]);
         if (!isset($data['category'])) {
@@ -918,6 +913,7 @@ class ProductController extends Controller
             throw new ValidationException("Invalid category: {$data['category']}");
         }
 
+        $brandId = null;
         // Only validate brand if it's provided and not null
         if (isset($data['brand']) && $data['brand'] !== null && $data['brand'] !== 'null') {
             $brandExists = $category->brands()
@@ -928,7 +924,13 @@ class ProductController extends Controller
             if (!$brandExists) {
                 throw new ValidationException("Invalid brand ID for category {$data['category']}");
             }
+            $brandId = $data['brand'];
         }
+
+        return [
+            'categoryId' => $category->id,
+            'brandId' => $brandId
+        ];
     }
 
     protected function handleBrand($brandId, $category)
