@@ -315,6 +315,7 @@ class ProductController extends Controller
                 'vendor_id' => auth()->id(),
             ]);
 
+            Log::info('Product data before saving', ['product' => $product->toArray()]);
             // 4. Handle images
             $processedImages = $this->processImages($request);
             if (isset($processedImages['error'])) {
@@ -323,6 +324,7 @@ class ProductController extends Controller
 
             $product->coverUrl = $processedImages['coverUrl'];
             $product->save();
+            Log::info('Product saved', ['product' => $product->toArray()]);
 
             // Store additional images
             if (!empty($processedImages['additionalImages'])) {
