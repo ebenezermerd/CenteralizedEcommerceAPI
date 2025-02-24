@@ -14,6 +14,7 @@ class CategoryResource extends JsonResource
             'slug' => $this->slug,
             'group' => $this->group,
             'description' => $this->description,
+            'coverImg' => $this->coverImg,
             'isActive' => $this->isActive,
             'parent' => new CategoryResource($this->whenLoaded('parent')),
             'children' => CategoryResource::collection($this->whenLoaded('children')),
