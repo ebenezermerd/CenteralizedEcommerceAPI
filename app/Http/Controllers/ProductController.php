@@ -725,7 +725,7 @@ class ProductController extends Controller
                 'product_id' => $request->productId
             ]);
 
-            $product = Product::with(['reviews', 'category', 'brand', 'images'])
+            $product = Product::with(['brand', 'category', 'images', 'reviews'])
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')
                 ->findOrFail($request->productId);

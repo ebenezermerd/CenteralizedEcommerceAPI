@@ -54,6 +54,7 @@ class Product extends Model
     protected $casts = [
         'id' => 'string',
         'categoryId' => 'integer',
+        'brandId' => 'integer',
         'price' => 'float',
         'priceSale' => 'float',
         'taxes' => 'float',
@@ -110,7 +111,7 @@ class Product extends Model
 
     public function brand()
     {
-        return $this->belongsTo(Brand::class);
+        return $this->belongsTo(Brand::class, 'brandId');
     }
 
     public function getCoverImageAttribute()

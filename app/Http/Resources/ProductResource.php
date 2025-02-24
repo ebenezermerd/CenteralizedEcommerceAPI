@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Brand;
 
 class ProductResource extends JsonResource
 {
@@ -90,14 +91,15 @@ class ProductResource extends JsonResource
             ],
 
             'createdAt' => $this->created_at,
-            'brand' => $this->when($this->category && $this->category->brands->isNotEmpty(),
-                $this->brand ? [
-                    'id' => (string) $this->brand->id,
-                    'name' => $this->brand->name,
-                    'description' => $this->brand->description,
-                    'logo' => $this->brand->logo
-                ] : null
-            )
+            'brand' => $this->when($this->brandId, function () {
+                $brand = Brand::find($this->brandId);
+                return $brand ? [
+                    'id' => $brand->id,
+                    'name' => $brand->name,
+                    'description' => $brand->description,
+                    'logo' => $brand->logo
+                ] : null;
+            })
         ];
     }
 }
