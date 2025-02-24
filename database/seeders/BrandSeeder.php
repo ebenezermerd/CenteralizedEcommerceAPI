@@ -87,11 +87,6 @@ class BrandSeeder extends Seeder
                 ['name' => 'BMW', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/BMW_logo_%28gray%29.svg/1280px-BMW_logo_%28gray%29.svg.png'],
                 ['name' => 'Audi', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Audi_logo_black.svg/1280px-Audi_logo_black.svg.png']
             ],
-          
-
-
-
-
 
         ];
 

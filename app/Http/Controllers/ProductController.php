@@ -277,7 +277,7 @@ class ProductController extends Controller
                 }],
                 'saleLabel' => 'required|json',
                 'newLabel' => 'required|json',
-                'brand' => 'nullable|json'
+                'brand' => 'nullable|string|exists:brands,id'
             ]);
 
             if ($validated->fails()) {
@@ -425,7 +425,7 @@ class ProductController extends Controller
             'images.*' => 'required',
             'saleLabel' => 'required|json',
             'newLabel' => 'required|json',
-            'brand' => 'nullable|json'
+            'brand' => 'nullable|string|exists:brands,id'
         ]);
 
         if ($validator->fails()) {
@@ -621,7 +621,7 @@ class ProductController extends Controller
                 }],
                 'saleLabel' => 'required|json',
                 'newLabel' => 'required|json',
-                'brand' => 'nullable|json'
+                'brand' => 'nullable|string|exists:brands,id'
             ]);
 
             if ($validated->fails()) {
@@ -914,34 +914,33 @@ class ProductController extends Controller
             throw new ValidationException("Invalid category: {$data['category']}");
         }
 
-        // Only validate brand if the category has brands
-        if ($category->brands->isNotEmpty() && isset($data['brand'])) {
-            $brand = is_string($data['brand']) ? json_decode($data['brand'], true) : $data['brand'];
-            $availableBrands = app(CategoryService::class)->getCategoryBrands($data['category']);
+        // Validate brand ID if provided
+        if (isset($data['brand']) && $data['brand'] !== null) {
+            $brandExists = $category->brands()
+                ->where('brands.id', $data['brand'])
+                ->exists();
 
-            $brandExists = collect($availableBrands)->contains('name', $brand['name']);
             if (!$brandExists) {
-                throw new ValidationException("Invalid brand for category {$data['category']}");
+                throw new ValidationException("Invalid brand ID for category {$data['category']}");
             }
         }
     }
 
-    protected function handleBrand($brandData, $category)
+    protected function handleBrand($brandId, $category)
     {
-        if (!$brandData) return null;
+        if (!$brandId) return null;
 
-        $brandArray = is_string($brandData) ? json_decode($brandData, true) : $brandData;
-        $brand = Brand::where('name', $brandArray['name'])
-                      ->whereHas('categories', function($query) use ($category) {
-                          $query->where('name', $category);
-                      })
-                      ->first();
+        $brand = Brand::where('id', $brandId)
+            ->whereHas('categories', function($query) use ($category) {
+                $query->where('name', $category);
+            })
+            ->first();
 
         if (!$brand) {
             throw new ValidationException("Brand not found or not associated with category");
         }
 
-        return $brand->id;
+        return $brand->id; // Returns string ID
     }
 
     protected function validateBrandData($brand, $category)

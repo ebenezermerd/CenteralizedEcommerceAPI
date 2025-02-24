@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Services\CategoryService;
-use App\Http\Requests\CategoryRequest;
-use App\Http\Resources\CategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Services\CategoryService;
+use Illuminate\Support\Facades\Log;
+use App\Http\Requests\CategoryRequest;
+use App\Http\Resources\CategoryResource;
 use Symfony\Component\HttpFoundation\Response;
 use App\Exceptions\CategoryNotFoundException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Log;
 
 class CategoryController extends Controller
 {
@@ -90,7 +90,7 @@ class CategoryController extends Controller
         Log::debug('Finding product category', ['name' => $name]);
         $category = Category::where('name', $name)->first();
 
-        if (!$category) {   
+        if (!$category) {
             Log::warning('Invalid product category', ['name' => $name]);
             return response()->json([
                 'message' => 'Invalid product category. Please select a valid subcategory.',
@@ -162,7 +162,7 @@ class CategoryController extends Controller
         try {
             $category = Category::where('name', $categoryName)->firstOrFail();
             $brands = $this->categoryService->getCategoryBrands($category->name);
-            
+
             Log::info('Brands retrieved for category', ['category' => $categoryName, 'count' => count($brands)]);
             return response()->json($brands, Response::HTTP_OK);
         } catch (ModelNotFoundException $e) {
