@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -20,23 +21,26 @@ class ProductFilterController extends Controller
                 ->with(['reviews', 'category', 'brand', 'images', 'vendor'])
                 ->published();
 
-            // Apply category filter
+            // Apply category filter using categoryId
             if ($request->has('category')) {
-                $query->whereHas('category', function($q) use ($request) {
-                    $q->where('name', $request->category);
-                });
+                $category = Category::where('name', $request->category)->first();
+                if ($category) {
+                    $query->where('categoryId', $category->id);
+                }
             }
 
-            // Apply brand filter
+            // Apply brand filter using brandId
             if ($request->has('brands') && !empty($request->brands)) {
-                $query->whereHas('brand', function($q) use ($request) {
-                    $q->whereIn('name', $request->brands);
-                });
+                $brandNames = json_decode($request->brands);
+                $brandIds = Brand::whereIn('name', $brandNames)->pluck('id');
+                if ($brandIds->isNotEmpty()) {
+                    $query->whereIn('brandId', $brandIds);
+                }
             }
 
             // Apply price range filter
             if ($request->has('priceRange')) {
-                $range = $request->priceRange;
+                $range = json_decode($request->priceRange, true);
                 if (isset($range['start']) && $range['start'] > 0) {
                     $query->where('price', '>=', $range['start']);
                 }
@@ -108,7 +112,7 @@ class ProductFilterController extends Controller
     {
         try {
             $categories = Category::with('brands:id,name')
-                ->whereNull('parentId')
+                ->main
                 ->get(['id', 'name', 'coverImg'])
                 ->map(function ($category) {
                     return [
