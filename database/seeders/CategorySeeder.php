@@ -41,22 +41,12 @@ class CategorySeeder extends Seeder
         ],
         [
             'group' => 'Accessories',
-            'classify' => ['Watches', 'Backpacks', 'Bracelets', 'Face Masks', 'Sunglasses', 'Belts'],
+            'classify' => ['Watches', 'Earrings', 'Necklaces', 'Rings',  'Bracelets', 'Face Masks', 'Sunglasses', 'Belts', 'Backpacks', 'Handbags', 'Briefcases', 'Tote Bags', 'Travel Bags'],
             'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
         ],
         [
             'group' => 'Shoes',
             'classify' => ['Athletic Shoes', 'Formal Shoes', 'Sandals', 'Boots', 'Sneakers'],
-            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
-        ],
-        [
-            'group' => 'Bags',
-            'classify' => ['Backpacks', 'Handbags', 'Briefcases', 'Tote Bags', 'Travel Bags'],
-            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
-        ],
-        [
-            'group' => 'Jewelry',
-            'classify' => ['Necklaces', 'Earrings', 'Bracelets', 'Rings', 'Watches'],
             'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
         ],
         [
