@@ -476,7 +476,7 @@ class ProductController extends Controller
             if ($request->has('coverUrl')) {
                 if ($request->hasFile('coverUrl')) {
                     $cover = $request->file('coverUrl');
-                    if ($cover->isValid() && in_array($cover->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
+                    if ($cover->isValid() && in_array($cover->getClientOriginalExtension(), ['jpg', 'png', 'jpg', 'gif'])) {
                         $coverUrl = $cover->store('products/covers', 'public');
                     }
                 } else if (is_string($request->coverUrl) && filter_var($request->coverUrl, FILTER_VALIDATE_URL)) {
@@ -488,7 +488,7 @@ class ProductController extends Controller
             if ($request->has('images')) {
                 foreach ($request->images as $image) {
                     if ($image instanceof \Illuminate\Http\UploadedFile) {
-                        if ($image->isValid() && in_array($image->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
+                        if ($image->isValid() && in_array($image->getClientOriginalExtension(), ['jpg', 'png', 'jpg', 'gif'])) {
                             $additionalImages[] = $image->store('products/images', 'public');
                         }
                     } else if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
@@ -562,10 +562,9 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
 
-            Log::info('Starting product update - Brand Data Debug', [
+            Log::info('Starting product update', [
                 'product_id' => $id,
-                'raw_brand_data' => $request->brand,
-                'brand_content_type' => gettype($request->brand)
+                'request_data' => $request->all()
             ]);
 
             $product = Product::findOrFail($id);
@@ -574,7 +573,7 @@ class ProductController extends Controller
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
 
-            // Clean up old images only if new files are provided
+            // Clean up array fields
             $arrayFields = ['colors', 'sizes', 'gender', 'tags'];
             foreach ($arrayFields as $field) {
                 if (is_string($request->$field)) {
@@ -584,14 +583,7 @@ class ProductController extends Controller
                 }
             }
 
-            // Log brand data before validation
-            Log::info('Brand data before validation', [
-                'product_id' => $id,
-                'brand_data' => $request->brand,
-
-            ]);
-
-            // 1. Validate the request
+            // Validate the request
             $validated = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'sku' => 'nullable|string|unique:products,sku,' . $id,
@@ -602,22 +594,17 @@ class ProductController extends Controller
                 'price' => 'required|numeric|min:1',
                 'priceSale' => 'nullable|numeric|min:0',
                 'taxes' => 'nullable|numeric|min:0',
-                'colors' => 'nullable|array|min:0',
-                'sizes' => 'nullable|array|min:0',
-                'gender' => 'nullable|array|min:1',
-                'tags' => 'nullable|array|min:1',
+                'colors' => 'nullable|array',
+                'sizes' => 'nullable|array',
+                'gender' => 'nullable|array',
+                'tags' => 'nullable|array',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
+                'brand' => 'nullable|string',
                 'coverUrl' => ['nullable', function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('The cover url must be either a valid URL or an image file.');
-                        }
-                        if ($value instanceof \Illuminate\Http\UploadedFile) {
-                            $allowedTypes = ['jpeg', 'png', 'jpg', 'gif'];
-                            if (!in_array($value->getClientOriginalExtension(), $allowedTypes)) {
-                                $fail('The cover url must be a file of type: jpeg, png, jpg, gif.');
-                            }
                         }
                     }
                 }],
@@ -627,43 +614,35 @@ class ProductController extends Controller
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('Each image must be either a valid URL or an image file.');
                         }
-                        if ($value instanceof \Illuminate\Http\UploadedFile) {
-                            $allowedTypes = ['jpeg', 'png', 'jpg', 'gif'];
-                            if (!in_array($value->getClientOriginalExtension(), $allowedTypes)) {
-                                $fail('Each image must be a file of type: jpeg, png, jpg, gif.');
-                            }
-                        }
                     }
                 }],
                 'saleLabel' => 'required|json',
-                'newLabel' => 'required|json',
-                'brand' => 'nullable|string'
+                'newLabel' => 'required|json'
             ]);
 
             if ($validated->fails()) {
-                Log::error('Validation failed for brand data', [
+                Log::error('Validation failed', [
                     'product_id' => $id,
-                    'brand_errors' => $validated->errors()->get('brand')
+                    'errors' => $validated->errors()
                 ]);
                 return response()->json(['errors' => $validated->errors()], 422);
             }
 
-            // Log brand data after validation
-            Log::info('Brand data after validation', [
-                'product_id' => $id,
-                'validated_brand' => $request->brand,
+            // Get validated category and brand IDs
+            $validatedIds = $this->validateCategoryAndBrand($request->all());
 
+            Log::info('Validated IDs for update', [
+                'product_id' => $id,
+                'validatedIds' => $validatedIds
             ]);
 
-            // 2. Get or validate category
-            $category = Category::where('name', trim($request->category))->first();
-            if (!$category) {
-                return response()->json(['message' => 'Invalid category'], 422);
+            // Process images
+            $processedImages = $this->processImages($request);
+            if (isset($processedImages['error'])) {
+                return response()->json(['error' => $processedImages['error']], 500);
             }
 
-            $brandData = $this->handleBrand($request->brand, $category);
-
-
+            // Fill product data
             $product->fill([
                 'name' => $request->name,
                 'sku' => $request->sku,
@@ -679,25 +658,19 @@ class ProductController extends Controller
                 'sizes' => $request->sizes,
                 'gender' => $request->gender,
                 'tags' => $request->tags,
-                'categoryId' => $category->id,
+                'categoryId' => $validatedIds['categoryId'],
+                'brandId' => $validatedIds['brandId'],
                 'publish' => $request->publish,
                 'saleLabel' => json_decode($request->saleLabel, true),
-                'newLabel' => json_decode($request->newLabel, true),
-                'brandId' => $brandData,
-                'vendor_id' => auth()->id()
+                'newLabel' => json_decode($request->newLabel, true)
             ]);
 
-            // Log brand data after fill
-            Log::info('Brand data after product fill', [
+            // Log product data before saving
+            Log::info('Product data before update', [
                 'product_id' => $id,
-                'product_brand' => $product->brand
+                'product_data' => $product->getDirty(),
+                'brandId' => $validatedIds['brandId']
             ]);
-
-            // 4. Handle images
-            $processedImages = $this->processImages($request);
-            if (isset($processedImages['error'])) {
-                return response()->json(['error' => $processedImages['error']], 500);
-            }
 
             if ($processedImages['coverUrl']) {
                 $product->coverUrl = $processedImages['coverUrl'];
@@ -705,16 +678,16 @@ class ProductController extends Controller
 
             $product->save();
 
-            // Log final brand data after save
-            Log::info('Final brand data after save', [
+            // Log after save
+            Log::info('Product updated successfully', [
                 'product_id' => $id,
-                'final_brand' => $product->fresh()->brand
+                'updated_data' => $product->fresh()->toArray(),
+                'brandId' => $product->brandId
             ]);
 
-            // 5. Store additional images
+            // Handle additional images
             if (!empty($processedImages['additionalImages'])) {
-                // Delete existing images
-                ProductImage::where('product_id', $product->id)->delete();
+                $product->images()->delete();
                 foreach ($processedImages['additionalImages'] as $imagePath) {
                     ProductImage::create([
                         'product_id' => $product->id,
@@ -725,20 +698,16 @@ class ProductController extends Controller
             }
 
             DB::commit();
-            Log::info('Product updated successfully with brand data', [
-                'product_id' => $product->id,
-                'final_brand_state' => $product->brand
-            ]);
 
             return response()->json([
                 'message' => 'Product updated successfully',
-                'product' => new ProductResource($product)
-            ], 200);
+                'product' => new ProductResource($product->fresh())
+            ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating product with brand data', [
+            Log::error('Error updating product', [
                 'product_id' => $id,
-                'brand_data' => $request->brand ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
