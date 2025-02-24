@@ -174,7 +174,7 @@ class CategoryController extends Controller
         }
     }
 
-    public function validate(string $name): JsonResponse
+    public function validateCategoryName(string $name): JsonResponse
     {
         Log::debug('Validating category name', ['name' => $name]);
         $exists = $this->categoryService->validateCategory($name);

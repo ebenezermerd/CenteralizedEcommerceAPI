@@ -85,7 +85,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('/', [CategoryController::class, 'index']);
         Route::get('/structure', [CategoryController::class, 'getStructure']);
         Route::get('/{category:slug}', [CategoryController::class, 'show']);
-        Route::get('/validate/{name}', [CategoryController::class, 'validate']);
+        Route::get('/validate/{name}', [CategoryController::class, 'validateCategoryName']);
         Route::get('/{categoryName}/brands', [CategoryController::class, 'getBrands']);
     });
 
