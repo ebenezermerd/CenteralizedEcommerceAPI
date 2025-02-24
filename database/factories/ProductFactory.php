@@ -27,7 +27,7 @@ class ProductFactory extends Factory
             'gender' => ['Men', 'Women']
         ],
         'Accessories' => [
-            'name' => ['Watches', 'Backpacks', 'Bracelets', 'Face Masks', 'Sunglasses', 'Belts'],
+            'name' => ['Watches', 'Bracelets', 'Face Masks', 'Sunglasses', 'Belts'],
             'sizes' => ['small', 'medium', 'large'],
             'colors' => ['#FF4842', '#1890FF', '#54D62C', '#FFC107', '#7F00FF'],
             'gender' => ['Men', 'Women', 'Kids']
@@ -152,7 +152,7 @@ class ProductFactory extends Factory
             'gender' => ['Unisex']
         ];
 
-        $brandData = self::$categoryBrands[$category->group] ?? [
+        $brandData = self::$categoryBrands[$brand->group] ?? [
             'name' => ['Generic Brand'],
             'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Van_Gogh_logo.svg/1280px-Van_Gogh_logo.svg.png'
         ];
