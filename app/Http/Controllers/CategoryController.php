@@ -9,6 +9,8 @@ use App\Http\Resources\CategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use App\Exceptions\CategoryNotFoundException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CategoryController extends Controller
 {
@@ -40,17 +42,12 @@ class CategoryController extends Controller
         return response()->json($categories);
     }
 
-    public function show(string $name): JsonResponse
+    public function show(Category $category): JsonResponse
     {
-        $category = Category::where('name', $name)
-            ->with(['parent', 'children'])
-            ->first();
-
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
-
-        return response()->json($category);
+        return response()->json(
+            new CategoryResource($category->load(['parent', 'children'])),
+            Response::HTTP_OK
+        );
     }
 
     public function subcategories(string $group): JsonResponse
@@ -111,5 +108,48 @@ class CategoryController extends Controller
             'total' => $categories->count(),
             'note' => 'This is a debug endpoint to check available categories'
         ]);
+    }
+
+    public function getBySlug(string $slug): JsonResponse
+    {
+        try {
+            $category = $this->categoryService->findCategoryBySlug($slug);
+            return response()->json(
+                new CategoryResource($category),
+                Response::HTTP_OK
+            );
+        } catch (CategoryNotFoundException $e) {
+            return response()->json([
+                'error' => 'Category not found',
+                'message' => $e->getMessage()
+            ], Response::HTTP_NOT_FOUND);
+        }
+    }
+
+    public function getStructure(): JsonResponse
+    {
+        $structure = $this->categoryService->getCategoryStructure();
+        return response()->json($structure, Response::HTTP_OK);
+    }
+
+    public function getBrands(string $categoryName): JsonResponse
+    {
+        try {
+            $category = Category::where('name', $categoryName)->firstOrFail();
+            $brands = $this->categoryService->getCategoryBrands($category->name);
+            
+            return response()->json($brands, Response::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Category not found',
+                'message' => "Category '{$categoryName}' does not exist"
+            ], Response::HTTP_NOT_FOUND);
+        }
+    }
+
+    public function validate(string $name): JsonResponse
+    {
+        $exists = $this->categoryService->validateCategory($name);
+        return response()->json(['valid' => $exists], Response::HTTP_OK);
     }
 }

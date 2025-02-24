@@ -23,6 +23,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\EcommerceOverviewController;
 use App\Http\Controllers\AppOverviewController;
+use App\Http\Controllers\CategoryController;
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
 Route::get('/products/list', [ProductController::class, 'index']);
@@ -82,10 +83,12 @@ Route::middleware(['jwt'])->group(function () {
     // Category routes
     Route::prefix('categories')->group(function () {
         Route::get('/', [CategoryController::class, 'index']);
-        Route::post('/', [CategoryController::class, 'store']);
-        Route::get('/{id}', [CategoryController::class, 'show']);
-        Route::put('/{id}', [CategoryController::class, 'update']);
-    
+        Route::get('/structure', [CategoryController::class, 'getStructure']);
+        Route::get('/{category:slug}', [CategoryController::class, 'show']);
+        Route::get('/validate/{name}', [CategoryController::class, 'validate']);
+        Route::get('/{categoryName}/brands', [CategoryController::class, 'getBrands']);
+    });
+
     // Mail routes
     Route::prefix('mail')->group(function () {
         Route::get('list', [MailController::class, 'list']);

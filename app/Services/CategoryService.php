@@ -39,4 +39,42 @@ class CategoryService
     {
         Cache::tags(['categories'])->flush();
     }
+
+    public function getCategoryStructure(): array
+    {
+        return Cache::remember('categories.structure', self::CACHE_TTL, function () {
+            return Category::with('children')
+                ->mainCategories()
+                ->get()
+                ->map(function ($category) {
+                    return [
+                        'group' => $category->name,
+                        'classify' => $category->children->pluck('name')->toArray()
+                    ];
+                })
+                ->toArray();
+        });
+    }
+
+    public function validateCategory(string $categoryName): bool
+    {
+        return Cache::remember("category.validate.{$categoryName}", 300, function () use ($categoryName) {
+            return Category::where('name', $categoryName)->exists();
+        });
+    }
+
+    public function getCategoryBrands(string $categoryName): array
+    {
+        return Cache::remember("category.brands.{$categoryName}", self::CACHE_TTL, function () use ($categoryName) {
+            // You might want to implement your own brand logic here
+            // This is just an example based on your current structure
+            $brands = config("brands.{$categoryName}", []);
+            return array_map(function ($brand) {
+                return [
+                    'name' => $brand['name'],
+                    'description' => $brand['description']
+                ];
+            }, $brands);
+        });
+    }
 }
