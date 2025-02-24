@@ -919,8 +919,15 @@ class ProductController extends Controller
     protected function validateCategoryAndBrand(array $data): array
     {
         Log::info('Validating category and brand', ['data' => $data]);
-        if (!isset($data['category'])) {
-            throw new ValidationException('Category is required');
+
+        // Create validator instance
+        $validator = Validator::make($data, [
+            'category' => 'required|string',
+            'brand' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            throw ValidationException::withMessages($validator->errors()->toArray());
         }
 
         $category = Category::where('name', $data['category'])
@@ -928,7 +935,9 @@ class ProductController extends Controller
             ->first();
 
         if (!$category) {
-            throw new ValidationException("Invalid category: {$data['category']}");
+            throw ValidationException::withMessages([
+                'category' => ["Invalid category: {$data['category']}"]
+            ]);
         }
 
         $brandId = null;
@@ -940,7 +949,9 @@ class ProductController extends Controller
             Log::info('Brand exists', ['brand_exists' => $brandExists]);
 
             if (!$brandExists) {
-                throw new ValidationException("Invalid brand ID for category {$data['category']}");
+                throw ValidationException::withMessages([
+                    'brand' => ["Invalid brand ID for category {$data['category']}"]
+                ]);
             }
             $brandId = $data['brand'];
         }
@@ -960,12 +971,14 @@ class ProductController extends Controller
 
         $brand = Brand::where('id', $brandId)
             ->whereHas('categories', function($query) use ($category) {
-                $query->where('name', $category);
+                $query->where('name', $category->name);  // Use category->name instead of category
             })
             ->first();
 
         if (!$brand) {
-            throw new ValidationException("Brand not found or not associated with category");
+            throw ValidationException::withMessages([
+                'brand' => ['Brand not found or not associated with category']
+            ]);
         }
 
         return $brand->id;
