@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignId('vendor_id')->constrained('users')->after('id');
             $table->foreignId('categoryId')->constrained('categories');
+            $table->string('brandId')->nullable();
 
             // Basic information
             $table->string('name');
@@ -20,9 +21,8 @@ return new class extends Migration
             $table->text('description');
             $table->text('subDescription');
             $table->enum('publish', ['draft', 'published']);
-            
+
             // Add brand column after basic information
-            $table->json('brand')->nullable();
 
             // Pricing
             $table->decimal('price', 10, 2);

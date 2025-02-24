@@ -39,7 +39,45 @@ class CategorySeeder extends Seeder
             'classify' => ['Beverages', 'Snacks', 'Canned Goods', 'Bakery', 'Dairy', 'Coffee & Tea'],
             'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
         ],
+        [
+            'group' => 'Accessories',
+            'classify' => ['Watches', 'Backpacks', 'Bracelets', 'Face Masks', 'Sunglasses', 'Belts'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
+        [
+            'group' => 'Shoes',
+            'classify' => ['Athletic Shoes', 'Formal Shoes', 'Sandals', 'Boots', 'Sneakers'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
+        [
+            'group' => 'Bags',
+            'classify' => ['Backpacks', 'Handbags', 'Briefcases', 'Tote Bags', 'Travel Bags'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
+        [
+            'group' => 'Jewelry',
+            'classify' => ['Necklaces', 'Earrings', 'Bracelets', 'Rings', 'Watches'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
+        [
+            'group' => 'Toys & Games',
+            'classify' => ['Puzzles', 'Dolls', 'Action Figures', 'Remote-Controlled Toys', 'Strollers'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
+        [
+            'group' => 'Art & Collectibles',
+            'classify' => ['Paintings', 'Sculptures', 'Posters', 'Antiques', 'Vintage Items'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
+        [
+            'group' => 'Automotive',
+            'classify' => ['Car Parts', 'Car Accessories', 'Car Care', 'Car Modifications', 'Car Tuning'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
+
     ];
+
+
 
     public function run(): void
     {
