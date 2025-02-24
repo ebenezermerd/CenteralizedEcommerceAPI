@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\Log;
 class CategoryService
 {
     private const CACHE_TTL = 3600; // 1 hour
-    
+
     public function getAllCategories(): Collection
     {
         return Cache::remember('categories.all', self::CACHE_TTL, function () {
             return Category::with('children')->mainCategories()->get();
         });
     }
-    
+
     public function findCategoryBySlug(string $slug): Category
     {
         return Cache::remember("categories.slug.{$slug}", self::CACHE_TTL, function () use ($slug) {
@@ -29,14 +29,14 @@ class CategoryService
                           ->firstOrFail();
         });
     }
-    
+
     public function createCategory(array $data): Category
     {
         $category = Category::create($data);
         $this->clearCategoryCache();
         return $category;
     }
-    
+
     private function clearCategoryCache(): void
     {
         Cache::tags(['categories'])->flush();
@@ -46,7 +46,7 @@ class CategoryService
     {
         return Cache::remember('category.structure', self::CACHE_TTL, function () {
             $categories = Category::with(['children', 'brands'])->mainCategories()->get();
-            
+
             return $categories->map(function ($category) {
                 return [
                     'group' => $category->name,
@@ -75,13 +75,14 @@ class CategoryService
             $category = Category::where('name', $categoryName)
                 ->with('brands:id,name,description,logo')
                 ->firstOrFail();
-            
+
             if ($category->brands->isEmpty()) {
                 return [];
             }
-            
+
             return $category->brands->map(function ($brand) {
                 return [
+                    'id' => $brand->id,
                     'name' => $brand->name,
                     'description' => $brand->description,
                     'logo' => $brand->logo
