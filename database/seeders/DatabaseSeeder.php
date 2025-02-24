@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             CategorySeeder::class,
             BrandSeeder::class,
-            ProductSeeder::class,
         ]);
 
         // Create single admin user if not exists
@@ -68,13 +67,6 @@ class DatabaseSeeder extends Seeder
             ]);
 
             $user->save();
-
-            // Only create products if company is active
-            if ($company->status === 'active') {
-                Product::factory(rand(5, 10))->create([
-                    'vendor_id' => $user->id
-                ]);
-            }
         });
 
         // Create customers
@@ -103,6 +95,22 @@ class DatabaseSeeder extends Seeder
             $user->password = bcrypt('password');
 
             $user->save();
+        });
+
+        // Seed products after users are created
+        $this->call([
+            ProductSeeder::class,
+        ]);
+
+        // Create products for active suppliers
+        User::whereHas('roles', function($query) {
+            $query->where('name', 'supplier');
+        })->whereHas('company', function($query) {
+            $query->where('status', 'active');
+        })->each(function($user) {
+            Product::factory(rand(5, 10))->create([
+                'vendor_id' => $user->id
+            ]);
         });
     }
 }
