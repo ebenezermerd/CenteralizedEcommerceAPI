@@ -214,4 +214,21 @@ class Product extends Model
     {
         $this->attributes['code'] = !empty($value) ? $value : null;
     }
+
+    // Add mutators to handle label data
+    public function setNewLabelAttribute($value)
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+        $this->attributes['newLabel'] = is_array($value) ? json_encode($value) : null;
+    }
+
+    public function setSaleLabelAttribute($value)
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+        $this->attributes['saleLabel'] = is_array($value) ? json_encode($value) : null;
+    }
 }

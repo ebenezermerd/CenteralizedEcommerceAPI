@@ -212,7 +212,6 @@ class ProductController extends Controller
         }
 
         try {
-
             DB::beginTransaction();
             Log::info('Starting product creation', ['request' => $request->except(['coverUrl', 'images'])]);
 
@@ -316,10 +315,15 @@ class ProductController extends Controller
                 'categoryId' => $validatedIds['categoryId'],
                 'brandId' => $validatedIds['brandId'],
                 'publish' => $request->publish,
-                'saleLabel' => json_decode($request->saleLabel, true),
-                'newLabel' => json_decode($request->newLabel, true),
                 'vendor_id' => auth()->id(),
             ]);
+
+            // Handle labels properly
+            $product->newLabel = $request->has('newLabel') ?
+                json_decode($request->newLabel, true) : null;
+
+            $product->saleLabel = $request->has('saleLabel') ?
+                json_decode($request->saleLabel, true) : null;
 
             // Before saving
             Log::info('Product data before saving', [
@@ -661,9 +665,18 @@ class ProductController extends Controller
                 'categoryId' => $validatedIds['categoryId'],
                 'brandId' => $validatedIds['brandId'],
                 'publish' => $request->publish,
-                'saleLabel' => json_decode($request->saleLabel, true),
-                'newLabel' => json_decode($request->newLabel, true)
             ]);
+
+            // Handle labels properly
+            if ($request->has('newLabel')) {
+                $newLabel = json_decode($request->newLabel, true);
+                $product->newLabel = is_array($newLabel) ? $newLabel : null;
+            }
+
+            if ($request->has('saleLabel')) {
+                $saleLabel = json_decode($request->saleLabel, true);
+                $product->saleLabel = is_array($saleLabel) ? $saleLabel : null;
+            }
 
             // Log product data before saving
             Log::info('Product data before update', [
