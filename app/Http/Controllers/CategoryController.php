@@ -156,21 +156,46 @@ class CategoryController extends Controller
         return response()->json($structure, Response::HTTP_OK);
     }
 
-    public function getBrands(string $categoryName): JsonResponse
+    public function getBrands(string $categoryId): JsonResponse
     {
-        Log::debug('Fetching brands for category', ['category' => $categoryName]);
+        Log::debug('Fetching brands for category', ['categoryId' => $categoryId]);
         try {
-            $category = Category::where('name', $categoryName)->firstOrFail();
-            $brands = $this->categoryService->getCategoryBrands($category->name);
+            $category = Category::findOrFail($categoryId);
 
-            Log::info('Brands retrieved for category', ['category' => $categoryName, 'count' => count($brands)]);
-            return response()->json($brands, Response::HTTP_OK);
+            $brands = $category->brands()
+                ->select('brands.id', 'brands.name', 'brands.description', 'brands.logo')
+                ->get()
+                ->map(function ($brand) {
+                    return [
+                        'id' => $brand->id,
+                        'name' => $brand->name,
+                        'description' => $brand->description,
+                        'logo' => $brand->logo
+                    ];
+                });
+
+            Log::info('Retrieved brands for category', [
+                'categoryId' => $categoryId,
+                'brandsCount' => $brands->count()
+            ]);
+
+            return response()->json($brands);
+
         } catch (ModelNotFoundException $e) {
-            Log::error('Category not found for brands', ['category' => $categoryName]);
+            Log::error('Category not found', ['categoryId' => $categoryId]);
             return response()->json([
                 'error' => 'Category not found',
-                'message' => "Category '{$categoryName}' does not exist"
+                'message' => 'The specified category does not exist'
             ], Response::HTTP_NOT_FOUND);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch brands', [
+                'categoryId' => $categoryId,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'error' => 'Failed to fetch brands',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

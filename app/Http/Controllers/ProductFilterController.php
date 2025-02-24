@@ -136,39 +136,4 @@ class ProductFilterController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Get brands for a specific category by ID
-     */
-    public function getCategoryBrands($categoryId)
-    {
-        try {
-            $category = Category::findOrFail($categoryId);
-
-            $brands = $category->brands()
-                ->select('id', 'name', 'description', 'logo')
-                ->get()
-                ->map(function ($brand) {
-                    return [
-                        'id' => $brand->id,
-                        'name' => $brand->name,
-                        'description' => $brand->description,
-                        'logo' => $brand->logo
-                    ];
-                });
-
-            return response()->json($brands);
-
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch category brands', [
-                'categoryId' => $categoryId,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Failed to fetch brands',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
 }
