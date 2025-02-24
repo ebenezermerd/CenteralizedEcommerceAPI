@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 
 class Category extends Model
@@ -17,7 +18,8 @@ class Category extends Model
         'group',
         'description',
         'slug',
-        'isActive'
+        'isActive',
+        'coverImg'
     ];
 
     protected $casts = [
@@ -66,5 +68,13 @@ class Category extends Model
     public static function findByNameStrict($name)
     {
         return static::where('name', $name)->first();
+    }
+
+    /**
+     * The brands that belong to the category.
+     */
+    public function brands(): BelongsToMany
+    {
+        return $this->belongsToMany(Brand::class, 'brand_category');
     }
 }

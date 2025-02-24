@@ -91,9 +91,10 @@ class ProductResource extends JsonResource
 
             'createdAt' => $this->created_at,
             'brand' => $this->brand ? [
-                'id' => $this->brand['name'] ? uniqid('brand_') : null,
-                'name' => $this->brand['name'] ?? null,
-                'description' => $this->brand['description'] ?? null,
+                'id' => (string) $this->brand->id,
+                'name' => $this->brand->name,
+                'description' => $this->brand->description,
+                'logo' => $this->brand->logo
             ] : null
         ];
     }

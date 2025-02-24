@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('group')->nullable();
             $table->text('description')->nullable();
             $table->string('slug')->unique();
+            $table->string('coverImg')->nullable();
             $table->boolean('isActive')->default(true);
             $table->timestamps();
         });

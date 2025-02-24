@@ -44,17 +44,16 @@ class CategoryService
 
     public function getCategoryStructure(): array
     {
-        return Cache::remember('categories.structure', self::CACHE_TTL, function () {
-            return Category::with('children')
-                ->mainCategories()
-                ->get()
-                ->map(function ($category) {
-                    return [
-                        'group' => $category->name,
-                        'classify' => $category->children->pluck('name')->toArray()
-                    ];
-                })
-                ->toArray();
+        return Cache::remember('category.structure', self::CACHE_TTL, function () {
+            $categories = Category::with('children')->mainCategories()->get();
+            
+            return $categories->map(function ($category) {
+                return [
+                    'group' => $category->name,
+                    'classify' => $category->children->pluck('name')->toArray(),
+                    'coverImg' => $category->coverImg
+                ];
+            })->toArray();
         });
     }
 
@@ -68,27 +67,17 @@ class CategoryService
     public function getCategoryBrands(string $categoryName): array
     {
         return Cache::remember("category.brands.{$categoryName}", self::CACHE_TTL, function () use ($categoryName) {
-            try {
-                $category = Category::where('name', $categoryName)->firstOrFail();
-                
-                // Get brands from configuration or database
-                $brands = config("brands.{$category->name}", []);
-                
-                if (empty($brands)) {
-                    Log::info('No brands found for category', ['category' => $categoryName]);
-                    return [];
-                }
-
-                return array_map(function ($brand) {
-                    return [
-                        'name' => $brand['name'],
-                        'description' => $brand['description']
-                    ];
-                }, $brands);
-            } catch (ModelNotFoundException $e) {
-                Log::error('Category not found while fetching brands', ['category' => $categoryName]);
-                return [];
-            }
+            $category = Category::where('name', $categoryName)
+                ->with('brands:id,name,description,logo')
+                ->firstOrFail();
+            
+            return $category->brands->map(function ($brand) {
+                return [
+                    'name' => $brand->name,
+                    'description' => $brand->description,
+                    'logo' => $brand->logo
+                ];
+            })->toArray();
         });
     }
 }

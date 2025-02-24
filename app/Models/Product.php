@@ -48,7 +48,7 @@ class Product extends Model
         'newLabel',
         'saleLabel',
         'vendor_id',
-        'brand',  // Add brand to fillable
+        'brand_id',
     ];
 
     protected $casts = [
@@ -68,7 +68,6 @@ class Product extends Model
         'totalReviews' => 'integer',
         'newLabel' => 'array',
         'saleLabel' => 'array',
-        'brand' => 'array',  // Add brand to casts
     ];
 
     protected $attributes = [
@@ -107,6 +106,11 @@ class Product extends Model
     public function vendor()
     {
         return $this->belongsTo(User::class, 'vendor_id');
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
     }
 
     public function getCoverImageAttribute()

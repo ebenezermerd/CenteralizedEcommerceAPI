@@ -11,16 +11,34 @@ class CategorySeeder extends Seeder
     protected $categories = [
         [
             'group' => 'Clothing',
-            'classify' => ['Shirts', 'T-shirts', 'Jeans', 'Leather', 'Accessories']
+            'classify' => ['Shirts', 'T-shirts', 'Jeans', 'Leather Jackets', 'Traditional Wear', 'Activewear', 'Underwear', 'Swimwear'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/3144/3144456.png'
         ],
         [
-            'group' => 'Tailored',
-            'classify' => ['Suits', 'Blazers', 'Trousers', 'Waistcoats', 'Apparel']
+            'group' => 'Electronics',
+            'classify' => ['Smartphones', 'Laptops', 'Tablets', 'Cameras', 'Headphones', 'Smart Watches', 'Home Appliances'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/1067/1067555.png'
         ],
         [
-            'group' => 'Accessories',
-            'classify' => ['Shoes', 'Backpacks and bags', 'Bracelets', 'Face masks']
-        ]
+            'group' => 'Home & Kitchen',
+            'classify' => ['Furniture', 'Cookware', 'Tableware', 'Home Decor', 'Bedding', 'Storage', 'Lighting'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2379/2379675.png'
+        ],
+        [
+            'group' => 'Beauty & Personal Care',
+            'classify' => ['Skincare', 'Haircare', 'Makeup', 'Fragrances', 'Men\'s Grooming', 'Oral Care'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/3082/3082019.png'
+        ],
+        [
+            'group' => 'Sports & Outdoors',
+            'classify' => ['Fitness Equipment', 'Camping Gear', 'Cycling', 'Team Sports', 'Yoga', 'Fishing'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/857/857455.png'
+        ],
+        [
+            'group' => 'Groceries',
+            'classify' => ['Beverages', 'Snacks', 'Canned Goods', 'Bakery', 'Dairy', 'Coffee & Tea'],
+            'coverImg' => 'https://cdn-icons-png.flaticon.com/512/2553/2553992.png'
+        ],
     ];
 
     public function run(): void
@@ -33,6 +51,7 @@ class CategorySeeder extends Seeder
                     'name' => $category['group'],
                     'group' => $category['group'],
                     'description' => "Main category for {$category['group']}",
+                    'coverImg' => $category['coverImg'] ?? null,
                     'isActive' => true
                 ]
             );
