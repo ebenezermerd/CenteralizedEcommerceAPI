@@ -290,6 +290,12 @@ class ProductController extends Controller
             // Get validated category and brand IDs
             $validatedIds = $this->validateCategoryAndBrand($request->all());
 
+            // Log validated IDs
+            Log::info('Validated IDs', [
+                'validatedIds' => $validatedIds,
+                'brandId' => $validatedIds['brandId'] ?? null
+            ]);
+
             // Create product with proper ID fields
             $product = new Product();
             $product->fill([
@@ -315,7 +321,12 @@ class ProductController extends Controller
                 'vendor_id' => auth()->id(),
             ]);
 
-            Log::info('Product data before saving', ['product' => $product->toArray()]);
+            // Before saving
+            Log::info('Product data before saving', [
+                'product' => $product->toArray(),
+                'brandId' => $validatedIds['brandId'] ?? null  // Explicitly log brandId
+            ]);
+
             // 4. Handle images
             $processedImages = $this->processImages($request);
             if (isset($processedImages['error'])) {
@@ -324,7 +335,12 @@ class ProductController extends Controller
 
             $product->coverUrl = $processedImages['coverUrl'];
             $product->save();
-            Log::info('Product saved', ['product' => $product->toArray()]);
+
+            // After saving
+            Log::info('Product saved', [
+                'product' => $product->fresh()->toArray(),  // Use fresh() to get latest data
+                'brandId' => $product->brandId  // Explicitly log brandId
+            ]);
 
             // Store additional images
             if (!empty($processedImages['additionalImages'])) {

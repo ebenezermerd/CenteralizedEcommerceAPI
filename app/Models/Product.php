@@ -48,7 +48,7 @@ class Product extends Model
         'newLabel',
         'saleLabel',
         'vendor_id',
-        'brand_id',
+        'brandId',
     ];
 
     protected $casts = [
