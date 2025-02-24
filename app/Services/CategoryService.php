@@ -45,12 +45,17 @@ class CategoryService
     public function getCategoryStructure(): array
     {
         return Cache::remember('category.structure', self::CACHE_TTL, function () {
-            $categories = Category::with('children')->mainCategories()->get();
+            $categories = Category::with(['children', 'brands'])->mainCategories()->get();
             
             return $categories->map(function ($category) {
                 return [
                     'group' => $category->name,
-                    'classify' => $category->children->pluck('name')->toArray(),
+                    'classify' => $category->children->map(function ($child) {
+                        return [
+                            'name' => $child->name,
+                            'hasBrands' => $child->brands->count() > 0
+                        ];
+                    })->toArray(),
                     'coverImg' => $category->coverImg
                 ];
             })->toArray();
@@ -70,6 +75,10 @@ class CategoryService
             $category = Category::where('name', $categoryName)
                 ->with('brands:id,name,description,logo')
                 ->firstOrFail();
+            
+            if ($category->brands->isEmpty()) {
+                return [];
+            }
             
             return $category->brands->map(function ($brand) {
                 return [

@@ -906,12 +906,16 @@ class ProductController extends Controller
             throw new ValidationException('Category is required');
         }
 
-        $category = Category::where('name', $data['category'])->first();
+        $category = Category::where('name', $data['category'])
+            ->with('brands')
+            ->first();
+        
         if (!$category) {
             throw new ValidationException("Invalid category: {$data['category']}");
         }
 
-        if (isset($data['brand'])) {
+        // Only validate brand if the category has brands
+        if ($category->brands->isNotEmpty() && isset($data['brand'])) {
             $brand = is_string($data['brand']) ? json_decode($data['brand'], true) : $data['brand'];
             $availableBrands = app(CategoryService::class)->getCategoryBrands($data['category']);
             
