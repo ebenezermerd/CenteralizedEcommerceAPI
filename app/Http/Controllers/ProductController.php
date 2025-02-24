@@ -325,6 +325,7 @@ class ProductController extends Controller
                 return response()->json(['error' => $processedImages['error']], 500);
             }
 
+            $product->brand = $brandId;
             $product->coverUrl = $processedImages['coverUrl'];
             $product->save();
 
