@@ -242,10 +242,10 @@ class ProductController extends Controller
                 'price' => 'required|numeric|min:1',
                 'priceSale' => 'nullable|numeric|min:0',
                 'taxes' => 'nullable|numeric|min:0',
-                'colors' => 'required|array|min:1',
-                'sizes' => 'required|array|min:1',
-                'gender' => 'required|array|min:1',
-                'tags' => 'required|array|min:1',
+                'colors' => 'nullable|array|min:1',
+                'sizes' => 'nullable|array|min:1',
+                'gender' => 'nullable|array|min:1',
+                'tags' => 'nullable|array|min:1',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
                 'coverUrl' => ['nullable', function ($attribute, $value, $fail) {
@@ -291,7 +291,7 @@ class ProductController extends Controller
 
             $category = Category::where('name', $request->category)->first();
             $brandId = $this->handleBrand($request->brand, $request->category);
-            
+
             Log::info('Brand ID', ['brand_id' => $brandId]);
 
             // 3. Create product
@@ -416,14 +416,14 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:1',
             'priceSale' => 'nullable|numeric|min:0',
             'taxes' => 'nullable|numeric|min:0',
-            'colors' => 'required|array|min:1',
-            'sizes' => 'required|array|min:1',
-            'gender' => 'required|array|min:1',
-            'tags' => 'required|array|min:1',
+            'colors' => 'nullable|array|min:1',
+            'sizes' => 'nullable|array|min:1',
+            'gender' => 'nullable|array|min:1',
+            'tags' => 'nullable|array|min:1',
             'category' => 'required|string',
             'publish' => 'required|in:draft,published',
             'coverUrl' => 'required',
-            'images' => 'required|array',
+            'images' => 'nullable|array',
             'images.*' => 'required',
             'saleLabel' => 'required|json',
             'newLabel' => 'required|json',
@@ -588,10 +588,10 @@ class ProductController extends Controller
                 'price' => 'required|numeric|min:1',
                 'priceSale' => 'nullable|numeric|min:0',
                 'taxes' => 'nullable|numeric|min:0',
-                'colors' => 'required|array|min:1',
-                'sizes' => 'required|array|min:1',
-                'gender' => 'required|array|min:1',
-                'tags' => 'required|array|min:1',
+                'colors' => 'nullable|array|min:1',
+                'sizes' => 'nullable|array|min:1',
+                'gender' => 'nullable|array|min:1',
+                'tags' => 'nullable|array|min:1',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
                 'coverUrl' => ['nullable', function ($attribute, $value, $fail) {
