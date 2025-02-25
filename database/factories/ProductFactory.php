@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Brand;
+
 class ProductFactory extends Factory
 {
     protected $model = Product::class;
@@ -110,11 +111,6 @@ class ProductFactory extends Factory
             ['name' => 'Chanel', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Chanel_logo.svg/1280px-Chanel_logo.svg.png'],
             ['name' => 'Gucci', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Gucci_logo.svg/1280px-Gucci_logo.svg.png']
         ],
-        'Jewelry' => [
-            ['name' => 'Tiffany & Co.', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Tiffany_&_Co._logo.svg/1280px-Tiffany_&_Co._logo.svg.png'],
-            ['name' => 'Cartier', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Cartier_logo.svg/1280px-Cartier_logo.svg.png'],
-            ['name' => 'Omega', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Omega_logo.svg/1280px-Omega_logo.svg.png']
-        ],
         'Toys & Games' => [
             ['name' => 'Lego', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/1280px-LEGO_logo.svg.png'],
             ['name' => 'Hasbro', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Hasbro_logo.svg/1280px-Hasbro_logo.svg.png'],
@@ -134,15 +130,25 @@ class ProductFactory extends Factory
 
     public function definition(): array
     {
-        $category = Category::inRandomOrder()->first();
-        $brand = Brand::inRandomOrder()->first();
+        // Get random active category
+        $category = Category::where('isActive', true)->inRandomOrder()->first();
+        if (!$category) {
+            // Create a category if none exists
+            $category = Category::factory()->create();
+        }
 
-        // Get a random supplier
-        $vendor = User::role('supplier')->inRandomOrder()->first();
-        if (!$vendor) {
-            // If no supplier exists, create one
-            $vendor = User::factory()->create();
-            $vendor->assignRole('supplier');
+        // Get random brand
+        $brand = Brand::inRandomOrder()->first();
+        if (!$brand) {
+            // Create a brand if none exists
+            $brand = Brand::factory()->create();
+        }
+
+        // Get random supplier
+        $supplier = User::role('supplier')->inRandomOrder()->first();
+        if (!$supplier) {
+            // Create a supplier if none exists
+            $supplier = User::factory()->create()->assignRole('supplier');
         }
 
         $categoryData = self::$productsByCategory[$category->group] ?? [
@@ -164,7 +170,7 @@ class ProductFactory extends Factory
         $basePrice = $this->faker->randomFloat(2, 20, 500);
 
         return [
-            'vendor_id' => $vendor->id,
+            'vendor_id' => $supplier->id,
             'categoryId' => $category->id,
             'brandId' => $brand->id,
             'name' => $this->faker->randomElement($categoryData['name']),
