@@ -33,6 +33,7 @@ Route::get('/product/details', [ProductController::class, 'show']);
 Route::get('/products/search', [ProductController::class, 'search']);
 Route::get('/products/filter', [ProductFilterController::class, 'filter']);
 Route::get('/products/categories', [ProductFilterController::class, 'getCategories']);
+Route::get('/products/colors', [ProductFilterController::class, 'getColors']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/categories/{categoryId}/brands', [CategoryController::class, 'getBrands']);
 

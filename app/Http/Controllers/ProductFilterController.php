@@ -175,4 +175,60 @@ class ProductFilterController extends Controller
             ], 500);
         }
     }
+
+    public function getColors()
+    {
+        try {
+            $colors = Product::where('publish', 'published')
+                ->whereNotNull('colors')
+                ->get()
+                ->pluck('colors')
+                ->flatten()
+                ->unique()
+                ->values()
+                ->map(function ($colorName) {
+                    return [
+                        'name' => $colorName,
+                        'code' => $this->getColorCode($colorName)
+                    ];
+                });
+
+            return response()->json([
+                'colors' => $colors
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch colors', ['error' => $e->getMessage()]);
+            return response()->json([
+                'error' => 'Failed to fetch colors',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function getColorCode(string $colorName): string
+    {
+        $colorMap = [
+            'red' => '#FF4842',
+            'blue' => '#1890FF',
+            'green' => '#54D62C',
+            'yellow' => '#FFC107',
+            'purple' => '#7A0C2E',
+            'black' => '#000000',
+            'white' => '#FFFFFF',
+            'grey' => '#787878',
+            'brown' => '#8B4513',
+            'pink' => '#FF69B4',
+            'orange' => '#FFA500',
+            'gold' => '#FFD700',
+            'silver' => '#C0C0C0',
+            'beige' => '#F5F5DC',
+            'navy' => '#000080',
+            'teal' => '#008080',
+
+            // Add more color mappings as needed
+        ];
+
+        return $colorMap[strtolower($colorName)] ?? '#000000';
+    }
 }
