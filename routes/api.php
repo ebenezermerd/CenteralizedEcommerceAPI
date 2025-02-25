@@ -35,6 +35,7 @@ Route::get('/products/filter', [ProductFilterController::class, 'filter']);
 Route::get('/products/categories', [ProductFilterController::class, 'getCategories']);
 Route::get('/products/colors', [ProductFilterController::class, 'getColors']);
 Route::get('/products/genders', [ProductFilterController::class, 'getGenders']);
+Route::get('/products/tags', [ProductFilterController::class, 'getTags']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/categories/{categoryId}/brands', [CategoryController::class, 'getBrands']);
 

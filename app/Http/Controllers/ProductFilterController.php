@@ -106,6 +106,15 @@ class ProductFilterController extends Controller
                 $query->whereJsonContains('gender', $request->gender);
             }
 
+            // Apply tags filter
+            if ($request->has('tags') && !empty($request->tags)) {
+                $query->where(function($q) use ($request) {
+                    foreach ($request->tags as $tag) {
+                        $q->orWhereJsonContains('tags', $tag);
+                    }
+                });
+            }
+
             // Log the final query for debugging
             Log::debug('Final SQL Query', [
                 'sql' => $query->toSql(),
@@ -295,6 +304,38 @@ class ProductFilterController extends Controller
             Log::error('Failed to fetch genders', ['error' => $e->getMessage()]);
             return response()->json([
                 'error' => 'Failed to fetch genders',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTags()
+    {
+        try {
+            $tags = Product::where('publish', 'published')
+                ->whereNotNull('tags')
+                ->get()
+                ->pluck('tags')
+                ->flatten()
+                ->unique()
+                ->values()
+                ->map(function ($tag) {
+                    return [
+                        'value' => $tag,
+                        'label' => $tag
+                    ];
+                });
+
+            Log::info('Retrieved unique tags', ['count' => $tags->count()]);
+
+            return response()->json([
+                'tags' => $tags
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch tags', ['error' => $e->getMessage()]);
+            return response()->json([
+                'error' => 'Failed to fetch tags',
                 'message' => $e->getMessage()
             ], 500);
         }
