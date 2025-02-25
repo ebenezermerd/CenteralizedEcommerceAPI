@@ -17,6 +17,11 @@ class ProductFilterController extends Controller
     public function filter(Request $request)
     {
         try {
+            Log::info('Product filter request', [
+                'params' => $request->all(),
+                'sort' => $request->input('sort', 'latest')
+            ]);
+
             $query = Product::query()
                 ->with(['reviews', 'category', 'brand', 'images', 'vendor'])
                 ->published();
@@ -60,23 +65,37 @@ class ProductFilterController extends Controller
             }
 
             // Include review stats
-            $query->withCount('reviews')
-                  ->withAvg('reviews', 'rating');
+            $query->withCount('reviews as reviews_count')
+                  ->withAvg('reviews as rating_avg', 'rating');
 
             // Apply sorting
             $sort = $request->input('sort', 'latest');
             switch ($sort) {
                 case 'oldest':
-                    $query->oldest();
+                    $query->orderBy('created_at', 'asc');
                     break;
                 case 'popular':
-                    $query->orderByDesc('reviews_count');
+                    $query->orderBy('reviews_count', 'desc');
+                    break;
+                case 'latest':
+                    $query->orderBy('created_at', 'desc');
                     break;
                 default:
-                    $query->latest();
+                    $query->orderBy('created_at', 'desc');
             }
 
+            // Add query logging
+            Log::debug('SQL Query', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
+
             $products = $query->paginate(12);
+
+            Log::info('Products retrieved', [
+                'count' => $products->count(),
+                'total' => $products->total()
+            ]);
 
             return response()->json([
                 'products' => ProductResource::collection($products),
@@ -91,6 +110,7 @@ class ProductFilterController extends Controller
         } catch (\Exception $e) {
             Log::error('Product filtering failed', [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'filters' => $request->all()
             ]);
 
