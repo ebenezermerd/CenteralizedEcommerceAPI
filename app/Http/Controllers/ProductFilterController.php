@@ -25,8 +25,7 @@ class ProductFilterController extends Controller
             // Start with published products only
             $query = Product::query()
                 ->with(['reviews', 'category', 'brand', 'images', 'vendor'])
-                ->where('publish', 'published')  // Only get published products
-                ->where('isPublished', true);    // Double check publication status
+                ->where('publish', 'published');  // Only get published products
 
             // Add review stats first for sorting purposes
             $query->withCount('reviews as reviews_count')
