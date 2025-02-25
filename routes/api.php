@@ -25,6 +25,8 @@ use App\Http\Controllers\EcommerceOverviewController;
 use App\Http\Controllers\AppOverviewController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductFilterController;
+use App\Http\Controllers\ProductAvailabilityController;
+
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
 Route::get('/products/list', [ProductController::class, 'index']);
@@ -38,6 +40,9 @@ Route::get('/products/genders', [ProductFilterController::class, 'getGenders']);
 Route::get('/products/categories/featured', [ProductFilterController::class, 'getFeaturedCategories']);
 Route::get('/products/tags', [ProductFilterController::class, 'getTags']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
+// Product availability routes
+Route::get('/products/{productId}/availability', [ProductAvailabilityController::class, 'checkAvailability']);
+
 
 // Category routes
 Route::prefix('categories')->group(function () {
@@ -46,12 +51,12 @@ Route::prefix('categories')->group(function () {
     Route::get('/structure', [CategoryController::class, 'getStructure']);
     Route::get('/{category:slug}', [CategoryController::class, 'show']);
     Route::get('/validate/{name}', [CategoryController::class, 'validateCategoryName']);
-});
+});    
 /**
  * @group Authentication
  *
  * APIs for managing authentication
- */
+ */ 
 Route::post('/auth/sign-up', [AuthController::class, 'register']);
 Route::post('/auth/sign-in', [AuthController::class, 'login']);
 Route::post('/auth/refresh', [AuthController::class, 'refresh']);
@@ -107,13 +112,13 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('search', [MailController::class, 'search']);
         Route::post('draft', [MailController::class, 'saveDraft']);
         Route::put('draft/{id}', [MailController::class, 'updateDraft']);
-    });
+    });    
 
     Route::prefix('analytics')->group(function () {
         Route::get('widget-summary', [AnalyticsController::class, 'getWidgetSummary']);
         Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
         Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
-    });
+    });    
 
 
     // Admin only routes
@@ -129,14 +134,14 @@ Route::middleware(['jwt'])->group(function () {
         // Admin product management
         Route::delete('products/{id}', [ProductController::class, 'destroy']);
         Route::post('products/{id}/transfer-vendor', [ProductController::class, 'transferVendor']);
-    });
+    });    
 
     // Admin and Supplier routes
     Route::middleware(['role:admin|supplier'])->group(function () {
         Route::post('products/create', [ProductController::class, 'store']);
         Route::post('products/update/{id}', [ProductController::class, 'update']);
         Route::put('products/publish/{id}', [ProductController::class, 'publishChange']);
-    });
+    });    
 
     // Review routes
     Route::prefix('reviews')->group(function () {
@@ -145,7 +150,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::put('/{id}', [ReviewController::class, 'update']);
         Route::delete('/{id}', [ReviewController::class, 'destroy']);
         Route::post('/{id}/helpful', [ReviewController::class, 'helpful']);
-    });
+    });    
 
     // Invoice routes
     Route::get('invoices/list', [InvoiceController::class, 'index']);
@@ -189,16 +194,16 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
         Route::get('website-visits', [AnalyticsController::class, 'getWebsiteVisits']);
         Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
-    });
+    });    
 
     // Ecommerce Overview routes
     Route::middleware(['role:admin|supplier'])->prefix('ecommerce')->group(function () {
         Route::get('overview', [EcommerceOverviewController::class, 'getOverviewData']);
-    });
+    });    
 
     // App Overview routes
     Route::prefix('app')->group(function () {
         Route::get('overview', [AppOverviewController::class, 'getOverviewData']);
-    });
+    });    
 
 });

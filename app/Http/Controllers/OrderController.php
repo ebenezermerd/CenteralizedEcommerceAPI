@@ -20,14 +20,18 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\MegaCompanyAddress;
 use App\Http\Controllers\ChapaController;
 use Illuminate\Validation\ValidationException;
+use App\Services\InventoryService;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
     protected $emailVerificationService;
+    protected $inventoryService;
 
-    public function __construct(EmailVerificationService $emailVerificationService)
+    public function __construct(EmailVerificationService $emailVerificationService, InventoryService $inventoryService)
     {
         $this->emailVerificationService = $emailVerificationService;
+        $this->inventoryService = $inventoryService;
     }
 
     public function index(Request $request): JsonResponse
@@ -584,6 +588,10 @@ class OrderController extends Controller
                 $invoice->items()->save($invoiceItem);
                 \Log::info('Invoice item created', ['item' => $invoiceItem->toArray()]);
             }
+
+            // Update inventory
+            $orderItems = $request->input('items');
+            $this->inventoryService->updateInventory($orderItems);
 
             DB::commit();
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);

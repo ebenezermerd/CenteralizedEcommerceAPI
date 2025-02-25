@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class Product extends Model
 {
@@ -230,5 +233,88 @@ class Product extends Model
             $value = json_decode($value, true);
         }
         $this->attributes['saleLabel'] = is_array($value) ? json_encode($value) : null;
+    }
+
+    /**
+     * Check if product has sufficient inventory
+     */
+    public function hasAvailableStock(int $quantity): bool
+    {
+        return $this->available >= $quantity;
+    }
+
+    /**
+     * Get real-time availability with cache
+     */
+    public function getRealTimeAvailability(): int
+    {
+        $cacheKey = "product_availability_{$this->id}";
+        
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () {
+            return $this->available;
+        });
+    }
+
+    /**
+     * Update inventory status
+     */
+    public function updateInventoryStatus(): void
+    {
+        $this->update([
+            'inventoryType' => $this->determineInventoryType($this->available)
+        ]);
+
+        // Clear availability cache
+        Cache::forget("product_availability_{$this->id}");
+    }
+
+    /**
+     * Determine inventory type based on quantity
+     */
+    private function determineInventoryType(int $quantity): string
+    {
+        if ($quantity <= 0) return 'out_of_stock';
+        if ($quantity <= 10) return 'low_stock';
+        return 'in_stock';
+    }
+
+    /**
+     * Reserve inventory for pending order
+     */
+    public function reserveInventory(int $quantity): bool
+    {
+        if (!$this->hasAvailableStock($quantity)) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($quantity) {
+            $this->decrement('available', $quantity);
+            $this->updateInventoryStatus();
+            
+            Log::info('Inventory reserved', [
+                'product_id' => $this->id,
+                'quantity' => $quantity,
+                'remaining' => $this->available
+            ]);
+
+            return true;
+        });
+    }
+
+    /**
+     * Release reserved inventory (for failed orders)
+     */
+    public function releaseInventory(int $quantity): void
+    {
+        DB::transaction(function () use ($quantity) {
+            $this->increment('available', $quantity);
+            $this->updateInventoryStatus();
+            
+            Log::info('Inventory released', [
+                'product_id' => $this->id,
+                'quantity' => $quantity,
+                'new_available' => $this->available
+            ]);
+        });
     }
 }
