@@ -350,25 +350,29 @@ class ProductFilterController extends Controller
     public function getFeaturedCategories()
     {
         try {
-            $categories = Category::whereHas('products', function($query) {
-                $query->where('publish', 'published');
-            })
-            ->select('id', 'name', 'coverImg', 'description')
-            ->withCount(['products' => function($query) {
-                $query->where('publish', 'published');
-            }])
-            ->orderBy('products_count', 'desc')
-            ->limit(12)
-            ->get()
-            ->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'label' => $category->name,
-                    'icon' => $category->coverImg ?: null,
-                    'description' => $category->description,
-                    'productsCount' => $category->products_count
-                ];
-            });
+            $categories = Category::with('parent')
+                ->whereHas('products', function($query) {
+                    $query->where('publish', 'published');
+                })
+                ->select('id', 'name', 'coverImg', 'description', 'parentId')
+                ->withCount(['products' => function($query) {
+                    $query->where('publish', 'published');
+                }])
+                ->orderBy('products_count', 'desc')
+                ->limit(12)
+                ->get()
+                ->map(function ($category) {
+                    return [
+                        'id' => $category->parentId ? $category->parent->id : $category->id,
+                        'label' => $category->name,
+                        'icon' => $category->coverImg ?: null,
+                        'description' => $category->description,
+                        'productsCount' => $category->products_count,
+                        // Include subcategory info if this is a child category
+                        'subCategoryId' => $category->parentId ? $category->id : null,
+                        'parentName' => $category->parentId ? $category->parent->name : null
+                    ];
+                });
 
             Log::info('Featured categories retrieved', [
                 'count' => $categories->count(),
