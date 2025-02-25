@@ -211,9 +211,10 @@ class ProductFilterController extends Controller
         $colorMap = [
             '#FF4842' => 'red',
             '#1890FF' => 'blue',
-            '#54D62C' => 'green',
+            '#FFC0CB' => 'pink',
+            '#00AB55' => 'green',
             '#FFC107' => 'yellow',
-            '#7A0C2E' => 'purple',
+            '#7F00FF' => 'violet',
             '#000000' => 'black',
             '#FFFFFF' => 'white',
             '#787878' => 'grey',
