@@ -76,12 +76,19 @@ class ProductFilterController extends Controller
             }
 
             if ($request->has('priceRange')) {
-                $range = json_decode($request->priceRange, true);
-                if (isset($range['start']) && $range['start'] > 0) {
-                    $query->where('price', '>=', $range['start']);
-                }
-                if (isset($range['end']) && $range['end'] > 0) {
-                    $query->where('price', '<=', $range['end']);
+                $priceRange = json_decode($request->priceRange, true);
+                if ($priceRange && is_array($priceRange)) {
+                    $query->when($priceRange['start'] > 0, function($q) use ($priceRange) {
+                        $q->where('price', '>=', $priceRange['start']);
+                    })
+                    ->when($priceRange['end'] > 0, function($q) use ($priceRange) {
+                        $q->where('price', '<=', $priceRange['end']);
+                    });
+
+                    Log::info('Applying price range filter', [
+                        'start' => $priceRange['start'],
+                        'end' => $priceRange['end']
+                    ]);
                 }
             }
 

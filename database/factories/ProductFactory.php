@@ -27,11 +27,7 @@ class ProductFactory extends Factory
             'gender' => ['Men', 'Women']
         ],
         'Accessories' => [
-<<<<<<< HEAD
             'name' => ['Watches', 'Backpacks', 'Face Masks', 'Sunglasses', 'Belts'],
-=======
-            'name' => ['Watches', 'Bracelets', 'Face Masks', 'Sunglasses', 'Belts'],
->>>>>>> 589c26518b29f48f1da1b142b1287bae2efc4947
             'sizes' => ['small', 'medium', 'large'],
             'colors' => ['#FF4842', '#1890FF', '#54D62C', '#FFC107', '#7F00FF'],
             'gender' => ['Men', 'Women', 'Kids']
