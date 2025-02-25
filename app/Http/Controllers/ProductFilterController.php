@@ -159,9 +159,13 @@ class ProductFilterController extends Controller
     /**
      * Get all available categories with their brands
      */
-    public function getCategories()
+    public function getCategories(Request $request)
     {
         try {
+            // Get active category IDs from query parameters
+            $activeCategoryId = $request->query('category');
+            $activeSubCategoryId = $request->query('subcategory');
+
             // Get parent categories that either have published products themselves
             // or have children with published products
             $categories = Category::whereNull('parentId')
@@ -178,13 +182,8 @@ class ProductFilterController extends Controller
                         $q->where('publish', 'published');
                     });
                 }])
-                ->orWhereHas('children', function($query) {
-                    $query->whereHas('products', function($q) {
-                        $q->where('publish', 'published');
-                    });
-                })
                 ->get()
-                ->map(function ($category) {
+                ->map(function ($category) use ($activeCategoryId, $activeSubCategoryId) {
                     return [
                         'id' => $category->id,
                         'name' => $category->name,
@@ -192,8 +191,8 @@ class ProductFilterController extends Controller
                         'slug' => $category->slug,
                         'description' => $category->description,
                         'coverImg' => $category->coverImg,
-                        'isActive' => $category->isActive,
-                        'children' => $category->children->map(function ($child) {
+                        'isActive' => $category->isActive || $category->id == $activeCategoryId,
+                        'children' => $category->children->map(function ($child) use ($activeSubCategoryId) {
                             return [
                                 'id' => $child->id,
                                 'name' => $child->name,
@@ -201,7 +200,7 @@ class ProductFilterController extends Controller
                                 'group' => $child->group,
                                 'description' => $child->description,
                                 'coverImg' => $child->coverImg,
-                                'isActive' => $child->isActive,
+                                'isActive' => $child->isActive || $child->id == $activeSubCategoryId,
                             ];
                         })
                     ];
@@ -211,7 +210,9 @@ class ProductFilterController extends Controller
                 'parentCount' => $categories->count(),
                 'totalChildren' => $categories->sum(function($cat) {
                     return $cat['children']->count();
-                })
+                }),
+                'activeCategoryId' => $activeCategoryId,
+                'activeSubCategoryId' => $activeSubCategoryId
             ]);
 
             return response()->json($categories);
@@ -350,29 +351,43 @@ class ProductFilterController extends Controller
     public function getFeaturedCategories()
     {
         try {
-            $categories = Category::whereHas('products', function($query) {
-                $query->where('publish', 'published');
-            })
-            ->select('id', 'name', 'coverImg', 'description')
-            ->withCount(['products' => function($query) {
-                $query->where('publish', 'published');
-            }])
-            ->orderBy('products_count', 'desc')
-            ->limit(12)
-            ->get()
-            ->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'label' => $category->name,
-                    'icon' => $category->coverImg ?: null,
-                    'description' => $category->description,
-                    'productsCount' => $category->products_count
-                ];
-            });
+            $categories = Category::with('parent')
+                ->whereHas('products', function($query) {
+                    $query->where('publish', 'published');
+                })
+                ->select('id', 'name', 'coverImg', 'description', 'parentId', 'group')
+                ->withCount(['products' => function($query) {
+                    $query->where('publish', 'published');
+                }])
+                ->orderBy('products_count', 'desc')
+                ->limit(12)
+                ->get()
+                ->map(function ($category) {
+                    return [
+                        // If it's a subcategory, use parent's ID as main category ID
+                        'categoryId' => $category->parentId ? $category->parentId : $category->id,
+                        // If it's a subcategory, include its ID as subCategoryId
+                        'subCategoryId' => $category->parentId ? $category->id : null,
+                        'label' => $category->name,
+                        'icon' => $category->coverImg ?: null,
+                        'description' => $category->description,
+                        'productsCount' => $category->products_count,
+                        'group' => $category->group,
+                        // Include parent info for debugging
+                        'parentName' => $category->parentId ? $category->parent->name : null
+                    ];
+                });
 
             Log::info('Featured categories retrieved', [
                 'count' => $categories->count(),
-                'categories' => $categories->pluck('label')
+                'categories' => $categories->map(function($cat) {
+                    return [
+                        'name' => $cat['label'],
+                        'categoryId' => $cat['categoryId'],
+                        'subCategoryId' => $cat['subCategoryId'],
+                        'parentName' => $cat['parentName']
+                    ];
+                })
             ]);
 
             return response()->json([
@@ -380,7 +395,10 @@ class ProductFilterController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Failed to fetch featured categories', ['error' => $e->getMessage()]);
+            Log::error('Failed to fetch featured categories', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'error' => 'Failed to fetch featured categories',
                 'message' => $e->getMessage()
