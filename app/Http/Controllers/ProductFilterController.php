@@ -162,7 +162,8 @@ class ProductFilterController extends Controller
     public function getCategories()
     {
         try {
-            // Get parent categories with published products (either directly or through children)
+            // Get parent categories that either have published products themselves
+            // or have children with published products
             $categories = Category::whereNull('parentId')
                 ->where(function($query) {
                     $query->whereHas('products', function($q) {
@@ -177,6 +178,11 @@ class ProductFilterController extends Controller
                         $q->where('publish', 'published');
                     });
                 }])
+                ->orWhereHas('children', function($query) {
+                    $query->whereHas('products', function($q) {
+                        $q->where('publish', 'published');
+                    });
+                })
                 ->get()
                 ->map(function ($category) {
                     return [
