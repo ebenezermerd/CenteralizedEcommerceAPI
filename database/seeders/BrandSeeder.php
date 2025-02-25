@@ -11,7 +11,6 @@ class BrandSeeder extends Seeder
     public function run()
     {
         $brandsByCategory = [
-            [
                 'Shirts' => [
                     ['name' => 'Tommy Hilfiger', 'logo' => 'https://icon.horse/icon/www.tommy.com'],
                     ['name' => 'Calvin Klein', 'logo' => 'https://icon.horse/icon/www.calvinklein.com'],
@@ -82,7 +81,6 @@ class BrandSeeder extends Seeder
                     ['name' => 'BMW', 'logo' => 'https://icon.horse/icon/www.bmw.com'],
                     ['name' => 'Audi', 'logo' => 'https://icon.horse/icon/www.audi.com']
                 ]
-            ]
 
         ];
 
