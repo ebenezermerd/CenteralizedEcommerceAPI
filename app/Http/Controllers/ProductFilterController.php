@@ -19,7 +19,8 @@ class ProductFilterController extends Controller
         try {
             Log::info('Product filter request', [
                 'params' => $request->all(),
-                'sort' => $request->input('sort', 'latest')
+                'page' => $request->input('page', 1),
+                'per_page' => $request->input('per_page', 20)
             ]);
 
             // Start with published products only
@@ -104,12 +105,14 @@ class ProductFilterController extends Controller
                 'bindings' => $query->getBindings()
             ]);
 
-            // Paginate results
-            $products = $query->paginate(12);
+            // Paginate results with 20 items per page
+            $products = $query->paginate($request->input('per_page', 20));
 
             Log::info('Products retrieved', [
                 'count' => $products->count(),
-                'total' => $products->total()
+                'total' => $products->total(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage()
             ]);
 
             return response()->json([
@@ -119,6 +122,8 @@ class ProductFilterController extends Controller
                     'per_page' => $products->perPage(),
                     'current_page' => $products->currentPage(),
                     'last_page' => $products->lastPage(),
+                    'from' => $products->firstItem(),
+                    'to' => $products->lastItem(),
                 ]
             ]);
 
