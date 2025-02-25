@@ -146,26 +146,30 @@ class ProductFilterController extends Controller
     public function getCategories()
     {
         try {
-            $categories = Category::with('brands:id,name')
-                ->main
-                ->get(['id', 'name', 'coverImg'])
-                ->map(function ($category) {
-                    return [
-                        'id' => $category->id,
-                        'name' => $category->name,
-                        'coverImg' => $category->coverImg,
-                        'brands' => $category->brands->map(function ($brand) {
-                            return [
-                                'id' => $brand->id,
-                                'name' => $brand->name
-                            ];
-                        })
-                    ];
-                });
+            // Get only categories that have published products
+            $categories = Category::whereHas('products', function($query) {
+                $query->where('publish', 'published');
+            })
+            ->with(['parent', 'children'])
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'group' => $category->group,
+                    'parentId' => $category->parentId,
+                    'children' => $category->children->map(function ($child) {
+                        return [
+                            'id' => $child->id,
+                            'name' => $child->name,
+                            'parentId' => $child->parentId
+                        ];
+                    })
+                ];
+            });
 
-            return response()->json([
-                'categories' => $categories
-            ]);
+            Log::info('Retrieved categories with products', ['count' => $categories->count()]);
+            return response()->json($categories);
 
         } catch (\Exception $e) {
             Log::error('Failed to fetch categories', ['error' => $e->getMessage()]);

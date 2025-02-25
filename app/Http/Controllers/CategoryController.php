@@ -163,6 +163,9 @@ class CategoryController extends Controller
             $category = Category::findOrFail($categoryId);
 
             $brands = $category->brands()
+                ->whereHas('products', function($query) {
+                    $query->where('publish', 'published');
+                })
                 ->select('brands.id', 'brands.name', 'brands.description', 'brands.logo')
                 ->get()
                 ->map(function ($brand) {
@@ -174,7 +177,7 @@ class CategoryController extends Controller
                     ];
                 });
 
-            Log::info('Retrieved brands for category', [
+            Log::info('Retrieved brands with products for category', [
                 'categoryId' => $categoryId,
                 'brandsCount' => $brands->count()
             ]);
