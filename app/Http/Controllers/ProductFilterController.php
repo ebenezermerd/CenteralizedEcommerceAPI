@@ -260,4 +260,36 @@ class ProductFilterController extends Controller
 
         return $colorMap[strtoupper($colorCode)] ?? 'other';
     }
+
+    public function getGenders()
+    {
+        try {
+            $genders = Product::where('publish', 'published')
+                ->whereNotNull('gender')
+                ->get()
+                ->pluck('gender')
+                ->flatten()
+                ->unique()
+                ->values()
+                ->map(function ($gender) {
+                    return [
+                        'value' => $gender,
+                        'label' => $gender
+                    ];
+                });
+
+            Log::info('Retrieved unique genders', ['count' => $genders->count()]);
+
+            return response()->json([
+                'genders' => $genders
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch genders', ['error' => $e->getMessage()]);
+            return response()->json([
+                'error' => 'Failed to fetch genders',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
