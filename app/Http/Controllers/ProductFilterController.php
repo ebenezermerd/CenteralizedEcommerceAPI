@@ -88,8 +88,8 @@ class ProductFilterController extends Controller
             // Apply color filter
             if ($request->has('colors') && !empty($request->colors)) {
                 $query->where(function($q) use ($request) {
-                    foreach ($request->colors as $color) {
-                        $q->orWhereJsonContains('colors', $color);
+                    foreach ($request->colors as $colorCode) {
+                        $q->orWhereJsonContains('colors', $colorCode);
                     }
                 });
             }
@@ -186,10 +186,10 @@ class ProductFilterController extends Controller
                 ->flatten()
                 ->unique()
                 ->values()
-                ->map(function ($colorName) {
+                ->map(function ($colorCode) {
                     return [
-                        'name' => $colorName,
-                        'code' => $this->getColorCode($colorName)
+                        'code' => $colorCode,
+                        'name' => $this->getColorName($colorCode)
                     ];
                 });
 
@@ -206,29 +206,27 @@ class ProductFilterController extends Controller
         }
     }
 
-    private function getColorCode(string $colorName): string
+    private function getColorName(string $colorCode): string
     {
         $colorMap = [
-            'red' => '#FF4842',
-            'blue' => '#1890FF',
-            'green' => '#54D62C',
-            'yellow' => '#FFC107',
-            'purple' => '#7A0C2E',
-            'black' => '#000000',
-            'white' => '#FFFFFF',
-            'grey' => '#787878',
-            'brown' => '#8B4513',
-            'pink' => '#FF69B4',
-            'orange' => '#FFA500',
-            'gold' => '#FFD700',
-            'silver' => '#C0C0C0',
-            'beige' => '#F5F5DC',
-            'navy' => '#000080',
-            'teal' => '#008080',
-
-            // Add more color mappings as needed
+            '#FF4842' => 'red',
+            '#1890FF' => 'blue',
+            '#54D62C' => 'green',
+            '#FFC107' => 'yellow',
+            '#7A0C2E' => 'purple',
+            '#000000' => 'black',
+            '#FFFFFF' => 'white',
+            '#787878' => 'grey',
+            '#8B4513' => 'brown',
+            '#FF69B4' => 'pink',
+            '#FFA500' => 'orange',
+            '#FFD700' => 'gold',
+            '#C0C0C0' => 'silver',
+            '#F5F5DC' => 'beige',
+            '#000080' => 'navy',
+            '#008080' => 'teal',
         ];
 
-        return $colorMap[strtolower($colorName)] ?? '#000000';
+        return $colorMap[strtoupper($colorCode)] ?? 'other';
     }
 }
