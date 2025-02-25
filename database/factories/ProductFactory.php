@@ -16,43 +16,78 @@ class ProductFactory extends Factory
 
     protected static $productsByCategory = [
         'Clothing' => [
-            'name' => ['Shirts', 'T-shirts', 'Jeans', 'Leather Jacket', 'Dresses'],
+            'name' => ['Shirts', 'T-shirts', 'Jeans', 'Leather Jackets', 'Traditional Wear', 'Activewear', 'Underwear', 'Swimwear'],
             'sizes' => ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
             'colors' => ['#FF4842', '#1890FF', '#00AB55', '#FFC107', '#7F00FF', '#000000'],
             'gender' => ['Men', 'Women', 'Kids']
         ],
         'Tailored' => [
-            'name' => ['Business Suit', 'Dress Shirt', 'Wool Blazer', 'Formal Trousers', 'Tailored Vest'],
+            'name' => ['Suits', 'Tuxedos', 'Dresses', 'Tops', 'Bottoms', 'Accessories'],
             'sizes' => ['46', '48', '50', '52', '54'],
             'colors' => ['#000000', '#2065D1', '#212B36', '#919EAB'],
             'gender' => ['Men', 'Women']
         ],
-        'Accessories' => [
-            'name' => ['Watches', 'Backpacks', 'Face Masks', 'Sunglasses', 'Belts'],
-            'sizes' => ['small', 'medium', 'large'],
-            'colors' => ['#FF4842', '#1890FF', '#54D62C', '#FFC107', '#7F00FF'],
+        'Electronics' => [
+            'name' => ['Smartphones', 'Laptops', 'Tablets', 'Cameras', 'Headphones', 'Smart Watches', 'Home Appliances'],
+            'sizes' => ['OS'],
+            'colors' => ['#000000', '#FFFFFF', '#919EAB'],
+            'gender' => ['Unisex']
+        ],
+        'Home & Kitchen' => [
+            'name' => ['Furniture', 'Cookware', 'Tableware', 'Home Decor', 'Bedding', 'Storage', 'Lighting'],
+            'sizes' => ['OS'],
+            'colors' => ['#000000', '#FFFFFF', '#919EAB', '#FFC107'],
+            'gender' => ['Unisex']
+        ],
+        'Beauty & Personal Care' => [
+            'name' => ['Skincare', 'Haircare', 'Makeup', 'Fragrances', 'Men\'s Grooming', 'Oral Care'],
+            'sizes' => ['OS'],
+            'colors' => ['#FF4842', '#1890FF', '#54D62C', '#FFC107'],
+            'gender' => ['Men', 'Women']
+        ],
+        'Sports & Outdoors' => [
+            'name' => ['Fitness Equipment', 'Camping Gear', 'Cycling', 'Team Sports', 'Yoga', 'Fishing'],
+            'sizes' => ['XS', 'S', 'M', 'L', 'XL'],
+            'colors' => ['#000000', '#1890FF', '#00AB55'],
             'gender' => ['Men', 'Women', 'Kids']
+        ],
+        'Groceries' => [
+            'name' => ['Beverages', 'Snacks', 'Canned Goods', 'Bakery', 'Dairy', 'Coffee & Tea'],
+            'sizes' => ['OS'],
+            'colors' => ['#000000'],
+            'gender' => ['Unisex']
+        ],
+        'Accessories' => [
+            'name' => ['Watches', 'Jewelry', 'Earrings', 'Necklaces', 'Rings', 'Bracelets', 'Face Masks', 'Sunglasses', 'Belts', 'Backpacks', 'Handbags', 'Briefcases', 'Tote Bags', 'Travel Bags'],
+            'sizes' => ['OS', 'S', 'M', 'L'],
+            'colors' => ['#000000', '#1890FF', '#FFC107', '#7F00FF'],
+            'gender' => ['Men', 'Women']
         ],
         'Shoes' => [
             'name' => ['Athletic Shoes', 'Formal Shoes', 'Sandals', 'Boots', 'Sneakers'],
-            'sizes' => ['7', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13'],
-            'colors' => ['#000000', '#FFFFFF', '#FF4842', '#1890FF', '#00AB55'],
+            'sizes' => ['7', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12'],
+            'colors' => ['#000000', '#FFFFFF', '#FF4842', '#1890FF'],
             'gender' => ['Men', 'Women', 'Kids']
         ],
-        'Bags' => [
-            'name' => ['Backpacks', 'Handbags', 'Briefcases', 'Tote Bags', 'Travel Bags'],
-            'sizes' => ['small', 'medium', 'large'],
-            'colors' => ['#000000', '#2065D1', '#54D62C', '#FFC107'],
-            'gender' => ['Men', 'Women']
+        'Toys & Games' => [
+            'name' => ['Puzzles', 'Dolls', 'Action Figures', 'Remote-Controlled Toys', 'Strollers'],
+            'sizes' => ['OS'],
+            'colors' => ['#FF4842', '#1890FF', '#FFC107', '#7F00FF'],
+            'gender' => ['Kids']
         ],
-        'Electronics' => [
-            'name' => ['Smartphones', 'Laptops', 'Headphones', 'Smart Watches', 'Tablets'],
+        'Art & Collectibles' => [
+            'name' => ['Paintings', 'Sculptures', 'Posters', 'Antiques', 'Vintage Items'],
+            'sizes' => ['OS'],
+            'colors' => ['#000000', '#FFFFFF'],
+            'gender' => ['Unisex']
+        ],
+        'Automotive' => [
+            'name' => ['Car Parts', 'Car Accessories', 'Car Care', 'Car Modifications', 'Car Tuning'],
             'sizes' => ['OS'],
             'colors' => ['#000000', '#FFFFFF', '#919EAB'],
             'gender' => ['Unisex']
         ]
     ];
-
 
     protected $categoryBrands = [
         'Shirts' => [
