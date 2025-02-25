@@ -340,4 +340,45 @@ class ProductFilterController extends Controller
             ], 500);
         }
     }
+
+    public function getFeaturedCategories()
+    {
+        try {
+            $categories = Category::whereHas('products', function($query) {
+                $query->where('publish', 'published');
+            })
+            ->select('id', 'name', 'coverImg', 'description')
+            ->withCount(['products' => function($query) {
+                $query->where('publish', 'published');
+            }])
+            ->orderBy('products_count', 'desc')
+            ->limit(12)
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'label' => $category->name,
+                    'icon' => $category->coverImg ?: null,
+                    'description' => $category->description,
+                    'productsCount' => $category->products_count
+                ];
+            });
+
+            Log::info('Featured categories retrieved', [
+                'count' => $categories->count(),
+                'categories' => $categories->pluck('label')
+            ]);
+
+            return response()->json([
+                'categories' => $categories
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch featured categories', ['error' => $e->getMessage()]);
+            return response()->json([
+                'error' => 'Failed to fetch featured categories',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
