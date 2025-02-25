@@ -78,21 +78,21 @@ class CategorySeeder extends Seeder
 
     public function run(): void
     {
-        foreach ($this->categories as $category) {
+        foreach ($this->categories as $categories) {
             // Create main category
             $mainCategory = Category::updateOrCreate(
-                ['name' => $category['group']],
+                ['name' => $categories['group']],
                 [
-                    'name' => $category['group'],
-                    'group' => $category['group'],
-                    'description' => "Main category for {$category['group']}",
-                    'coverImg' => $category['coverImg'] ?? null,
+                    'name' => $categories['group'],
+                    'group' => $categories['group'],
+                    'description' => "Main category for {$categories['group']}",
+                    'coverImg' => $categories['coverImg'] ?? null,
                     'isActive' => true
                 ]
             );
 
             // Create sub-categories
-            foreach ($category['classify'] as $subCategory) {
+            foreach ($categories['classify'] as $subCategory) {
                 Category::updateOrCreate(
                     [
                         'name' => $subCategory,
@@ -100,8 +100,8 @@ class CategorySeeder extends Seeder
                     ],
                     [
                         'name' => $subCategory,
-                        'group' => $category['group'],
-                        'description' => "{$subCategory} in {$category['group']} category",
+                        'group' => $categories['group'],
+                        'description' => "{$subCategory} in {$categories['group']} category",
                         'isActive' => true
                     ]
                 );
