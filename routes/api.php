@@ -37,8 +37,15 @@ Route::get('/products/colors', [ProductFilterController::class, 'getColors']);
 Route::get('/products/genders', [ProductFilterController::class, 'getGenders']);
 Route::get('/products/tags', [ProductFilterController::class, 'getTags']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
-Route::get('/categories/{categoryId}/brands', [CategoryController::class, 'getBrands']);
 
+// Category routes
+Route::prefix('categories')->group(function () {
+    Route::get('/', [CategoryController::class, 'index']);
+    Route::get('/{categoryId}/brands', [CategoryController::class, 'getBrands']);
+    Route::get('/structure', [CategoryController::class, 'getStructure']);
+    Route::get('/{category:slug}', [CategoryController::class, 'show']);
+    Route::get('/validate/{name}', [CategoryController::class, 'validateCategoryName']);
+});
 /**
  * @group Authentication
  *
@@ -86,14 +93,6 @@ Route::middleware(['jwt'])->group(function () {
     Route::get('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'show']);
     Route::put('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'update']);
     Route::delete('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'destroy']);
-
-    // Category routes
-    Route::prefix('categories')->group(function () {
-        Route::get('/', [CategoryController::class, 'index']);
-        Route::get('/structure', [CategoryController::class, 'getStructure']);
-        Route::get('/{category:slug}', [CategoryController::class, 'show']);
-        Route::get('/validate/{name}', [CategoryController::class, 'validateCategoryName']);
-    });
 
     // Mail routes
     Route::prefix('mail')->group(function () {
@@ -200,7 +199,5 @@ Route::middleware(['jwt'])->group(function () {
     Route::prefix('app')->group(function () {
         Route::get('overview', [AppOverviewController::class, 'getOverviewData']);
     });
-
-    // Product filtering routes
 
 });
