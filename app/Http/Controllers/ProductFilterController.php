@@ -64,20 +64,8 @@ class ProductFilterController extends Controller
             }
 
             // Then apply filters
-            if ($request->has('category')) {
-                $categoryId = $request->query('category');
-                $subCategoryId = $request->query('subcategory');
-
-                if ($subCategoryId) {
-                    // If subcategory is specified, filter by it
-                    $query->where('categoryId', $subCategoryId);
-                } else {
-                    // If only main category is specified, get products from it and its subcategories
-                    $query->whereHas('category', function($q) use ($categoryId) {
-                        $q->where('id', $categoryId)
-                            ->orWhere('parentId', $categoryId);
-                    });
-                }
+            if ($request->has('categoryId')) {
+                $query->where('categoryId', $request->categoryId);
             }
 
             if ($request->has('brandIds')) {
@@ -363,11 +351,11 @@ class ProductFilterController extends Controller
     public function getFeaturedCategories()
     {
         try {
-            $categories = Category::with('parent')
+            $categories = Category::whereNull('parentId')
                 ->whereHas('products', function($query) {
                     $query->where('publish', 'published');
                 })
-                ->select('id', 'name', 'coverImg', 'description', 'parentId', 'group')
+                ->select('id', 'name', 'coverImg', 'description')
                 ->withCount(['products' => function($query) {
                     $query->where('publish', 'published');
                 }])
@@ -376,44 +364,20 @@ class ProductFilterController extends Controller
                 ->get()
                 ->map(function ($category) {
                     return [
-                        // If it's a subcategory, use its own ID as categoryId
-                        'categoryId' => $category->id,
-                        // If it's a subcategory, include parent's ID
-                        'parentCategoryId' => $category->parentId,
-                        'label' => $category->name,
+                        'id' => $category->id,
+                        'name' => $category->name,
                         'icon' => $category->coverImg ?: null,
                         'description' => $category->description,
-                        'productsCount' => $category->products_count,
-                        'group' => $category->group,
-                        'parentName' => $category->parentId ? $category->parent->name : null
+                        'productsCount' => $category->products_count
                     ];
                 });
-
-            Log::info('Featured categories retrieved', [
-                'count' => $categories->count(),
-                'categories' => $categories->map(function($cat) {
-                    return [
-                        'name' => $cat['label'],
-                        'categoryId' => $cat['categoryId'],
-                        'parentCategoryId' => $cat['parentCategoryId'],
-                        'productsCount' => $cat['productsCount']
-                    ];
-                })
-            ]);
 
             return response()->json([
                 'categories' => $categories
             ]);
-
         } catch (\Exception $e) {
-            Log::error('Failed to fetch featured categories', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'error' => 'Failed to fetch featured categories',
-                'message' => $e->getMessage()
-            ], 500);
+            Log::error('Failed to fetch featured categories', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to fetch featured categories'], 500);
         }
     }
 }
