@@ -22,16 +22,52 @@ class ProductFilterController extends Controller
                 'sort' => $request->input('sort', 'latest')
             ]);
 
+            // Start with published products only
             $query = Product::query()
                 ->with(['reviews', 'category', 'brand', 'images', 'vendor'])
-                ->published();
+                ->where('publish', 'published')  // Only get published products
+                ->where('isPublished', true);    // Double check publication status
 
-            // Filter by category ID
+            // Add review stats first for sorting purposes
+            $query->withCount('reviews as reviews_count')
+                  ->withAvg('reviews as rating_avg', 'rating')
+                  ->withSum('reviews as total_ratings', 'rating');
+
+            // Apply sorting first
+            $sort = $request->input('sort', 'latest');
+            switch ($sort) {
+                case 'oldest':
+                    $query->orderBy('created_at', 'asc');
+                    break;
+                case 'popular':
+                    $query->orderBy('reviews_count', 'desc')
+                          ->orderBy('rating_avg', 'desc');
+                    break;
+                case 'featured':
+                    $query->where('featured', true)
+                          ->orderBy('created_at', 'desc');
+                    break;
+                case 'top_rated':
+                    $query->orderBy('rating_avg', 'desc')
+                          ->orderBy('reviews_count', 'desc');
+                    break;
+                case 'price_low':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price_high':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'latest':
+                default:
+                    $query->orderBy('created_at', 'desc');
+                    break;
+            }
+
+            // Then apply filters
             if ($request->has('categoryId')) {
                 $query->where('categoryId', $request->categoryId);
             }
 
-            // Filter by brand IDs
             if ($request->has('brandIds')) {
                 $brandIds = json_decode($request->brandIds);
                 if (!empty($brandIds)) {
@@ -39,7 +75,6 @@ class ProductFilterController extends Controller
                 }
             }
 
-            // Apply price range filter
             if ($request->has('priceRange')) {
                 $range = json_decode($request->priceRange, true);
                 if (isset($range['start']) && $range['start'] > 0) {
@@ -64,32 +99,13 @@ class ProductFilterController extends Controller
                 $query->whereJsonContains('gender', $request->gender);
             }
 
-            // Include review stats
-            $query->withCount('reviews as reviews_count')
-                  ->withAvg('reviews as rating_avg', 'rating');
-
-            // Apply sorting
-            $sort = $request->input('sort', 'latest');
-            switch ($sort) {
-                case 'oldest':
-                    $query->orderBy('created_at', 'asc');
-                    break;
-                case 'popular':
-                    $query->orderBy('reviews_count', 'desc');
-                    break;
-                case 'latest':
-                    $query->orderBy('created_at', 'desc');
-                    break;
-                default:
-                    $query->orderBy('created_at', 'desc');
-            }
-
-            // Add query logging
-            Log::debug('SQL Query', [
+            // Log the final query for debugging
+            Log::debug('Final SQL Query', [
                 'sql' => $query->toSql(),
                 'bindings' => $query->getBindings()
             ]);
 
+            // Paginate results
             $products = $query->paginate(12);
 
             Log::info('Products retrieved', [
@@ -110,8 +126,7 @@ class ProductFilterController extends Controller
         } catch (\Exception $e) {
             Log::error('Product filtering failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'filters' => $request->all()
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
