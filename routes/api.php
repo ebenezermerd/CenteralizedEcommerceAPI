@@ -31,7 +31,10 @@ Route::get('/products/list', [ProductController::class, 'index']);
 // Public routes
 Route::get('/product/details', [ProductController::class, 'show']);
 Route::get('/products/search', [ProductController::class, 'search']);
+Route::get('/products/filter', [ProductFilterController::class, 'filter']);
+Route::get('/products/categories', [ProductFilterController::class, 'getCategories']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
+Route::get('/categories/{categoryId}/brands', [CategoryController::class, 'getBrands']);
 
 /**
  * @group Authentication
@@ -87,7 +90,6 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('/structure', [CategoryController::class, 'getStructure']);
         Route::get('/{category:slug}', [CategoryController::class, 'show']);
         Route::get('/validate/{name}', [CategoryController::class, 'validateCategoryName']);
-        Route::get('/{categoryId}/brands', [CategoryController::class, 'getBrands']);
     });
 
     // Mail routes
@@ -197,6 +199,5 @@ Route::middleware(['jwt'])->group(function () {
     });
 
     // Product filtering routes
-    Route::get('/products/filter', [ProductFilterController::class, 'filter']);
-    Route::get('/products/categories', [ProductFilterController::class, 'getCategories']);
+
 });
