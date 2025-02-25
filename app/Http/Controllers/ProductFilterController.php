@@ -200,9 +200,7 @@ class ProductFilterController extends Controller
                 })
             ]);
 
-            return response()->json([
-                'categories' => $categories
-            ]);
+            return response()->json($categories, 200);
 
         } catch (\Exception $e) {
             Log::error('Failed to fetch categories', ['error' => $e->getMessage()]);
