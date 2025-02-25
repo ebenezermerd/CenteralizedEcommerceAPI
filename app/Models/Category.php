@@ -75,6 +75,9 @@ class Category extends Model
      */
     public function brands(): BelongsToMany
     {
-        return $this->belongsToMany(Brand::class, 'brand_category');
+        return $this->belongsToMany(Brand::class, 'brand_category')
+            ->whereHas('products', function($query) {
+                $query->where('publish', 'published');
+            });
     }
 }

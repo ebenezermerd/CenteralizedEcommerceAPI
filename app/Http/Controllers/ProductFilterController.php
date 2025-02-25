@@ -146,29 +146,52 @@ class ProductFilterController extends Controller
     public function getCategories()
     {
         try {
-            // Get only categories that have published products
-            $categories = Category::whereHas('products', function($query) {
-                $query->where('publish', 'published');
-            })
-            ->with(['parent', 'children'])
-            ->get()
-            ->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'group' => $category->group,
-                    'parentId' => $category->parentId,
-                    'children' => $category->children->map(function ($child) {
-                        return [
-                            'id' => $child->id,
-                            'name' => $child->name,
-                            'parentId' => $child->parentId
-                        ];
+            // Get parent categories with published products (either directly or through children)
+            $categories = Category::whereNull('parentId')
+                ->where(function($query) {
+                    $query->whereHas('products', function($q) {
+                        $q->where('publish', 'published');
                     })
-                ];
-            });
+                    ->orWhereHas('children.products', function($q) {
+                        $q->where('publish', 'published');
+                    });
+                })
+                ->with(['children' => function($query) {
+                    $query->whereHas('products', function($q) {
+                        $q->where('publish', 'published');
+                    });
+                }])
+                ->get()
+                ->map(function ($category) {
+                    return [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'group' => $category->group,
+                        'slug' => $category->slug,
+                        'description' => $category->description,
+                        'coverImg' => $category->coverImg,
+                        'isActive' => $category->isActive,
+                        'children' => $category->children->map(function ($child) {
+                            return [
+                                'id' => $child->id,
+                                'name' => $child->name,
+                                'slug' => $child->slug,
+                                'group' => $child->group,
+                                'description' => $child->description,
+                                'coverImg' => $child->coverImg,
+                                'isActive' => $child->isActive,
+                            ];
+                        })
+                    ];
+                });
 
-            Log::info('Retrieved categories with products', ['count' => $categories->count()]);
+            Log::info('Retrieved categories with children', [
+                'parentCount' => $categories->count(),
+                'totalChildren' => $categories->sum(function($cat) {
+                    return $cat['children']->count();
+                })
+            ]);
+
             return response()->json($categories);
 
         } catch (\Exception $e) {
