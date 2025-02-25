@@ -211,12 +211,15 @@ class ProductFilterController extends Controller
         $colorMap = [
             '#FF4842' => 'red',
             '#1890FF' => 'blue',
-            '#FFC0CB' => 'pink',
             '#00AB55' => 'green',
             '#FFC107' => 'yellow',
             '#7F00FF' => 'violet',
             '#000000' => 'black',
             '#FFFFFF' => 'white',
+            '#54D62C' => 'green',
+            '#2065D1' => 'blue',
+            '#919EAB' => 'grey',
+            '#FFC0CB' => 'pink',
             '#787878' => 'grey',
             '#8B4513' => 'brown',
             '#FF69B4' => 'pink',
@@ -225,7 +228,7 @@ class ProductFilterController extends Controller
             '#C0C0C0' => 'silver',
             '#F5F5DC' => 'beige',
             '#000080' => 'navy',
-            '#008080' => 'teal',
+            '#008080' => 'teal'
         ];
 
         return $colorMap[strtoupper($colorCode)] ?? 'other';
