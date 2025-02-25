@@ -64,8 +64,20 @@ class ProductFilterController extends Controller
             }
 
             // Then apply filters
-            if ($request->has('categoryId')) {
-                $query->where('categoryId', $request->categoryId);
+            if ($request->has('category')) {
+                $categoryId = $request->query('category');
+                $subCategoryId = $request->query('subcategory');
+
+                if ($subCategoryId) {
+                    // If subcategory is specified, filter by it
+                    $query->where('categoryId', $subCategoryId);
+                } else {
+                    // If only main category is specified, get products from it and its subcategories
+                    $query->whereHas('category', function($q) use ($categoryId) {
+                        $q->where('id', $categoryId)
+                            ->orWhere('parentId', $categoryId);
+                    });
+                }
             }
 
             if ($request->has('brandIds')) {
@@ -364,16 +376,15 @@ class ProductFilterController extends Controller
                 ->get()
                 ->map(function ($category) {
                     return [
-                        // If it's a subcategory, use parent's ID as main category ID
-                        'categoryId' => $category->parentId ? $category->parentId : $category->id,
-                        // If it's a subcategory, include its ID as subCategoryId
-                        'subCategoryId' => $category->parentId ? $category->id : null,
+                        // If it's a subcategory, use its own ID as categoryId
+                        'categoryId' => $category->id,
+                        // If it's a subcategory, include parent's ID
+                        'parentCategoryId' => $category->parentId,
                         'label' => $category->name,
                         'icon' => $category->coverImg ?: null,
                         'description' => $category->description,
                         'productsCount' => $category->products_count,
                         'group' => $category->group,
-                        // Include parent info for debugging
                         'parentName' => $category->parentId ? $category->parent->name : null
                     ];
                 });
@@ -384,8 +395,8 @@ class ProductFilterController extends Controller
                     return [
                         'name' => $cat['label'],
                         'categoryId' => $cat['categoryId'],
-                        'subCategoryId' => $cat['subCategoryId'],
-                        'parentName' => $cat['parentName']
+                        'parentCategoryId' => $cat['parentCategoryId'],
+                        'productsCount' => $cat['productsCount']
                     ];
                 })
             ]);
