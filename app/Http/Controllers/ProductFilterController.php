@@ -351,23 +351,24 @@ class ProductFilterController extends Controller
     public function getFeaturedCategories()
     {
         try {
-            $categories = Category::whereNull('parentId')
+            $categories = Category::whereNull('parentId')  // Get parent categories only
                 ->whereHas('products', function($query) {
                     $query->where('publish', 'published');
                 })
-                ->select('id', 'name', 'coverImg', 'description')
+                ->select('id', 'name', 'coverImg', 'description', 'group', 'slug')  // Added group and slug
                 ->withCount(['products' => function($query) {
                     $query->where('publish', 'published');
                 }])
-                ->orderBy('products_count', 'desc')
-                ->limit(12)
-                ->get()
+                ->orderBy('products_count', 'desc')  // Order by most products
+                ->get()  // Remove limit(12) to get all categories
                 ->map(function ($category) {
                     return [
                         'id' => $category->id,
                         'name' => $category->name,
-                        'icon' => $category->coverImg ?: null,
+                        'icon' => $category->coverImg,
                         'description' => $category->description,
+                        'group' => $category->group,
+                        'slug' => $category->slug,
                         'productsCount' => $category->products_count
                     ];
                 });
