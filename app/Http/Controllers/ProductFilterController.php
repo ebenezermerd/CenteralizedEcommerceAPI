@@ -162,45 +162,53 @@ class ProductFilterController extends Controller
     public function getCategories()
     {
         try {
-            // Get main categories that have products in their children
+            // Get parent categories with published products (either directly or through children)
             $categories = Category::whereNull('parentId')
                 ->where(function($query) {
-                    $query->whereHas('children.products', function($q) {
-                        $q->where('publish', 'published');
-                    });
-                })
-                ->select('id', 'name', 'group', 'coverImg')
-                ->with(['children' => function($query) {
                     $query->whereHas('products', function($q) {
                         $q->where('publish', 'published');
                     })
-                    ->select('id', 'name', 'group', 'parentId');
+                    ->orWhereHas('children.products', function($q) {
+                        $q->where('publish', 'published');
+                    });
+                })
+                ->with(['children' => function($query) {
+                    $query->whereHas('products', function($q) {
+                        $q->where('publish', 'published');
+                    });
                 }])
                 ->get()
                 ->map(function ($category) {
                     return [
-                        'value' => $category->name,
-                        'label' => $category->name,
+                        'id' => $category->id,
+                        'name' => $category->name,
                         'group' => $category->group,
-                        'icon' => $category->coverImg,
+                        'slug' => $category->slug,
+                        'description' => $category->description,
+                        'coverImg' => $category->coverImg,
+                        'isActive' => $category->isActive,
                         'children' => $category->children->map(function ($child) {
                             return [
-                                'value' => $child->name,
-                                'label' => $child->name,
-                                'group' => $child->group
+                                'id' => $child->id,
+                                'name' => $child->name,
+                                'slug' => $child->slug,
+                                'group' => $child->group,
+                                'description' => $child->description,
+                                'coverImg' => $child->coverImg,
+                                'isActive' => $child->isActive,
                             ];
                         })
                     ];
                 });
 
-            Log::info('Categories retrieved', [
-                'mainCategoriesCount' => $categories->count(),
-                'totalChildrenCount' => $categories->sum(function($cat) {
+            Log::info('Retrieved categories with children', [
+                'parentCount' => $categories->count(),
+                'totalChildren' => $categories->sum(function($cat) {
                     return $cat['children']->count();
                 })
             ]);
 
-            return response()->json($categories, 200);
+            return response()->json($categories);
 
         } catch (\Exception $e) {
             Log::error('Failed to fetch categories', ['error' => $e->getMessage()]);
