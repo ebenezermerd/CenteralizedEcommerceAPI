@@ -65,7 +65,24 @@ class ProductFilterController extends Controller
 
             // Then apply filters
             if ($request->has('categoryId')) {
-                $query->where('categoryId', $request->categoryId);
+                // Get the requested category ID
+                $categoryId = $request->categoryId;
+
+                // Get all child category IDs recursively
+                $childCategoryIds = Category::where('parentId', $categoryId)
+                    ->orWhere(function($query) use ($categoryId) {
+                        $query->whereHas('parent', function($q) use ($categoryId) {
+                            $q->where('parentId', $categoryId);
+                        });
+                    })
+                    ->pluck('id')
+                    ->toArray();
+
+                // Combine parent and child category IDs
+                $allCategoryIds = array_merge([$categoryId], $childCategoryIds);
+
+                // Filter products by all relevant category IDs
+                $query->whereIn('categoryId', $allCategoryIds);
             }
 
             if ($request->has('brandIds')) {
