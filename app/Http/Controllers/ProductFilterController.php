@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ProductFilterController extends Controller
 {
@@ -71,7 +72,7 @@ class ProductFilterController extends Controller
                 // Get all child category IDs recursively
                 $childCategoryIds = Category::where('parentId', $categoryId)
                     ->orWhere(function($query) use ($categoryId) {
-                        $query->whereHas('parent', function($q) use ($categoryId) {
+                    $query->whereHas('parent', function($q) use ($categoryId) {
                             $q->where('parentId', $categoryId);
                         });
                     })
@@ -179,24 +180,29 @@ class ProductFilterController extends Controller
     public function getCategories(Request $request)
     {
         try {
-            // Get active category IDs from query parameters
             $activeCategoryId = $request->query('category');
             $activeSubCategoryId = $request->query('subcategory');
 
-            // Get parent categories that either have published products themselves
-            // or have children with published products
+            // Get parent categories with either direct products or products in child categories
             $categories = Category::whereNull('parentId')
                 ->where(function($query) {
                     $query->whereHas('products', function($q) {
                         $q->where('publish', 'published');
                     })
-                    ->orWhereHas('children.products', function($q) {
-                        $q->where('publish', 'published');
+                    ->orWhereExists(function($subquery) {
+                        $subquery->select(DB::raw(1))
+                            ->from('products')
+                            ->join('categories as child_categories', 'products.categoryId', '=', 'child_categories.id')
+                            ->whereColumn('child_categories.parentId', 'categories.id')
+                            ->where('products.publish', 'published');
                     });
                 })
                 ->with(['children' => function($query) {
-                    $query->whereHas('products', function($q) {
-                        $q->where('publish', 'published');
+                    $query->whereExists(function($subquery) {
+                        $subquery->select(DB::raw(1))
+                            ->from('products')
+                            ->whereColumn('products.categoryId', 'categories.id')
+                            ->where('products.publish', 'published');
                     });
                 }])
                 ->get()
