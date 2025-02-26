@@ -375,15 +375,29 @@ class ProductFilterController extends Controller
     {
         try {
             $categories = Category::whereNull('parentId')  // Get parent categories only
-                ->whereHas('products', function($query) {
-                    $query->where('publish', 'published');
+                ->where(function($query) {
+                    $query->whereHas('products', function($q) {
+                        $q->where('publish', 'published');
+                    })
+                    ->orWhereExists(function($subquery) {
+                        $subquery->select(DB::raw(1))
+                            ->from('products')
+                            ->join('categories as child_categories', 'products.categoryId', '=', 'child_categories.id')
+                            ->whereColumn('child_categories.parentId', 'categories.id')
+                            ->where('products.publish', 'published');
+                    });
                 })
-                ->select('id', 'name', 'coverImg', 'description', 'group', 'slug')  // Added group and slug
-                ->withCount(['products' => function($query) {
+                ->select('id', 'name', 'coverImg', 'description', 'group', 'slug')
+                ->withCount(['products as direct_products_count' => function($query) {
                     $query->where('publish', 'published');
                 }])
-                ->orderBy('products_count', 'desc')  // Order by most products
-                ->get()  // Remove limit(12) to get all categories
+                ->withCount(['children as children_products_count' => function($query) {
+                    $query->whereHas('products', function($q) {
+                        $q->where('publish', 'published');
+                    });
+                }])
+                ->orderByRaw('(direct_products_count + children_products_count) DESC')
+                ->get()
                 ->map(function ($category) {
                     return [
                         'id' => $category->id,
@@ -392,7 +406,7 @@ class ProductFilterController extends Controller
                         'description' => $category->description,
                         'group' => $category->group,
                         'slug' => $category->slug,
-                        'productsCount' => $category->products_count
+                        'productsCount' => $category->direct_products_count + $category->children_products_count
                     ];
                 });
 
