@@ -52,6 +52,9 @@ class Product extends Model
         'saleLabel',
         'vendor_id',
         'brandId',
+        'publish_status',
+        'rejection_reason',
+        'approved_at'
     ];
 
     protected $casts = [
@@ -249,7 +252,7 @@ class Product extends Model
     public function getRealTimeAvailability(): int
     {
         $cacheKey = "product_availability_{$this->id}";
-        
+
         return Cache::remember($cacheKey, now()->addMinutes(5), function () {
             return $this->available;
         });
@@ -290,7 +293,7 @@ class Product extends Model
         return DB::transaction(function () use ($quantity) {
             $this->decrement('available', $quantity);
             $this->updateInventoryStatus();
-            
+
             Log::info('Inventory reserved', [
                 'product_id' => $this->id,
                 'quantity' => $quantity,
@@ -309,12 +312,39 @@ class Product extends Model
         DB::transaction(function () use ($quantity) {
             $this->increment('available', $quantity);
             $this->updateInventoryStatus();
-            
+
             Log::info('Inventory released', [
                 'product_id' => $this->id,
                 'quantity' => $quantity,
                 'new_available' => $this->available
             ]);
         });
+    }
+
+    public function scopePendingApproval($query)
+    {
+        return $query->where('publish_status', 'pending')
+                     ->where('publish', 'published');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('publish_status', 'approved');
+    }
+
+    public function approve()
+    {
+        $this->update([
+            'publish_status' => 'approved',
+            'approved_at' => now()
+        ]);
+    }
+
+    public function reject($reason)
+    {
+        $this->update([
+            'publish_status' => 'rejected',
+            'rejection_reason' => $reason
+        ]);
     }
 }

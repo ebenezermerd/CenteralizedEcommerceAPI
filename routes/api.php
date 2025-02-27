@@ -26,6 +26,7 @@ use App\Http\Controllers\AppOverviewController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductAvailabilityController;
+use App\Http\Controllers\ProductApprovalController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -134,6 +135,13 @@ Route::middleware(['jwt'])->group(function () {
         // Admin product management
         Route::delete('products/{id}', [ProductController::class, 'destroy']);
         Route::post('products/{id}/transfer-vendor', [ProductController::class, 'transferVendor']);
+
+        // Product approvals
+        Route::prefix('product-approvals')->group(function () {
+            Route::get('/', [ProductApprovalController::class, 'index']);
+            Route::post('/{id}/approve', [ProductApprovalController::class, 'approve']);
+            Route::post('/{id}/reject', [ProductApprovalController::class, 'reject']);
+        });
     });
 
     // Admin and Supplier routes

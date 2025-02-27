@@ -37,6 +37,9 @@ return new class extends Migration
             $table->timestamp('mfa_verified_at')->nullable(); // Add this line
             $table->string('email_otp')->nullable(); // Add this line
             $table->timestamp('email_otp_expires_at')->nullable(); // Add this line
+            $table->enum('publish_status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->text('rejection_reason')->nullable();
+            $table->timestamp('approved_at')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
