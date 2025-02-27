@@ -16,8 +16,8 @@ class CompanyRequest extends FormRequest
         $rules = [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
+            'email' => 'required|email|unique:companies,email',
+            'phone' => 'required|string|unique:companies,phone',
             'country' => 'required|string|max:100',
             'city' => 'required|string|max:100',
             'address' => 'required|string',

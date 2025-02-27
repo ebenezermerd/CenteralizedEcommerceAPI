@@ -161,7 +161,7 @@ class AuthController extends Controller
      *
      * @param LoginRequest $request
      *
-     * @bodyParam email string required User's email address. Example: john@example.com
+     * @bodyParam identifier string required User's email or phone number. Example: john@example.com or +1234567890
      * @bodyParam password string required User's password. Example: Secret123!
      *
      * @response 200 {
@@ -224,14 +224,18 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         try {
-            $credentials = $request->validated();
+            $identifier = $request->input('identifier');
+            $password = $request->input('password');
 
-            // Set TTL for access token to 60 minutes
-            JWTAuth::factory()->setTTL($this->ACCESS_TOKEN_TTL);
+            // Determine if the identifier is an email or phone number
+            $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
 
-            if (!$token = JWTAuth::attempt($credentials)) {
+            // Find the user by email or phone
+            $user = User::where($isEmail ? 'email' : 'phone', $identifier)->first();
+
+            if (!$user || !Hash::check($password, $user->password)) {
                 Log::channel('telescope')->warning('Failed login attempt', [
-                    'email' => $request->input('email'),
+                    'identifier' => $identifier,
                     'ip' => $request->ip(),
                     'user_agent' => $request->userAgent()
                 ]);
@@ -239,11 +243,16 @@ class AuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'status' => 'invalid_credentials',
-                    'message' => 'Invalid email or password'
+                    'message' => 'Invalid credentials'
                 ], 401);
             }
 
-            $user = Auth::user();
+            // Set TTL for access token
+            JWTAuth::factory()->setTTL($this->ACCESS_TOKEN_TTL);
+
+            // Generate JWT token for the user
+            $token = JWTAuth::fromUser($user);
+
             // Generate refresh token with 1 week TTL
             JWTAuth::factory()->setTTL($this->REFRESH_TOKEN_TTL);
             $refreshToken = JWTAuth::fromUser($user);
@@ -318,18 +327,18 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'status' => 'error',
-                'message' => 'Authentication failed. Please try again later.'
+                'message' => 'Could not create token'
             ], 500);
         } catch (\Exception $e) {
-            Log::error('Login error', [
-                'message' => $e->getMessage(),
+            Log::error('Login failed', [
+                'error' => $e->getMessage(),
                 'ip' => $request->ip()
             ]);
             return response()->json([
                 'success' => false,
                 'status' => 'error',
-                'message' => 'Login failed. Please try again later.'
-            ], 501);
+                'message' => 'Login failed: ' . $e->getMessage()
+            ], 500);
         }
     }
 
