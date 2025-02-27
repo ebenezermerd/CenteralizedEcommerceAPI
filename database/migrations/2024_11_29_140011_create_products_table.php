@@ -21,9 +21,6 @@ return new class extends Migration
             $table->text('description');
             $table->text('subDescription');
             $table->enum('publish', ['draft', 'published']);
-
-            // Add brand column after basic information
-
             // Pricing
             $table->decimal('price', 10, 2);
             $table->decimal('priceSale', 10, 2)->nullable();
@@ -51,6 +48,11 @@ return new class extends Migration
             // Labels
             $table->json('newLabel')->nullable();
             $table->json('saleLabel')->nullable();
+
+            // Approval
+            $table->enum('publish_status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->text('rejection_reason')->nullable();
+            $table->timestamp('approved_at')->nullable();
 
             $table->timestamps();
         });
