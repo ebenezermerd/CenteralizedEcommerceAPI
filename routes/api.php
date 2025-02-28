@@ -96,6 +96,7 @@ Route::middleware(['jwt'])->group(function () {
 
     // Address routes
     Route::get('user/{userId}/addresses', [AddressBookController::class, 'index']);
+    Route::get('user/{userId}/addresses/primary', [AddressBookController::class, 'verifyAddressCompleteness']);
     Route::post('user/{userId}/addresses/create', [AddressBookController::class, 'store']);
     Route::get('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'show']);
     Route::put('user/{userId}/addresses/{addressId}', [AddressBookController::class, 'update']);

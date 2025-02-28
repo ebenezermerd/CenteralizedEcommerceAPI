@@ -13,7 +13,7 @@ class AddressBook extends Model
 
     protected $fillable = [
         'user_id', 'name', 'email',
-        'company', 'is_primary', 'full_address', 'phone_number', 'address_type'
+         'is_primary', 'full_address', 'phone_number', 'address_type'
     ];
 
     protected $casts = ['is_primary' => 'boolean'];

@@ -150,6 +150,23 @@ class AddressBookController extends Controller
         return response()->json(new AddressResource($address), 200);
     }
 
+    public function verifyAddressCompleteness()
+    {
+        $user = auth()->user();
+        $primaryAddress = $user->addressBooks()->where('is_primary', true)->first();
+        
+        $isComplete = $primaryAddress && 
+                    $primaryAddress->email && 
+                    $primaryAddress->country && 
+                    $primaryAddress->city && 
+                    $primaryAddress->state;
+        
+        return response()->json([
+            'isComplete' => $isComplete,
+            'message' => $isComplete ? 'Address is complete' : 'Please complete your address information'
+        ]);
+    }
+
     public function destroy($userId, $addressId): JsonResponse
     {
         \Log::info('Deleting address book entry', [

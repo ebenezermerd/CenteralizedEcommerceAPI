@@ -198,6 +198,14 @@ class UserController extends Controller
             // Update user data
             $user->update($validated);
 
+             // Update primary address if email changed
+            if (isset($validatedData['email'])) {
+                $primaryAddress = $user->addressBooks()->where('is_primary', true)->first();
+                if ($primaryAddress) {
+                    $primaryAddress->update(['email' => $validatedData['email']]);
+                }
+            }
+
             // Log successful update
             Log::info('User updated successfully', [
                 'user_id' => $user->id,
