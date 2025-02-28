@@ -25,7 +25,7 @@ class RegisterationRequest extends FormRequest
             'role' => 'required|string|in:customer,supplier',
             'firstName' => 'required|string|max:255',
             'lastName' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'nullable|string|email|max:255|unique:users',
             'phone' => 'required|string|unique:users,phone',
             'sex' => 'required|string|in:male,female, Male, Female',
             'address' => 'required|string',

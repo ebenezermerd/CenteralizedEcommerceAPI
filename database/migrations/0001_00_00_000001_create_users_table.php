@@ -27,7 +27,7 @@ return new class extends Migration
             $table->date('birthdate')->nullable();
             $table->timestamps();
             $table->rememberToken();
-            $table->string('email')->unique();
+            $table->string('email')->unique()->nullable();
             $table->boolean('verified')->default(false);
             $table->string('zip_code')->nullable();
             $table->timestamp('email_verified_at')->nullable();
