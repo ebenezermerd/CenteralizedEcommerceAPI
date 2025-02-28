@@ -131,7 +131,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::put('users/update/{id}', [UserController::class, 'update']);
         Route::delete('users/delete/{id}', [UserController::class, 'destroy']);
         Route::put('users/{id}/role', [UserController::class, 'updateRole']);
-
+a
         // Admin product management
         Route::delete('products/{id}', [ProductController::class, 'destroy']);
         Route::post('products/{id}/transfer-vendor', [ProductController::class, 'transferVendor']);

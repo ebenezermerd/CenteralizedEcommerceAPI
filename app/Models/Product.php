@@ -332,6 +332,10 @@ class Product extends Model
         return $query->where('publish_status', 'approved');
     }
 
+    public function scopeRejected($query)
+    {
+        return $query->where('publish_status', 'rejected');
+    }
     public function approve()
     {
         $this->update([

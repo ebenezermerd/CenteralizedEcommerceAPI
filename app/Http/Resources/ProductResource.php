@@ -80,6 +80,8 @@ class ProductResource extends JsonResource
                 ];
             })->values(),
 
+            'publishStatus' => $this->publish_status,
+            'approvedAt' => $this->approved_at,
             // Labels
             'newLabel' => [
                 'enabled' => !empty($this->newLabel),
