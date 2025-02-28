@@ -188,7 +188,7 @@ class ProductFilterController extends Controller
                 ->where(function($query) {
                     $query->whereHas('products', function($q) {
                         $q->where('publish', 'published')
-                        ->approved();
+                        ->where('publish_status', 'approved');
                     })
                     ->orWhereExists(function($subquery) {
                         $subquery->select(DB::raw(1))
@@ -196,7 +196,7 @@ class ProductFilterController extends Controller
                             ->join('categories as child_categories', 'products.categoryId', '=', 'child_categories.id')
                             ->whereColumn('child_categories.parentId', 'categories.id')
                             ->where('products.publish', 'published')
-                            ->approved();
+                            ->where('products.publish_status', 'approved');
                     });
                 })
                 ->with(['children' => function($query) {
@@ -205,7 +205,7 @@ class ProductFilterController extends Controller
                             ->from('products')
                             ->whereColumn('products.categoryId', 'categories.id')
                             ->where('products.publish', 'published')
-                            ->approved();
+                            ->where('products.publish_status', 'approved');
                     });
                 }])
                 ->get()
@@ -384,7 +384,7 @@ class ProductFilterController extends Controller
                 ->where(function($query) {
                     $query->whereHas('products', function($q) {
                         $q->where('publish', 'published')
-                        ->approved();
+                        ->where('publish_status', 'approved');
                     })
                     ->orWhereExists(function($subquery) {
                         $subquery->select(DB::raw(1))
@@ -392,18 +392,18 @@ class ProductFilterController extends Controller
                             ->join('categories as child_categories', 'products.categoryId', '=', 'child_categories.id')
                             ->whereColumn('child_categories.parentId', 'categories.id')
                             ->where('products.publish', 'published')
-                            ->approved();
+                            ->where('products.publish_status', 'approved');
                     });
                 })
                 ->select('id', 'name', 'coverImg', 'description', 'group', 'slug')
                 ->withCount(['products as direct_products_count' => function($query) {
                     $query->where('publish', 'published')
-                    ->approved();
+                    ->where('publish_status', 'approved');
                 }])
                 ->withCount(['children as children_products_count' => function($query) {
                     $query->whereHas('products', function($q) {
                         $q->where('publish', 'published')
-                        ->approved();
+                        ->where('publish_status', 'approved');
                     });
                 }])
                 ->orderByRaw('(direct_products_count + children_products_count) DESC')
