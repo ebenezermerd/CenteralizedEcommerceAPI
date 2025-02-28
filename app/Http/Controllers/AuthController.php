@@ -258,48 +258,48 @@ class AuthController extends Controller
             $refreshToken = JWTAuth::fromUser($user);
 
             // Check if user is verified
-            if (!$user->verified) {
-                // Send verification email
-                $this->emailVerificationService->sendVerificationEmail($user);
+            // if (!$user->verified) {
+            //     // Send verification email
+            //     $this->emailVerificationService->sendVerificationEmail($user);
 
-                return response()->json([
-                    'success' => false,
-                    'status' => 'verification_required',
-                    'message' => 'Please verify your email address. A verification code has been sent to your email.',
-                    'accessToken' => $token,
-                    'refreshToken' => $refreshToken,
-                    'user' => [
-                        'email' => $user->email,
-                        'role' => $user->getRoleNames()->first(),
-                        'isVerified' => $user->verified,
-                        'id' => $user->id
-                    ]
-                ], 203);
-            }
+            //     return response()->json([
+            //         'success' => false,
+            //         'status' => 'verification_required',
+            //         'message' => 'Please verify your email address. A verification code has been sent to your email.',
+            //         'accessToken' => $token,
+            //         'refreshToken' => $refreshToken,
+            //         'user' => [
+            //             'email' => $user->email,
+            //             'role' => $user->getRoleNames()->first(),
+            //             'isVerified' => $user->verified,
+            //             'id' => $user->id
+            //         ]
+            //     ], 203);
+            // }
 
-            // Check if MFA is enabled
-            if ($user->is_mfa_enabled) {
-                $tempToken = JWTAuth::fromUser($user, ['exp' => now()->addMinutes(60)->timestamp]);
-                Log::info('MFA required for user', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'ip' => $request->ip()
-                ]);
-                $this->emailVerificationService->sendMfaOtp($user);
+            // // Check if MFA is enabled
+            // if ($user->is_mfa_enabled) {
+            //     $tempToken = JWTAuth::fromUser($user, ['exp' => now()->addMinutes(60)->timestamp]);
+            //     Log::info('MFA required for user', [
+            //         'user_id' => $user->id,
+            //         'email' => $user->email,
+            //         'ip' => $request->ip()
+            //     ]);
+            //     $this->emailVerificationService->sendMfaOtp($user);
 
-                return response()->json([
-                    'success' => true,
-                    'status' => 'mfa_required',
-                    'message' => 'MFA verification required. A verification code has been sent to your email.',
-                    'tempToken' => $tempToken,
-                    'user' => [
-                        'email' => $user->email,
-                        'id' => $user->id,
-                        'role' => $user->getRoleNames()->first(),
-                        'isVerified' => $user->verified
-                    ]
-                ], 201);
-            }
+            //     return response()->json([
+            //         'success' => true,
+            //         'status' => 'mfa_required',
+            //         'message' => 'MFA verification required. A verification code has been sent to your email.',
+            //         'tempToken' => $tempToken,
+            //         'user' => [
+            //             'email' => $user->email,
+            //             'id' => $user->id,
+            //             'role' => $user->getRoleNames()->first(),
+            //             'isVerified' => $user->verified
+            //         ]
+            //     ], 201);
+            // }
 
             Log::info('User logged in successfully', [
                 'user_id' => $user->id,
