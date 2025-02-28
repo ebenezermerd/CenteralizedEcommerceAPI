@@ -220,7 +220,10 @@ class ProductFactory extends Factory
             'priceSale' => $isOnSale ? $basePrice * 0.8 : null,
             'taxes' => 10,
 
-            // Media
+            // Approval
+            'publish_status' => 'approved',
+            'rejection_reason' => null,
+            'approved_at' => now(),
 
             // Attributes
             'tags' => $this->faker->randomElements([
