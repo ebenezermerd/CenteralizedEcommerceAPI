@@ -95,6 +95,13 @@ class Product extends Model
 
     protected $withCount = ['reviews']; // always count reviews
 
+    public const INVENTORY_TYPES = [
+        'in_stock' => 'In Stock',
+        'low_stock' => 'Low Stock',
+        'out_of_stock' => 'Out of Stock',
+        'discontinued' => 'Discontinued'
+    ];
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'categoryId');
@@ -148,16 +155,10 @@ class Product extends Model
         });
     }
 
-    // Add accessor for inventory status
+    // Update the inventory status accessor
     public function getInventoryStatusAttribute(): string
     {
-        if ($this->quantity <= 0) {
-            return 'out_of_stock';
-        }
-        if ($this->quantity <= 10) {
-            return 'low_stock';
-        }
-        return 'in_stock';
+        return self::INVENTORY_TYPES[$this->inventoryType] ?? 'Unknown';
     }
 
     // Add accessor for price with taxes
@@ -350,5 +351,11 @@ class Product extends Model
             'publish_status' => 'rejected',
             'rejection_reason' => $reason
         ]);
+    }
+
+    // Add a scope for filtering by inventory type
+    public function scopeByInventoryType($query, string $type)
+    {
+        return $query->where('inventoryType', $type);
     }
 }

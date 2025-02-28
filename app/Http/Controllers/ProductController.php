@@ -108,13 +108,14 @@ class ProductController extends Controller
     {
         $user = auth()->user();
 
-        // Customers can see only published products
+        // Customers can see only published and approved products
         if ($user && $user->hasRole('customer')) {
             $products = Product::with(['reviews', 'category', 'brand', 'images', 'vendor' => function ($query) {
                 $query->select('id', 'firstName', 'lastName', 'phone', 'email')
                     ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
             }])
                 ->published()
+                ->approved()
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')
                 ->latest()
@@ -126,12 +127,13 @@ class ProductController extends Controller
                     ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
             }])
                 ->published()
+                ->approved()
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')
                 ->latest()
                 ->paginate(12);
         } else if ($user) {
-            // Admin and supplier can see all products
+            // only Admin can see all pendingApproval and all products & supplier can see their products
             $products = Product::with(['reviews', 'category', 'brand', 'images', 'vendor' => function ($query) {
                 $query->select('id', 'firstName', 'lastName', 'phone', 'email')
                     ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
@@ -148,6 +150,7 @@ class ProductController extends Controller
                     ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
             }])
                 ->published()
+                ->approved()
                 ->withCount('reviews')
                 ->withAvg('reviews', 'rating')
                 ->latest()

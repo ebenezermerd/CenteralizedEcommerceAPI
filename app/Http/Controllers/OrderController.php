@@ -22,6 +22,7 @@ use App\Http\Controllers\ChapaController;
 use Illuminate\Validation\ValidationException;
 use App\Services\InventoryService;
 use Illuminate\Support\Facades\Log;
+use App\Models\InventoryReservation;
 
 class OrderController extends Controller
 {
@@ -589,9 +590,8 @@ class OrderController extends Controller
                 \Log::info('Invoice item created', ['item' => $invoiceItem->toArray()]);
             }
 
-            // Update inventory
-            $orderItems = $request->input('items');
-            $this->inventoryService->updateInventory($orderItems);
+            // Update inventory and clear reservations
+            $this->finalizeInventory($validated['items'], $inventoryCheck['reservation_ids']);
 
             DB::commit();
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);
@@ -615,6 +615,18 @@ class OrderController extends Controller
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
+
+            // Clean up any reservations if they exist
+            if (isset($inventoryCheck['reservation_ids'])) {
+                InventoryReservation::whereIn('id', $inventoryCheck['reservation_ids'])
+                    ->chunk(100, function ($reservations) {
+                        foreach ($reservations as $reservation) {
+                            $reservation->product->increment('available', $reservation->quantity);
+                            $reservation->delete();
+                        }
+                    });
+            }
+
             \Log::error('Order processing failed', [
                 'user_id' => auth()->id(),
                 'error' => $e->getMessage(),
@@ -633,41 +645,23 @@ class OrderController extends Controller
 
     protected function validateInventory(array $items): array
     {
-        $result = [
-            'valid' => true,
-            'failed_items' => []
-        ];
+        $inventoryService = app(InventoryService::class);
 
-        foreach ($items as $item) {
-            $product = Product::find($item['id']);
+        // First check availability
+        $availabilityCheck = $inventoryService->checkAndReserveInventory($items);
 
-            if (!$product) {
-                $result['valid'] = false;
-                $result['failed_items'][] = [
-                    'id' => $item['id'],
-                    'name' => 'Product not found',
-                    'requested_quantity' => $item['quantity'],
-                    'available_quantity' => 0,
-                    'status' => 'NOT_FOUND',
-                    'error_type' => 'product_not_found'
-                ];
-                continue;
-            }
-
-            if ($product->quantity < $item['quantity']) {
-                $result['valid'] = false;
-                $result['failed_items'][] = [
-                    'id' => $item['id'],
-                    'name' => $product->name,
-                    'requested_quantity' => $item['quantity'],
-                    'available_quantity' => $product->quantity,
-                    'status' => $product->quantity === 0 ? 'OUT_OF_STOCK' : 'INSUFFICIENT_STOCK',
-                    'error_type' => $product->quantity === 0 ? 'out_of_stock' : 'insufficient_quantity'
-                ];
-            }
+        if (!$availabilityCheck['success']) {
+            return $availabilityCheck;
         }
 
-        return $result;
+        // If available, create reservations
+        $reservationResult = $inventoryService->reserveInventory($items);
+
+        return [
+            'valid' => $reservationResult['success'],
+            'failed_items' => $reservationResult['failed_items'],
+            'reservation_ids' => $reservationResult['reservation_ids']
+        ];
     }
 
     protected function getAlternativeProducts(array $failedItems): array
@@ -695,6 +689,17 @@ class OrderController extends Controller
         return $alternatives;
     }
 
+    // Update inventory and clear reservations
+    private function finalizeInventory(array $items, array $reservationIds): void
+    {
+        DB::transaction(function () use ($items, $reservationIds) {
+            // Update final inventory counts
+            $this->inventoryService->updateInventory($items);
+
+            // Clear the reservations
+            InventoryReservation::whereIn('id', $reservationIds)->delete();
+        });
+    }
 
     public function destroy(string $id): JsonResponse
     {

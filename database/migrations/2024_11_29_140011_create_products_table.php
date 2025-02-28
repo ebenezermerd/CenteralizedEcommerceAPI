@@ -36,7 +36,12 @@ return new class extends Migration
             $table->json('gender')->nullable();
 
             // Inventory
-            $table->string('inventoryType')->default('In Stock');
+            $table->enum('inventoryType', [
+                'in_stock',
+                'low_stock',
+                'out_of_stock',
+                'discontinued'
+            ])->default('in_stock');
             $table->integer('quantity')->default(0);
             $table->integer('available')->default(0);
             $table->integer('totalSold')->default(0);
