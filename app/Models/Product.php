@@ -335,7 +335,7 @@ class Product extends Model
 
     public function scopeRejected($query)
     {
-        return $query->where('publish_status', 'rejected');
+        return $query->where('publish_status', 'rejected')->where('approved_at', null);
     }
     public function approve()
     {
