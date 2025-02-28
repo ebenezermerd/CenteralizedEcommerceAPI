@@ -150,16 +150,22 @@ class AddressBookController extends Controller
         return response()->json(new AddressResource($address), 200);
     }
 
-    public function verifyAddressCompleteness()
+    public function verifyAddressCompleteness(string $userId): JsonResponse
     {
-        $user = auth()->user();
+        $user = User::findOrFail($userId);
         $primaryAddress = $user->addressBooks()->where('is_primary', true)->first();
         
-        $isComplete = $primaryAddress && 
-                    $primaryAddress->email && 
-                    $primaryAddress->country && 
-                    $primaryAddress->city && 
-                    $primaryAddress->state;
+        $isComplete = false;
+        if ($primaryAddress) {
+            $addressParts = explode(',', $primaryAddress->full_address);
+            $isComplete = count($addressParts) === 4 && 
+                  !empty(trim($addressParts[0])) && 
+                  !empty(trim($addressParts[1])) && 
+                  !empty(trim($addressParts[2])) && 
+                  !empty(trim($addressParts[3])) && 
+                  !empty($primaryAddress->phone_number) &&  
+                  !empty($primaryAddress->email);
+        }
         
         return response()->json([
             'isComplete' => $isComplete,
