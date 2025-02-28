@@ -122,7 +122,7 @@ class AuthController extends Controller
             $addressBook = AddressBook::create([
                 'user_id' => $user->id,
                 'name' => $user->firstName . ' ' . $user->lastName,
-                'email' => $user->email,
+                'email' => $user->email ?? null,
                 'phone_number' => $user->phone,
                 'address_type' => 'home',
                 'full_address' => $user->address,
@@ -130,7 +130,7 @@ class AuthController extends Controller
             ]);
 
             //   // Send registration email
-            $this->emailVerificationService->sendRegistrationEmail($user);
+            // $this->emailVerificationService->sendRegistrationEmail($user);
 
 
             Log::info('User registered successfully', [
