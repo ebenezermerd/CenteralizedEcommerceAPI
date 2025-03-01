@@ -454,6 +454,8 @@ class OrderController extends Controller
                 'status' => $validated['payment']['status'] ?? 'pending'
             ];
 
+            $chapaResponse = null;
+            //if it is chapa payment method
             if ($validated['payment']['method'] === 'chapa') {
                 \Log::info('Initiating Chapa payment through ChapaController');
 
@@ -483,19 +485,8 @@ class OrderController extends Controller
                 \Log::info('Payment record created', ['payment' => $payment->toArray()]);
 
                 // Continue with the rest of the order processing...
-            }
+                 // Create order history
 
-            // OrderDelivery information
-            $orderDelivery = $order->delivery()->create([
-                'order_id' => $order->id,
-                'ship_by' => $validated['shipping']['method']['label'],
-                'speedy' => $validated['shipping']['method']['description'] ?? null,
-                'tracking_number' => 'TRK-' . strtoupper(bin2hex(random_bytes(8))),
-            ]);
-            \Log::info('Order delivery created', ['delivery' => $orderDelivery->toArray()]);
-
-
-            // Create order history
             $orderHistory = $order->history()->create([
                 'order_id' => $order->id,
                 'payment_time' => $payment->created_at,
@@ -522,7 +513,44 @@ class OrderController extends Controller
                     ]
                 ])
             ]);
-            \Log::info('Order history created', ['history' => $orderHistory->toArray()]);
+            \Log::info('Order history for chapa method created', ['history' => $orderHistory->toArray()]);
+            }
+
+           
+            // OrderDelivery information
+            $orderDelivery = $order->delivery()->create([
+                'order_id' => $order->id,
+                'ship_by' => $validated['shipping']['method']['label'],
+                'speedy' => $validated['shipping']['method']['description'] ?? null,
+                'tracking_number' => 'TRK-' . strtoupper(bin2hex(random_bytes(8))),
+            ]);
+            \Log::info('Order delivery created', ['delivery' => $orderDelivery->toArray()]);
+
+
+            //order history for other payment methods
+            $orderHistory = $order->history()->create([
+                'order_id' => $order->id,
+                'payment_time' => null,
+                'delivery_date' => match ($validated['shipping']['method']['label']) {
+                    'Express' => now()->addDays(rand(2, 3)),
+                    'Standard' => now()->addDays(rand(5, 7)),
+                    'Free' => now()->addDays(7),
+                    default => now()->addDays(7)
+                },
+                'completion_time' => null, // Will be updated when order is completed
+                'timeline' => json_encode([
+                    [
+                        'title' => 'Order Placed',
+                        'time' => now()->toISOString()
+                    ],
+                    [
+                        'title' => 'Estimated Delivery Time',
+                        'time' => now()->setTime(4, 0)->toISOString(),
+                        'end_time' => now()->setTime(9, 0)->toISOString()
+                    ]
+                ])
+            ]);
+            \Log::info('Order history for other payment methods created', ['history' => $orderHistory->toArray()]);
 
 
             // Invoice information
@@ -554,10 +582,10 @@ class OrderController extends Controller
             } catch (\Exception $e) {
                 // Fallback to config values if MegaCompanyAddress fails
                 $invoice->billFrom()->create([
-                    'name' => config('app.company_name', 'Company Name'),
-                    'full_address' => config('app.company_address', 'Company Address'),
-                    'phone_number' => config('app.company_phone', 'Company Phone'),
-                    'email' => config('app.company_email', 'Company Email')
+                    'name' => config('app.company_name', 'Korecha Ecommerce'),
+                    'full_address' => config('app.company_address', 'Addis Ababa, Ethiopia'),
+                    'phone_number' => config('app.company_phone', '+251 922 49 6959'),
+                    'email' => config('app.company_email', 'support@korecha.com.et')
                 ]);
             }
 

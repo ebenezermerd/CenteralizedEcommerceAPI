@@ -111,6 +111,7 @@ class ChapaController extends Controller
 
                         // Update order history
                         if ($order->history) {
+
                             $timeline = json_decode($order->history->timeline, true) ?? [];
                             $timeline[] = [
                                 'title' => 'Payment Confirmed',
@@ -118,7 +119,8 @@ class ChapaController extends Controller
                             ];
                             $order->history->update([
                                 'timeline' => json_encode($timeline),
-                                'payment_time' => now()
+                                'payment_time' => now(),
+                                'completion_time' => now()
                             ]);
                         }
                     }
