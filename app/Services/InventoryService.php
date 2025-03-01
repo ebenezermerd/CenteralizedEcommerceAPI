@@ -18,20 +18,21 @@ class InventoryService
     public const INVENTORY_OUT_OF_STOCK = 'out_of_stock';
     public const INVENTORY_DISCONTINUED = 'discontinued';
 
-    // Define threshold for low stock
-    private const LOW_STOCK_THRESHOLD = 10;
+    // Define threshold for low stock - changed to match StockMonitoringService
+    private const LOW_STOCK_THRESHOLD = 3; 
 
-    private const RESERVATION_TIMEOUT = 900; // 15 minutes
+    // Increase reservation timeout to 30 minutes
+    private const RESERVATION_TIMEOUT = 1800; 
 
     /**
-     * Update inventory for multiple items
+     * Update inventory for multiple items (used after order confirmation)
      */
     public function updateInventory(array $items): bool
     {
         try {
             return DB::transaction(function () use ($items) {
                 foreach ($items as $item) {
-                    $product = Product::findOrFail($item['id']);
+                    $product = Product::lockForUpdate()->findOrFail($item['id']);
                     $this->processInventoryUpdate($product, $item['quantity']);
                 }
                 return true;
@@ -50,6 +51,7 @@ class InventoryService
      */
     private function processInventoryUpdate(Product $product, int $quantity): void
     {
+        // Check available inventory (excluding reservations)
         if ($product->available < $quantity) {
             throw new InsufficientStockException(
                 "Insufficient stock for product: {$product->name}",
@@ -57,13 +59,13 @@ class InventoryService
             );
         }
 
-        $newQuantity = $product->available - $quantity;
+        $newAvailable = $product->available - $quantity;
         $newTotalSold = $product->totalSold + $quantity;
 
         $product->update([
-            'available' => $newQuantity,
+            'available' => $newAvailable,
             'totalSold' => $newTotalSold,
-            'inventoryType' => $this->determineInventoryType($newQuantity)
+            'inventoryType' => $this->determineInventoryType($newAvailable)
         ]);
 
         // Clear cache for this product
@@ -74,9 +76,11 @@ class InventoryService
 
         Log::info('Inventory updated', [
             'product_id' => $product->id,
-            'previous_quantity' => $product->available + $quantity,
-            'new_quantity' => $newQuantity,
-            'sold' => $quantity
+            'product_name' => $product->name,
+            'previous_available' => $product->available + $quantity,
+            'new_available' => $newAvailable,
+            'sold' => $quantity,
+            'total_sold' => $newTotalSold
         ]);
     }
 
@@ -95,9 +99,9 @@ class InventoryService
     }
 
     /**
-     * Check and reserve inventory
+     * Check inventory availability without creating reservations
      */
-    public function checkAndReserveInventory(array $items): array
+    public function checkInventoryAvailability(array $items): array
     {
         $failedItems = [];
         $successItems = [];
@@ -145,7 +149,7 @@ class InventoryService
      */
     private function checkLowStockAlert(Product $product): void
     {
-        if ($product->available <= self::LOW_STOCK_THRESHOLD) {
+        if ($product->available <= self::LOW_STOCK_THRESHOLD && $product->available > 0) {
             event(new LowStockEvent($product));
         }
     }
@@ -156,24 +160,30 @@ class InventoryService
     public function restockProduct(Product $product, int $quantity): void
     {
         DB::transaction(function () use ($product, $quantity) {
-            $newQuantity = $product->available + $quantity;
+            $newQuantity = $product->quantity + $quantity;
+            $newAvailable = $product->available + $quantity;
 
             $product->update([
-                'available' => $newQuantity,
+                'available' => $newAvailable,
                 'quantity' => $newQuantity,
-                'inventoryType' => $this->determineInventoryType($newQuantity)
+                'inventoryType' => $this->determineInventoryType($newAvailable)
             ]);
 
             $this->clearProductCache($product);
 
             Log::info('Product restocked', [
                 'product_id' => $product->id,
+                'product_name' => $product->name,
                 'added_quantity' => $quantity,
-                'new_quantity' => $newQuantity
+                'new_quantity' => $newQuantity,
+                'new_available' => $newAvailable
             ]);
         });
     }
 
+    /**
+     * Reserve inventory for checkout process
+     */
     public function reserveInventory(array $items): array
     {
         return DB::transaction(function () use ($items) {
@@ -181,14 +191,15 @@ class InventoryService
             $failedItems = [];
 
             foreach ($items as $item) {
+                // Important: Use lockForUpdate to prevent race conditions
                 $product = Product::lockForUpdate()->find($item['id']);
 
                 if (!$product || $product->available < $item['quantity']) {
                     $failedItems[] = [
                         'id' => $item['id'],
                         'name' => $product?->name ?? 'Unknown Product',
-                        'requested' => $item['quantity'],
-                        'available' => $product?->available ?? 0
+                        'requested_quantity' => $item['quantity'],
+                        'available_quantity' => $product?->available ?? 0
                     ];
                     continue;
                 }
@@ -197,13 +208,26 @@ class InventoryService
                 $reservation = InventoryReservation::create([
                     'product_id' => $product->id,
                     'quantity' => $item['quantity'],
+                    'session_id' => session()->getId(),
                     'expires_at' => now()->addSeconds(self::RESERVATION_TIMEOUT)
                 ]);
 
                 // Reduce available quantity
                 $product->decrement('available', $item['quantity']);
+                
+                // Update inventory type
+                $product->update(['inventoryType' => $this->determineInventoryType($product->available)]);
 
                 $reservations[] = $reservation->id;
+                
+                Log::info('Inventory reserved', [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'quantity' => $item['quantity'],
+                    'remaining_available' => $product->available,
+                    'reservation_id' => $reservation->id,
+                    'expires_at' => $reservation->expires_at
+                ]);
             }
 
             return [
@@ -211,6 +235,72 @@ class InventoryService
                 'failed_items' => $failedItems,
                 'reservation_ids' => $reservations
             ];
+        });
+    }
+    
+    /**
+     * Release reserved inventory
+     */
+    public function releaseReservation(int $reservationId): bool
+    {
+        return DB::transaction(function () use ($reservationId) {
+            $reservation = InventoryReservation::find($reservationId);
+            
+            if (!$reservation) {
+                Log::warning('Attempted to release non-existent reservation', ['id' => $reservationId]);
+                return false;
+            }
+            
+            $product = $reservation->product;
+            $product->increment('available', $reservation->quantity);
+            $product->update(['inventoryType' => $this->determineInventoryType($product->available)]);
+            
+            $reservation->delete();
+            
+            Log::info('Reservation released', [
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'quantity' => $reservation->quantity,
+                'new_available' => $product->available
+            ]);
+            
+            return true;
+        });
+    }
+    
+    /**
+     * Finalize inventory after order completion
+     * This converts reservations into actual inventory deductions
+     */
+    public function finalizeInventory(array $items, array $reservationIds): bool
+    {
+        return DB::transaction(function () use ($items, $reservationIds) {
+            // Release all reservations
+            foreach ($reservationIds as $reservationId) {
+                $reservation = InventoryReservation::find($reservationId);
+                if ($reservation) {
+                    $reservation->delete();
+                }
+            }
+            
+            // No need to decrement available since it was already reduced during reservation
+            // Just update total sold
+            foreach ($items as $item) {
+                $product = Product::find($item['id']);
+                if ($product) {
+                    $product->increment('totalSold', $item['quantity']);
+                    
+                    Log::info('Inventory finalized', [
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'quantity' => $item['quantity'],
+                        'new_total_sold' => $product->totalSold,
+                        'available' => $product->available
+                    ]);
+                }
+            }
+            
+            return true;
         });
     }
 }

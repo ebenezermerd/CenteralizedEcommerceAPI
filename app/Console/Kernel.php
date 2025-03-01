@@ -17,10 +17,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // Run daily at 9 AM
-        $schedule->command('stock:check-low')->dailyAt('09:00');
         // Run every 5 minutes
         $schedule->command('inventory:cleanup-reservations')->everyFiveMinutes();
+        // Run every 30 minutes
+        $schedule->command('stock:check-low')->everyThirtyMinutes();
     }
 
     /**

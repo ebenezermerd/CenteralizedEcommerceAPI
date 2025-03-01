@@ -343,39 +343,62 @@ class OrderController extends Controller
                 'subtotal' => 'required|numeric',
             ]);
 
-            // Check inventory availability before processing
-            $inventoryCheck = $this->validateInventory($validated['items']);
-            if (!$inventoryCheck['valid']) {
-                \Log::warning('Inventory validation failed during checkout', [
-                    'user_id' => auth()->id(),
-                    'failed_items' => $inventoryCheck['failed_items']
-                ]);
+            // Start a transaction for the entire checkout process
+        DB::beginTransaction();
 
-                $errorMessages = [];
-                foreach ($inventoryCheck['failed_items'] as $item) {
-                    if ($item['available_quantity'] === 0) {
-                        $errorMessages[] = "{$item['name']} is out of stock.";
-                    } else {
-                        $errorMessages[] = "Only {$item['available_quantity']} units of {$item['name']} are available (you requested {$item['requested_quantity']}).";
-                    }
+        // Check inventory availability before creating reservations
+        $inventoryService = app(InventoryService::class);
+        $availabilityCheck = $inventoryService->checkInventoryAvailability($validated['items']);
+        
+        if (!$availabilityCheck['success']) {
+            \Log::warning('Inventory availability check failed during checkout', [
+                'user_id' => auth()->id(),
+                'failed_items' => $availabilityCheck['failed_items']
+            ]);
+
+            $errorMessages = [];
+            foreach ($availabilityCheck['failed_items'] as $item) {
+                if ($item['available_quantity'] === 0) {
+                    $errorMessages[] = "{$item['name']} is out of stock.";
+                } else {
+                    $errorMessages[] = "Only {$item['available_quantity']} units of {$item['name']} are available (you requested {$item['requested_quantity']}).";
                 }
-
-                return response()->json([
-                    'status' => 'error',
-                    'code' => 'INVENTORY_ERROR',
-                    'message' => 'Some items in your cart are no longer available in the requested quantity.',
-                    'details' => [
-                        'unavailable_items' => $inventoryCheck['failed_items'],
-                        'error_messages' => $errorMessages
-                    ],
-                    'suggestions' => [
-                        'update_cart' => true,
-                        'available_alternatives' => $this->getAlternativeProducts($inventoryCheck['failed_items'])
-                    ]
-                ], 422);
             }
 
-            DB::beginTransaction();
+            return response()->json([
+                'status' => 'error',
+                'code' => 'INVENTORY_ERROR',
+                'message' => 'Some items in your cart are no longer available in the requested quantity.',
+                'details' => [
+                    'unavailable_items' => $availabilityCheck['failed_items'],
+                    'error_messages' => $errorMessages
+                ],
+            ], 422);
+        }
+        
+        // Reserve inventory if available
+        $reservationResult = $inventoryService->reserveInventory($validated['items']);
+        
+        if (!$reservationResult['success']) {
+            DB::rollBack();
+            
+            \Log::warning('Inventory reservation failed during checkout', [
+                'user_id' => auth()->id(),
+                'failed_items' => $reservationResult['failed_items']
+            ]);
+            
+            $errorMessages = [];
+            foreach ($reservationResult['failed_items'] as $item) {
+                $errorMessages[] = "Failed to reserve {$item['requested_quantity']} units of {$item['name']}.";
+            }
+            
+            return response()->json([
+                'status' => 'error',
+                'code' => 'RESERVATION_ERROR',
+                'message' => 'Failed to reserve inventory for your order.',
+                'details' => ['error_messages' => $errorMessages]
+            ], 422);
+        }
 
             // Log calculation details
             $totalQuantity = collect($validated['items'])->sum('quantity');
@@ -552,7 +575,6 @@ class OrderController extends Controller
             ]);
             \Log::info('Order history for other payment methods created', ['history' => $orderHistory->toArray()]);
 
-
             // Invoice information
             $invoice = Invoice::create([
                 'order_id' => $order->id,
@@ -618,9 +640,9 @@ class OrderController extends Controller
                 \Log::info('Invoice item created', ['item' => $invoiceItem->toArray()]);
             }
 
-            // Update inventory and clear reservations
-            $this->finalizeInventory($validated['items'], $inventoryCheck['reservation_ids']);
-
+            // Finalize inventory (convert reservations to actual deductions)
+            $inventoryService->finalizeInventory($validated['items'], $reservationResult['reservation_ids']);
+        
             DB::commit();
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);
 
@@ -644,16 +666,13 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // Clean up any reservations if they exist
-            if (isset($inventoryCheck['reservation_ids'])) {
-                InventoryReservation::whereIn('id', $inventoryCheck['reservation_ids'])
-                    ->chunk(100, function ($reservations) {
-                        foreach ($reservations as $reservation) {
-                            $reservation->product->increment('available', $reservation->quantity);
-                            $reservation->delete();
-                        }
-                    });
+             // If there was an exception, release any reservations if we have them
+        if (isset($reservationResult) && isset($reservationResult['reservation_ids'])) {
+            $inventoryService = app(InventoryService::class);
+            foreach ($reservationResult['reservation_ids'] as $reservationId) {
+                $inventoryService->releaseReservation($reservationId);
             }
+        }
 
             \Log::error('Order processing failed', [
                 'user_id' => auth()->id(),
