@@ -20,7 +20,6 @@ class AddressResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'company' => $this->company,
             'primary' => (bool) $this->is_primary,
             'fullAddress' => $this->full_address,
             'phoneNumber' => $this->phone_number,
