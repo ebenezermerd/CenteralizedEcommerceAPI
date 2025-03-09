@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('amount', 8, 2);
             $table->string('currency');
             $table->string('tx_ref')->nullable();
+            $table->string('original_tx_ref')->nullable();
             $table->string('status')->default('pending');
             $table->string('bank_account')->nullable();
             $table->timestamps();
