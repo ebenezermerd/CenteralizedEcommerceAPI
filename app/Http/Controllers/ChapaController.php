@@ -287,6 +287,8 @@ class ChapaController extends Controller
                     // Payment was actually completed, update our records
                     $this->updatePaymentStatus($payment, $verificationData);
 
+                    \Log::info('Payment was already completed', ['verification_data' => $verificationData]);
+
                     return response()->json([
                         'status' => 'success',
                         'message' => 'Payment was already completed',
