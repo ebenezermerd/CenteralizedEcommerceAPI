@@ -308,20 +308,27 @@ class ChapaController extends Controller
             // Get the customer information from the order
             $customer = $order->customer;
 
-            // Initialize a new payment session with the same reference
+            // Generate a new transaction reference based on the original
+            $originalTxRef = $payment->tx_ref;
+            $newTxRef = $originalTxRef . '-resume-' . time();
+
+            // Initialize a new payment session with a new reference
             $data = [
                 'amount' => $payment->amount,
                 'currency' => $payment->currency,
                 'email' => $customer->email,
-                'tx_ref' => $payment->tx_ref, // Use the same reference
-                'callback_url' => route('callback', [$payment->tx_ref]),
-                'return_url' => route('chapa.return', ['tx_ref' => $payment->tx_ref]),
+                'tx_ref' => $newTxRef,
+                'callback_url' => route('callback', [$newTxRef]),
+                'return_url' => route('chapa.return', ['tx_ref' => $newTxRef]),
                 'first_name' => explode(' ', $customer->name)[0],
                 'last_name' => explode(' ', $customer->name)[1] ?? '',
                 'phone_number' => str_replace(' ', '', $customer->phone_number),
                 'customization' => [
                     'title' => 'Resume Payment',
                     'description' => 'Payment for order ' . $order->order_number
+                ],
+                'meta' => [
+                    'original_tx_ref' => $originalTxRef
                 ]
             ];
 
@@ -338,9 +345,15 @@ class ChapaController extends Controller
                 ], 400);
             }
 
+            // Update the payment record with the new tx_ref
+            $payment->update([
+                'tx_ref' => $newTxRef,
+                'original_tx_ref' => $originalTxRef
+            ]);
+
             return response()->json([
                 'status' => 'success',
-                'tx_ref' => $payment->tx_ref,
+                'tx_ref' => $newTxRef,
                 'checkout_url' => $chapaResponse['data']['checkout_url']
             ], 200);
         } catch (\Exception $e) {
