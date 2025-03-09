@@ -283,7 +283,7 @@ class ChapaController extends Controller
             // Verify the payment hasn't been completed already
             try {
                 $verificationData = Chapa::verifyTransaction($payment->tx_ref);
-                if ($verificationData['status'] === 'success') {
+                if ($verificationData['status'] === 'success' && $verificationData['data']['status'] === 'completed') {
                     // Payment was actually completed, update our records
                     $this->updatePaymentStatus($payment, $verificationData);
 
