@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Jobs\CleanupAbandonedOrders;
 
 class Kernel extends ConsoleKernel
 {
@@ -21,6 +22,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('inventory:cleanup-reservations')->everyFiveMinutes();
         // Run every 30 minutes
         $schedule->command('stock:check-low')->everyThirtyMinutes();
+        $schedule->job(new CleanupAbandonedOrders)->daily();
     }
 
     /**

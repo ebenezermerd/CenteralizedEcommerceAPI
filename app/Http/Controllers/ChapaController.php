@@ -250,4 +250,144 @@ class ChapaController extends Controller
             ], 500);
         }
     }
+
+    public function resumePayment(Request $request): JsonResponse
+    {
+        \Log::info('Resuming Chapa payment', ['request_data' => $request->all()]);
+
+        try {
+            $validated = $request->validate([
+                'tx_ref' => 'required|string',
+            ]);
+
+            $payment = OrderPayment::where('tx_ref', $validated['tx_ref'])
+                                   ->where('status', 'initiated')
+                                   ->first();
+
+            if (!$payment) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Payment not found or already completed'
+                ], 404);
+            }
+
+            $order = $payment->order;
+
+            if (!$order || $order->user_id !== auth()->id()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Order not found or unauthorized'
+                ], 403);
+            }
+
+            // Verify the payment hasn't been completed already
+            try {
+                $verificationData = Chapa::verifyTransaction($payment->tx_ref);
+                if ($verificationData['status'] === 'success') {
+                    // Payment was actually completed, update our records
+                    $this->updatePaymentStatus($payment, $verificationData);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Payment was already completed',
+                        'redirect_url' => config('app.frontend_url') . '/e-commerce/payment/success'
+                            . '?tx_ref=' . $payment->tx_ref
+                            . '&transaction_id=' . ($verificationData['data']['transaction_id'] ?? '')
+                    ], 200);
+                }
+            } catch (\Exception $e) {
+                // Verification failed, which means payment is still pending
+                \Log::info('Payment verification failed, proceeding with resumption', [
+                    'tx_ref' => $payment->tx_ref,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // Get the customer information from the order
+            $customer = $order->customer;
+
+            // Initialize a new payment session with the same reference
+            $data = [
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+                'email' => $customer->email,
+                'tx_ref' => $payment->tx_ref, // Use the same reference
+                'callback_url' => route('callback', [$payment->tx_ref]),
+                'return_url' => route('chapa.return', ['tx_ref' => $payment->tx_ref]),
+                'first_name' => explode(' ', $customer->name)[0],
+                'last_name' => explode(' ', $customer->name)[1] ?? '',
+                'phone_number' => str_replace(' ', '', $customer->phone_number),
+                'customization' => [
+                    'title' => 'Resume Order Payment',
+                    'description' => 'Payment for order ' . $order->order_number
+                ]
+            ];
+
+            \Log::info('Resuming Chapa payment with data', ['data' => $data]);
+
+            $chapaResponse = Chapa::initializePayment($data);
+
+            if ($chapaResponse['status'] !== 'success') {
+                \Log::error('Chapa payment resumption failed', ['response' => $chapaResponse]);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Payment resumption failed',
+                    'error' => $chapaResponse['message']
+                ], 400);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'tx_ref' => $payment->tx_ref,
+                'checkout_url' => $chapaResponse['data']['checkout_url']
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Chapa payment resumption error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error resuming payment',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Helper method to update payment status
+    private function updatePaymentStatus($payment, $verificationData)
+    {
+        $payment->update([
+            'status' => 'completed',
+            'transaction_id' => $verificationData['data']['transaction_id'] ?? null,
+            'payment_date' => now()
+        ]);
+
+        $order = $payment->order;
+        if ($order) {
+            $order->update(['status' => 'completed']);
+
+            // Update order history
+            if ($order->history) {
+                $timeline = json_decode($order->history->timeline, true) ?? [];
+                $timeline[] = [
+                    'title' => 'Payment Completed',
+                    'time' => now()->toISOString()
+                ];
+                $order->history->update([
+                    'timeline' => json_encode($timeline),
+                    'payment_time' => now(),
+                    'completion_time' => now()
+                ]);
+            }
+
+            // Update invoice status
+            $invoice = Invoice::where('order_id', $order->id)->first();
+            if ($invoice) {
+                $invoice->update(['status' => 'paid']);
+                app(EmailVerificationService::class)->sendInvoiceEmail($invoice);
+            }
+        }
+    }
 }

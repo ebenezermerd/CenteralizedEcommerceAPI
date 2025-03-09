@@ -349,7 +349,7 @@ class OrderController extends Controller
         // Check inventory availability before creating reservations
         $inventoryService = app(InventoryService::class);
         $availabilityCheck = $inventoryService->checkInventoryAvailability($validated['items']);
-        
+
         if (!$availabilityCheck['success']) {
             \Log::warning('Inventory availability check failed during checkout', [
                 'user_id' => auth()->id(),
@@ -375,23 +375,23 @@ class OrderController extends Controller
                 ],
             ], 422);
         }
-        
+
         // Reserve inventory if available
         $reservationResult = $inventoryService->reserveInventory($validated['items']);
-        
+
         if (!$reservationResult['success']) {
             DB::rollBack();
-            
+
             \Log::warning('Inventory reservation failed during checkout', [
                 'user_id' => auth()->id(),
                 'failed_items' => $reservationResult['failed_items']
             ]);
-            
+
             $errorMessages = [];
             foreach ($reservationResult['failed_items'] as $item) {
                 $errorMessages[] = "Failed to reserve {$item['requested_quantity']} units of {$item['name']}.";
             }
-            
+
             return response()->json([
                 'status' => 'error',
                 'code' => 'RESERVATION_ERROR',
@@ -539,7 +539,7 @@ class OrderController extends Controller
             \Log::info('Order history for chapa method created', ['history' => $orderHistory->toArray()]);
             }
 
-           
+
             // OrderDelivery information
             $orderDelivery = $order->delivery()->create([
                 'order_id' => $order->id,
@@ -642,7 +642,7 @@ class OrderController extends Controller
 
             // Finalize inventory (convert reservations to actual deductions)
             $inventoryService->finalizeInventory($validated['items'], $reservationResult['reservation_ids']);
-        
+
             DB::commit();
             \Log::info('Order process completed successfully', ['order_id' => $order->id]);
 
@@ -748,6 +748,7 @@ class OrderController extends Controller
         });
     }
 
+
     public function destroy(string $id): JsonResponse
     {
         \Log::info('Order deletion initiated', ['order_id' => $id, 'user_id' => auth()->id()]);
@@ -825,6 +826,51 @@ class OrderController extends Controller
             return response()->json([
                 'message' => 'Failed to delete order',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getPendingChapaPayments(Request $request): JsonResponse
+    {
+        if (!auth()->check()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized access'
+            ], 401);
+        }
+
+        try {
+            $pendingPayments = Order::with(['payment', 'productItems'])
+                ->where('user_id', auth()->id())
+                ->where('status', 'pending')
+                ->whereHas('payment', function($query) {
+                    $query->where('payment_method', 'chapa')
+                          ->where('status', 'initiated');
+                })
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'pending_payments' => $pendingPayments->map(function($order) {
+                    return [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'amount' => $order->total_amount,
+                        'created_at' => $order->created_at,
+                        'tx_ref' => $order->payment->tx_ref,
+                        'items_count' => $order->productItems->count()
+                    ];
+                })
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching pending Chapa payments', [
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch pending payments'
             ], 500);
         }
     }

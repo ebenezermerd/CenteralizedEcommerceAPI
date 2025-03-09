@@ -74,9 +74,11 @@ Route::post('/auth/email/send-otp', [EmailVerificationController::class, 'sendVe
 
 // Chapa payment routes - these should be outside the auth middleware
 Route::post('chapa/initialize', [ChapaController::class, 'initializePayment'])->name('chapa.initialize');
-Route::get('chapa/callback/{reference}', [ChapaController::class, 'callback'])->name('callback');
 Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chapa.return');
 Route::post('chapa/webhook', [ChapaController::class, 'handleWebhook'])->name('chapa.webhook');
+Route::get('orders/pending-chapa-payments', [OrderController::class, 'getPendingChapaPayments']);
+Route::post('chapa/resume-payment', [ChapaController::class, 'resumePayment']);
+Route::get('chapa/callback/{reference}', [ChapaController::class, 'callback'])->name('callback');
 
 // Protected routes
 Route::middleware(['jwt'])->group(function () {
@@ -216,3 +218,5 @@ Route::middleware(['jwt'])->group(function () {
     });
 
 });
+
+// Add to routes/api.php (outside the auth middleware)
