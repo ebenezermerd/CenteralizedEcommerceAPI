@@ -27,6 +27,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductAvailabilityController;
 use App\Http\Controllers\ProductApprovalController;
+use App\Http\Controllers\FlutterChapaController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -78,6 +79,7 @@ Route::get('chapa/return', [ChapaController::class, 'handleReturn'])->name('chap
 Route::post('chapa/webhook', [ChapaController::class, 'handleWebhook'])->name('chapa.webhook');
 Route::get('orders/pending-chapa-payments', [OrderController::class, 'getPendingChapaPayments']);
 Route::post('chapa/resume-payment', [ChapaController::class, 'resumePayment']);
+Route::post('flutter/chapa/verify-and-create-order', [FlutterChapaController::class, 'verifyAndCreateOrder']);
 Route::get('chapa/callback/{reference}', [ChapaController::class, 'callback'])->name('callback');
 
 // Protected routes
@@ -217,6 +219,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('overview', [AppOverviewController::class, 'getOverviewData']);
     });
 
+
+
 });
 
-// Add to routes/api.php (outside the auth middleware)
