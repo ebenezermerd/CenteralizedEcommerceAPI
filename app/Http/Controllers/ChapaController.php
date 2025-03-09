@@ -320,7 +320,7 @@ class ChapaController extends Controller
                 'last_name' => explode(' ', $customer->name)[1] ?? '',
                 'phone_number' => str_replace(' ', '', $customer->phone_number),
                 'customization' => [
-                    'title' => 'Resume Order Payment',
+                    'title' => 'Resume Payment',
                     'description' => 'Payment for order ' . $order->order_number
                 ]
             ];
