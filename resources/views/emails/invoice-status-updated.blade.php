@@ -131,7 +131,19 @@
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Due Date</span>
-                    <span class="detail-value">{{ $invoice->due_date->format('M d, Y') }}</span>
+                    <span class="detail-value">
+                        @php
+                            try {
+                                if (is_string($invoice->due_date)) {
+                                    echo \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y');
+                                } else {
+                                    echo $invoice->due_date->format('M d, Y');
+                                }
+                            } catch (\Exception $e) {
+                                echo $invoice->due_date;
+                            }
+                        @endphp
+                    </span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Total Amount</span>

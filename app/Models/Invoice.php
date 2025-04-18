@@ -25,6 +25,22 @@ class Invoice extends Model
         'due_date'
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'create_date' => 'datetime',
+        'due_date' => 'datetime',
+        'taxes' => 'float',
+        'subtotal' => 'float',
+        'discount' => 'float',
+        'shipping' => 'float',
+        'total_amount' => 'float',
+        'sent' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

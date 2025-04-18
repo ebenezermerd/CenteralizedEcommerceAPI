@@ -289,6 +289,61 @@ class InvoiceController extends Controller
         }
     }
 
+    /**
+     * Update the status of an invoice.
+     *
+     * @param Request $request
+     * @param string $id
+     * @return JsonResponse
+     */
+    public function updateStatus(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,paid,overdue,cancelled,draft',
+        ]);
+
+        try {
+            $invoice = Invoice::findOrFail($id);
+            
+            // Store previous status for notification
+            $previousStatus = $invoice->status;
+            
+            // Update invoice status
+            $invoice->update([
+                'status' => $validated['status'],
+            ]);
+            
+            // If status is changing, send notification
+            if ($validated['status'] !== $previousStatus) {
+                // Check if invoice has a related user before sending email
+                if ($invoice->user) {
+                    // Ensure due_date is a Carbon instance
+                    if (is_string($invoice->due_date)) {
+                        $invoice->due_date = \Carbon\Carbon::parse($invoice->due_date);
+                    }
+                    
+                    Mail::to($invoice->user->email)
+                        ->send(new InvoiceStatusUpdated($invoice, $previousStatus));
+                }
+                
+                Log::info('Invoice status updated', [
+                    'invoice_id' => $invoice->id,
+                    'previous_status' => $previousStatus,
+                    'new_status' => $validated['status']
+                ]);
+            }
+            
+            // Load relationships and return updated invoice
+            $invoice->load('items', 'billTo', 'billFrom');
+            
+            return response()->json(new InvoiceResource($invoice), 200);
+            
+        } catch (\Exception $e) {
+            Log::error('Invoice status update failed:', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to update invoice status', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function destroy(string $id): JsonResponse
     {
         $invoice = Invoice::findOrFail($id);
