@@ -177,6 +177,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::get('orders/user', [OrderController::class, 'myOrders']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::put('orders/{id}', [OrderController::class, 'updateStatus']);
+    Route::put('orders/{id}/delivery-status', [OrderController::class, 'updateDeliveryStatus']);
     Route::post('/checkout/order', [OrderController::class, 'checkout']);
     Route::post('/order/{orderId}/payment-proof', [OrderController::class, 'uploadPaymentProof']);
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);

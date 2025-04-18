@@ -546,6 +546,12 @@ class OrderController extends Controller
                 'ship_by' => $validated['shipping']['method']['label'],
                 'speedy' => $validated['shipping']['method']['description'] ?? null,
                 'tracking_number' => 'TRK-' . strtoupper(bin2hex(random_bytes(8))),
+                'estimated_delivery_date' => match ($validated['shipping']['method']['label']) {
+                    'Express' => now()->addDays(rand(2, 3)),
+                    'Standard' => now()->addDays(rand(5, 7)),
+                    'Free' => now()->addDays(7),
+                    default => now()->addDays(7)
+                },
             ]);
             \Log::info('Order delivery created', ['delivery' => $orderDelivery->toArray()]);
 
@@ -873,5 +879,74 @@ class OrderController extends Controller
                 'message' => 'Failed to fetch pending payments'
             ], 500);
         }
+    }
+
+    /**
+     * Update delivery status for an order
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function updateDeliveryStatus(Request $request, $id): JsonResponse
+    {
+        \Log::info('Order delivery status update request received', ['id' => $id, 'data' => $request->all()]);
+        
+        $validated = $request->validate([
+            'status' => 'required|string|in:completed,pending,cancelled',
+        ]);
+
+        $order = Order::with([
+            'history',
+            'payment',
+            'shippingAdd',
+            'customer',
+            'delivery',
+            'productItems',
+        ])->findOrFail($id);
+
+        if (!$order) {
+            \Log::error('Order not found for delivery status update', ['id' => $id]);
+            return response()->json([
+                'message' => 'Order not found'
+            ], 404);
+        }
+
+        \Log::info('Order found for delivery status update', ['order' => $order->id]);
+        
+        DB::transaction(function () use ($order, $validated) {
+            // Update order status
+            $order->status = $validated['status'];
+            $order->save();
+
+            // Update delivery information
+            if ($order->delivery) {
+                // If status is completed, update actual delivery date
+                if ($validated['status'] === 'completed') {
+                    $order->delivery->update([
+                        'actual_delivery_date' => now()
+                    ]);
+
+                    // Update order history timeline
+                    if ($order->history) {
+                        $timeline = json_decode($order->history->timeline, true) ?? [];
+                        $timeline[] = [
+                            'title' => 'Order Delivered',
+                            'time' => now()->toISOString()
+                        ];
+                        
+                        $order->history->update([
+                            'completion_time' => now(),
+                            'timeline' => json_encode($timeline)
+                        ]);
+                    }
+                }
+            }
+        });
+
+        return response()->json([
+            'message' => 'Order delivery status updated successfully',
+            'order' => new OrderResource($order)
+        ], 200);
     }
 }

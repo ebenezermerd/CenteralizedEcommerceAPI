@@ -18,6 +18,8 @@ class OrderDeliveryResource extends JsonResource
             'shipBy' => $this->ship_by,
             'speedy' => $this->speedy,
             'trackingNumber' => $this->tracking_number,
+            'estimatedDeliveryDate' => $this->estimated_delivery_date,
+            'actualDeliveryDate' => $this->actual_delivery_date,
         ];
     }
 

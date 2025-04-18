@@ -8,7 +8,14 @@ class OrderDelivery extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'ship_by', 'speedy', 'tracking_number'];
+    protected $fillable = [
+        'order_id', 
+        'ship_by', 
+        'speedy', 
+        'tracking_number', 
+        'estimated_delivery_date', 
+        'actual_delivery_date'
+    ];
 
     public function order()
     {
