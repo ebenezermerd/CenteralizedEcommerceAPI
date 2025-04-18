@@ -35,6 +35,7 @@ Route::get('/products/list', [ProductController::class, 'index']);
 // Public routes
 Route::get('/product/details', [ProductController::class, 'show']);
 Route::get('/products/search', [ProductController::class, 'search']);
+Route::get('/products/advanced-search', [ProductController::class, 'advancedSearch']);
 Route::get('/products/filter', [ProductFilterController::class, 'filter']);
 Route::get('/products/categories', [ProductFilterController::class, 'getCategories']);
 Route::get('/products/colors', [ProductFilterController::class, 'getColors']);

@@ -901,6 +901,209 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * @group Products
+     *
+     * Advanced Search for products with flexible category filtering
+     *
+     * This endpoint allows searching for products with the ability to specify category constraints
+     * in a flexible manner. It can search within a specific category, all its subcategories,
+     * or a specific set of categories.
+     *
+     * @queryParam q string required The search query term
+     * @queryParam variant string optional Name of a category or subcategory to search within
+     * @queryParam include_subcategories boolean optional Whether to include subcategories in the search (default: true)
+     * @queryParam limit int optional Maximum number of results to return (default: 10)
+     *
+     * @response 200 {
+     *   "products": [
+     *     {
+     *       "id": "string",
+     *       "name": "string",
+     *       "coverImg": "string",
+     *       "price": "float",
+     *       "priceSale": "float",
+     *       "category": "object",
+     *       "rating": "float"
+     *     }
+     *   ],
+     *   "meta": {
+     *     "total_found": "int",
+     *     "search_params": "object"
+     *   }
+     * }
+     */
+    public function advancedSearch(Request $request)
+    {
+        try {
+            // Validate the request
+            $validator = Validator::make($request->all(), [
+                'q' => 'required|string|min:1',
+                'variant' => 'nullable|string',
+                'include_subcategories' => 'nullable|boolean',
+                'limit' => 'nullable|integer|min:1|max:50'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'error' => 'Invalid search parameters',
+                    'details' => $validator->errors()
+                ], 422);
+            }
+
+            // Get validated parameters
+            $searchQuery = $request->input('q');
+            $variant = $request->input('variant');
+            $includeSubcategories = $request->input('include_subcategories', true);
+            $limit = $request->input('limit', 10);
+
+            // Log the search parameters
+            Log::info('Advanced product search', [
+                'query' => $searchQuery,
+                'variant' => $variant,
+                'include_subcategories' => $includeSubcategories,
+                'limit' => $limit
+            ]);
+
+            // Start building the query
+            $query = Product::query()
+                ->where('publish', 'published')
+                ->where('publish_status', 'approved')
+                ->where(function($q) use ($searchQuery) {
+                    $q->where('name', 'LIKE', "%{$searchQuery}%")
+                      ->orWhere('description', 'LIKE', "%{$searchQuery}%");
+                })
+                ->with(['category', 'brand', 'images']);
+
+            // Handle category filtering based on variant (which could be a category or subcategory)
+            $targetCategoryIds = [];
+            $variantInfo = null;
+            
+            if ($variant) {
+                // First, try to find the variant as a direct category or subcategory
+                $category = Category::where('name', $variant)->first();
+                
+                if ($category) {
+                    $variantInfo = [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'group' => $category->group,
+                        'type' => $category->parentId ? 'subcategory' : 'category',
+                        'parentId' => $category->parentId
+                    ];
+                    
+                    $targetCategoryIds[] = $category->id;
+                    
+                    // If it's a main category and we want to include subcategories
+                    if (!$category->parentId && $includeSubcategories) {
+                        $subcategoryIds = $this->getSubcategoryIds($category->id);
+                        $targetCategoryIds = array_merge($targetCategoryIds, $subcategoryIds);
+                    }
+                    
+                    // If it's a subcategory, we don't need to include further subcategories
+                    // as there are none (our category model has only 2 levels)
+                } else {
+                    // Try to find it as a group name
+                    $groupCategories = Category::where('group', $variant)->get();
+                    
+                    if ($groupCategories->count() > 0) {
+                        $variantInfo = [
+                            'name' => $variant,
+                            'type' => 'group'
+                        ];
+                        
+                        foreach ($groupCategories as $groupCat) {
+                            $targetCategoryIds[] = $groupCat->id;
+                            
+                            // Include subcategories if requested and if this is a main category
+                            if ($includeSubcategories && !$groupCat->parentId) {
+                                $subcategoryIds = $this->getSubcategoryIds($groupCat->id);
+                                $targetCategoryIds = array_merge($targetCategoryIds, $subcategoryIds);
+                            }
+                        }
+                    } else {
+                        Log::warning('Variant not found in search', ['variant' => $variant]);
+                    }
+                }
+            }
+
+            // Apply category filter if we have any target categories
+            if (!empty($targetCategoryIds)) {
+                $query->whereIn('categoryId', array_unique($targetCategoryIds));
+            }
+
+            // Add ratings and reviews data
+            $query->withCount('reviews')
+                  ->withAvg('reviews', 'rating');
+
+            // Execute the search query with limit
+            $products = $query->limit($limit)->get();
+
+            // Build response with category information
+            $categoryInfoMap = [];
+            if (!empty($targetCategoryIds)) {
+                $matchedCategories = Category::whereIn('id', array_unique($targetCategoryIds))->get(['id', 'name', 'group', 'parentId']);
+                foreach ($matchedCategories as $cat) {
+                    $categoryInfoMap[$cat->id] = [
+                        'id' => $cat->id,
+                        'name' => $cat->name,
+                        'group' => $cat->group,
+                        'type' => $cat->parentId ? 'subcategory' : 'category'
+                    ];
+                }
+            }
+
+            Log::info('Search results', [
+                'count' => $products->count(),
+                'variant_info' => $variantInfo,
+                'categories_matched' => count($categoryInfoMap) > 0 ? array_values($categoryInfoMap) : 'none'
+            ]);
+
+            // Return the results
+            return response()->json([
+                'products' => ProductResource::collection($products),
+                'meta' => [
+                    'total_found' => $products->count(),
+                    'search_params' => [
+                        'query' => $searchQuery,
+                        'variant' => $variantInfo,
+                        'category_constraints' => count($categoryInfoMap) > 0 ? array_values($categoryInfoMap) : 'none'
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Advanced search failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Search failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all subcategory IDs for a given category ID
+     * 
+     * @param int $categoryId
+     * @return array
+     */
+    private function getSubcategoryIds(int $categoryId): array
+    {
+        // First level children
+        $children = Category::where('parentId', $categoryId)->pluck('id')->toArray();
+        
+        // Second level children (if any)
+        $secondLevelChildren = [];
+        if (!empty($children)) {
+            $secondLevelChildren = Category::whereIn('parentId', $children)->pluck('id')->toArray();
+        }
+        
+        return array_merge($children, $secondLevelChildren);
+    }
+
     protected function validateCategoryAndBrand(array $data): array
     {
         Log::info('Validating category and brand', ['data' => $data]);
