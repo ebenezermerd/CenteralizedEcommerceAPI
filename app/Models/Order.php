@@ -17,9 +17,19 @@ class Order extends Model
         'shipping',
         'discount',
         'subtotal',
+        'additional_costs_total',
         'order_number',
         'total_amount',
         'total_quantity'
+    ];
+
+    protected $casts = [
+        'subtotal' => 'float',
+        'taxes' => 'float',
+        'shipping' => 'float',
+        'discount' => 'float',
+        'total_amount' => 'float',
+        'additional_costs_total' => 'float',
     ];
 
     public function user()
@@ -69,10 +79,16 @@ class Order extends Model
 
     public function calculateTotals()
     {
-        $this->subtotal = $this->items->sum(function($item) {
+        // Base price * quantity for all items
+        $baseSubtotal = $this->items->sum(function($item) {
             return $item->quantity * $item->price;
         });
-
+        
+        // Total of additional costs
+        $additionalCostsTotal = $this->items->sum('additional_cost');
+        
+        $this->additional_costs_total = $additionalCostsTotal;
+        $this->subtotal = $baseSubtotal + $additionalCostsTotal;
         $this->taxes = $this->subtotal * 0.15; // 15% tax
         $this->total_amount = $this->subtotal + $this->taxes + $this->shipping - $this->discount;
         $this->save();

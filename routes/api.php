@@ -28,6 +28,7 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductAvailabilityController;
 use App\Http\Controllers\ProductApprovalController;
 use App\Http\Controllers\FlutterChapaController;
+use App\Http\Controllers\SupportInquiryController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -222,7 +223,14 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('overview', [AppOverviewController::class, 'getOverviewData']);
     });
 
-
+    // Support inquiry routes
+    Route::post('/support/inquiries', [SupportInquiryController::class, 'store']);
+    Route::middleware(['jwt', 'role:admin'])->group(function () {
+        Route::get('/support/inquiries', [SupportInquiryController::class, 'index']);
+        Route::get('/support/inquiries/{id}', [SupportInquiryController::class, 'show']);
+        Route::put('/support/inquiries/{id}/status', [SupportInquiryController::class, 'updateStatus']);
+        Route::post('/support/inquiries/{id}/respond', [SupportInquiryController::class, 'respond']);
+    });
 
 });
 

@@ -15,9 +15,16 @@ class OrderProductItem extends Model
         'product_id',
         'price',
         'quantity',
+        'additional_cost',
         'name',
         'sku',
         'cover_url'
+    ];
+
+    protected $casts = [
+        'price' => 'float',
+        'quantity' => 'integer',
+        'additional_cost' => 'float',
     ];
 
     public function order()
@@ -32,11 +39,21 @@ class OrderProductItem extends Model
 
     public function getSubtotalAttribute()
     {
-        return $this->quantity * $this->price;
+        return ($this->quantity * $this->price) + $this->additional_cost;
     }
 
     public function calculateSubtotal()
     {
         $this->order->calculateTotals();
+    }
+    
+    /**
+     * Get whether this item has additional costs
+     *
+     * @return bool
+     */
+    public function hasAdditionalCost(): bool
+    {
+        return $this->additional_cost > 0;
     }
 }

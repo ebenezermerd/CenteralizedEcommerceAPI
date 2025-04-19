@@ -432,18 +432,37 @@ class OrderController extends Controller
 
             // Log order Itmes information
             foreach ($validated['items'] as $item) {
-                $product = Product::find($item['id']);
-                $orderProductItem = new OrderProductItem([
-                    'order_id' => $order->id,
+                $product = Product::findOrFail($item['id']);
+                
+                // Calculate additional cost if applicable
+                $additionalCost = 0;
+                if ($product->hasAdditionalCost($item['quantity'])) {
+                    $additionalCost = $product->calculateAdditionalCost($item['quantity']);
+                }
+                
+                $orderItem = new OrderProductItem([
                     'product_id' => $item['id'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
+                    'additional_cost' => $additionalCost,
                     'name' => $item['name'],
                     'sku' => $product->sku,
-                    'cover_url' => $item['coverUrl'],
+                    'cover_url' => $item['coverUrl'] ?? $product->coverUrl
                 ]);
-                $order->items()->save($orderProductItem);
-                \Log::info('Order item created', ['item' => $orderProductItem->toArray()]);
+                
+                $order->items()->save($orderItem);
+
+                // Update inventory (reduced in the inventory reservation service)
+                $product->totalSold += $item['quantity'];
+                $product->save();
+                
+                \Log::info('Order item created', [
+                    'order_id' => $order->id,
+                    'product' => $item['name'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'additional_cost' => $additionalCost,
+                ]);
             }
 
             // Shipping information

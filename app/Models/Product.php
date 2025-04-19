@@ -44,6 +44,10 @@ class Product extends Model
         'gender',
         'inventoryType',
         'quantity',
+        'quantity_threshold',
+        'additional_cost_percentage',
+        'additional_cost_fixed',
+        'additional_cost_type',
         'available',
         'totalSold',
         'totalRatings',
@@ -69,6 +73,9 @@ class Product extends Model
         'colors' => 'array',
         'gender' => 'array',
         'quantity' => 'integer',
+        'quantity_threshold' => 'integer',
+        'additional_cost_percentage' => 'float',
+        'additional_cost_fixed' => 'float',
         'available' => 'integer',
         'totalSold' => 'integer',
         'totalRatings' => 'float',
@@ -357,5 +364,35 @@ class Product extends Model
     public function scopeByInventoryType($query, string $type)
     {
         return $query->where('inventoryType', $type);
+    }
+
+    /**
+     * Calculate additional cost based on quantity
+     * 
+     * @param int $quantity
+     * @return float
+     */
+    public function calculateAdditionalCost(int $quantity): float
+    {
+        if (!$this->quantity_threshold || $quantity <= $this->quantity_threshold) {
+            return 0;
+        }
+        
+        if ($this->additional_cost_type === 'percentage') {
+            return $this->price * ($this->additional_cost_percentage / 100) * $quantity;
+        }
+        
+        return $this->additional_cost_fixed;
+    }
+    
+    /**
+     * Check if additional costs apply for the given quantity
+     * 
+     * @param int $quantity
+     * @return bool
+     */
+    public function hasAdditionalCost(int $quantity): bool
+    {
+        return $this->quantity_threshold && $quantity > $this->quantity_threshold;
     }
 }

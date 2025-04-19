@@ -9,7 +9,13 @@ class CartItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['cart_id', 'product_id', 'quantity', 'price', 'subtotal'];
+    protected $fillable = ['cart_id', 'product_id', 'quantity', 'price', 'subtotal', 'additional_cost'];
+
+    protected $casts = [
+        'price' => 'float',
+        'subtotal' => 'float',
+        'additional_cost' => 'float',
+    ];
 
     public function cart()
     {
@@ -23,7 +29,25 @@ class CartItem extends Model
 
     public function calculateSubtotal()
     {
-        $this->subtotal = $this->quantity * $this->price;
+        $product = $this->product;
+        $additionalCost = 0;
+        
+        if ($product && $product->hasAdditionalCost($this->quantity)) {
+            $additionalCost = $product->calculateAdditionalCost($this->quantity);
+        }
+        
+        $this->additional_cost = $additionalCost;
+        $this->subtotal = ($this->quantity * $this->price) + $additionalCost;
         $this->save();
+    }
+    
+    /**
+     * Get whether this item has additional costs
+     *
+     * @return bool
+     */
+    public function hasAdditionalCost(): bool
+    {
+        return $this->additional_cost > 0;
     }
 }
