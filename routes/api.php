@@ -84,6 +84,9 @@ Route::post('chapa/resume-payment', [ChapaController::class, 'resumePayment']);
 Route::post('flutter/chapa/verify-and-create-order', [FlutterChapaController::class, 'verifyAndCreateOrder']);
 Route::get('chapa/callback/{reference}', [ChapaController::class, 'callback'])->name('callback');
 
+// General settings
+Route::get('settings', [SettingsController::class, 'index']);
+
 // Protected routes
 Route::middleware(['jwt'])->group(function () {
     // Auth routes
@@ -130,7 +133,6 @@ Route::middleware(['jwt'])->group(function () {
        // Settings routes
       
     Route::prefix('settings')->group(function () {
-        Route::get('/', [SettingsController::class, 'index']);
         Route::get('/group/{group}', [SettingsController::class, 'getByGroup']);
         Route::get('/{key}', [SettingsController::class, 'show']);
         Route::put('/', [SettingsController::class, 'updateMultiple']);
