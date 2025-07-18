@@ -86,6 +86,8 @@ Route::get('chapa/callback/{reference}', [ChapaController::class, 'callback'])->
 
 // General settings
 Route::get('settings', [SettingsController::class, 'index']);
+Route::get('settings/{key}', [SettingsController::class, 'show']);
+
 
 // Protected routes
 Route::middleware(['jwt'])->group(function () {
@@ -134,7 +136,6 @@ Route::middleware(['jwt'])->group(function () {
       
     Route::prefix('settings')->group(function () {
         Route::get('/group/{group}', [SettingsController::class, 'getByGroup']);
-        Route::get('/{key}', [SettingsController::class, 'show']);
         Route::put('/', [SettingsController::class, 'updateMultiple']);
         Route::put('/{key}', [SettingsController::class, 'update']);
         Route::delete('/{key}', [SettingsController::class, 'destroy']);
