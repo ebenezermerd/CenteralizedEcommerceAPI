@@ -28,6 +28,7 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductAvailabilityController;
 use App\Http\Controllers\ProductApprovalController;
 use App\Http\Controllers\FlutterChapaController;
+use App\Http\Controllers\SettingsController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -126,6 +127,16 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('current-visits', [AnalyticsController::class, 'getCurrentVisits']);
         Route::get('order-timeline', [AnalyticsController::class, 'getOrderTimeline']);
     });
+       // Settings routes
+      
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [SettingsController::class, 'index']);
+        Route::get('/group/{group}', [SettingsController::class, 'getByGroup']);
+        Route::get('/{key}', [SettingsController::class, 'show']);
+        Route::put('/', [SettingsController::class, 'updateMultiple']);
+        Route::put('/{key}', [SettingsController::class, 'update']);
+        Route::delete('/{key}', [SettingsController::class, 'destroy']);
+    });
 
 
     // Admin only routes
@@ -222,7 +233,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('overview', [AppOverviewController::class, 'getOverviewData']);
     });
 
-
+ 
 
 });
 

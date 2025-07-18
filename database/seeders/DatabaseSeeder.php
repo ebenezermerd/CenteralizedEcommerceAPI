@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             CategorySeeder::class,
             BrandSeeder::class,
+            SettingsSeeder::class,
         ]);
 
         // Create single admin user if not exists
