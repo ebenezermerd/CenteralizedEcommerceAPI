@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class () extends Migration {
     public function up()
     {
         Schema::create('mail_labels', function (Blueprint $table) {
@@ -41,7 +40,7 @@ return new class extends Migration
             $table->foreignId('mail_label_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
-              // Add composite index for better query performance
+            // Add composite index for better query performance
             $table->index(['mail_id', 'mail_label_id']);
         });
 
@@ -57,39 +56,39 @@ return new class extends Migration
         });
 
 
-    // Insert default system labels
-    DB::table('mail_labels')->insert([
-        [
-            'type' => 'system',
-            'name' => 'inbox',
-            'color' => '#00AB55',
-            'created_at' => now(),
-        ],
-        [
-            'type' => 'system',
-            'name' => 'sent',
-            'color' => '#00B8D9',
-            'created_at' => now(),
-        ],
-        [
-            'type' => 'system',
-            'name' => 'draft',
-            'color' => '#FFC107',
-            'created_at' => now(),
-        ],
-        [
-            'type' => 'system',
-            'name' => 'trash',
-            'color' => '#FF4123',
-            'created_at' => now(),
-        ],
-        [
-            'type' => 'system',
-            'name' => 'spam',
-            'color' => '#919EAB',
-            'created_at' => now(),
-        ],
-    ]);
+        // Insert default system labels
+        DB::table('mail_labels')->insert([
+            [
+                'type' => 'system',
+                'name' => 'inbox',
+                'color' => '#00AB55',
+                'created_at' => now(),
+            ],
+            [
+                'type' => 'system',
+                'name' => 'sent',
+                'color' => '#00B8D9',
+                'created_at' => now(),
+            ],
+            [
+                'type' => 'system',
+                'name' => 'draft',
+                'color' => '#FFC107',
+                'created_at' => now(),
+            ],
+            [
+                'type' => 'system',
+                'name' => 'trash',
+                'color' => '#FF4123',
+                'created_at' => now(),
+            ],
+            [
+                'type' => 'system',
+                'name' => 'spam',
+                'color' => '#919EAB',
+                'created_at' => now(),
+            ],
+        ]);
     }
 
     public function down()

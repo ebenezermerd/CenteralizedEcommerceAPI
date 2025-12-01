@@ -7,7 +7,6 @@ use App\Http\Resources\MailSenderResource;
 use App\Http\Resources\MailAttachmentResource;
 use App\Http\Resources\MailLabelResource;
 
-
 class MailResource extends JsonResource
 {
     public function toArray($request)
@@ -20,7 +19,7 @@ class MailResource extends JsonResource
         'isUnread' => $this->is_unread,
         'from' => new MailSenderResource($this->whenLoaded('from')),
         'to' => MailSenderResource::collection($this->whenLoaded('to')),
-        'labelIds' => $this->whenLoaded('labels', fn() => $this->labels->pluck('id')),
+        'labelIds' => $this->whenLoaded('labels', fn () => $this->labels->pluck('id')),
         'isStarred' => $this->is_starred,
         'isImportant' => $this->is_important,
         'createdAt' => $this->created_at,

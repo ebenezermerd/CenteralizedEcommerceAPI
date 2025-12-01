@@ -16,9 +16,7 @@ use App\Models\User;
 
 class ProductController extends Controller
 {
-
-
-  /**
+    /**
  * @group Products
  *
  * Retrieve a list of products with their details.
@@ -99,26 +97,26 @@ class ProductController extends Controller
  *  "message": "Unauthenticated."
  * }
  */
-public function index(Request $request)
-{
-    $user = auth()->user();
-    $products = Product::with(['reviews', 'category', 'images', 'vendor' => function($query) {
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $products = Product::with(['reviews', 'category', 'images', 'vendor' => function ($query) {
             $query->select('id', 'firstName', 'lastName', 'phone', 'email')
                 ->selectRaw("CONCAT(firstName, ' ', lastName) as name");
         }])
-        ->viewableBy($user)
-        ->withCount('reviews')
-        ->withAvg('reviews', 'rating')
-        ->latest()
-        ->paginate(12);
+            ->viewableBy($user)
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->latest()
+            ->paginate(12);
 
         // Log the result for debugging
-    \Log::info('Products Data', $products->toArray());
+        \Log::info('Products Data', $products->toArray());
 
-    return response()->json([
-        'products' => ProductResource::collection($products)
-    ], 201);
-}
+        return response()->json([
+            'products' => ProductResource::collection($products)
+        ], 201);
+    }
 
     public function store(Request $request)
     {
@@ -159,7 +157,7 @@ public function index(Request $request)
                 'tags' => 'required|array|min:1',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
-                'coverUrl' => ['nullable', function($attribute, $value, $fail) {
+                'coverUrl' => ['nullable', function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('The cover url must be either a valid URL or an image file.');
@@ -173,7 +171,7 @@ public function index(Request $request)
                     }
                 }],
                 'images' => 'nullable|array',
-                'images.*' => [function($attribute, $value, $fail) {
+                'images.*' => [function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('Each image must be either a valid URL or an image file.');
@@ -206,7 +204,7 @@ public function index(Request $request)
 
             // Pre-process brand data
             $brandData = is_string($request->brand) ? json_decode($request->brand, true) : $request->brand;
-            
+
             Log::info('Brand data before product creation', [
                 'decoded_brand' => $brandData
             ]);
@@ -308,7 +306,7 @@ public function index(Request $request)
                                 return $query->where('id', '!=', $request->id);
                             })
                             ->exists();
-                        
+
                         if ($exists) {
                             $fail('This SKU already exists!');
                         }
@@ -324,7 +322,7 @@ public function index(Request $request)
                                 return $query->where('id', '!=', $request->id);
                             })
                             ->exists();
-                        
+
                         if ($exists) {
                             $fail('This code already exists!');
                         }
@@ -386,7 +384,7 @@ public function index(Request $request)
                     if ($cover->isValid() && in_array($cover->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
                         $coverUrl = $cover->store('products/covers', 'public');
                     }
-                } else if (is_string($request->coverUrl) && filter_var($request->coverUrl, FILTER_VALIDATE_URL)) {
+                } elseif (is_string($request->coverUrl) && filter_var($request->coverUrl, FILTER_VALIDATE_URL)) {
                     $coverUrl = $request->coverUrl;
                 }
             }
@@ -398,7 +396,7 @@ public function index(Request $request)
                         if ($image->isValid() && in_array($image->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
                             $additionalImages[] = $image->store('products/images', 'public');
                         }
-                    } else if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+                    } elseif (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
                         $additionalImages[] = $image;
                     }
                 }
@@ -423,7 +421,7 @@ public function index(Request $request)
 
             // Process images first
             $processedImages = $this->processImages(request());
-            
+
             // Fill product data
             $product->fill(array_merge(
                 collect($data)->except(['images', 'category'])->toArray(),
@@ -476,7 +474,7 @@ public function index(Request $request)
             ]);
 
             $product = Product::findOrFail($id);
-            
+
             if (!$this->canManageProduct($product)) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
@@ -515,7 +513,7 @@ public function index(Request $request)
                 'tags' => 'required|array|min:1',
                 'category' => 'required|string',
                 'publish' => 'required|in:draft,published',
-                'coverUrl' => ['nullable', function($attribute, $value, $fail) {
+                'coverUrl' => ['nullable', function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('The cover url must be either a valid URL or an image file.');
@@ -529,7 +527,7 @@ public function index(Request $request)
                     }
                 }],
                 'images' => 'nullable|array',
-                'images.*' => [function($attribute, $value, $fail) {
+                'images.*' => [function ($attribute, $value, $fail) {
                     if (!empty($value)) {
                         if (!is_string($value) && !$value instanceof \Illuminate\Http\UploadedFile) {
                             $fail('Each image must be either a valid URL or an image file.');
@@ -616,10 +614,10 @@ public function index(Request $request)
                 return response()->json(['error' => $processedImages['error']], 500);
             }
 
-            if($processedImages['coverUrl']){
+            if ($processedImages['coverUrl']) {
                 $product->coverUrl = $processedImages['coverUrl'];
             }
-            
+
             $product->save();
 
             // Log final brand data after save
@@ -739,7 +737,7 @@ public function index(Request $request)
     {
         try {
             $product = Product::findOrFail($id);
-            
+
             if (!$this->canManageProduct($product)) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }

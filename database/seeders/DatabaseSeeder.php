@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Create single admin user if not exists
-        if (!User::whereHas('roles', function($query) {
+        if (!User::whereHas('roles', function ($query) {
             $query->where('name', 'admin');
         })->exists()) {
             $admin = User::factory()->admin()->create();

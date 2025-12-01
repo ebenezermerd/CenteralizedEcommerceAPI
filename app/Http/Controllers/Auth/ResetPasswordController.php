@@ -144,7 +144,7 @@ class ResetPasswordController extends Controller
                     'message' => 'Current password is incorrect'
                 ], 400);
             }
-            
+
             $user->password = bcrypt($request->newPassword);
             $user->save();
 
