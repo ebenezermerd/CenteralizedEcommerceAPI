@@ -32,7 +32,9 @@ class HubSpotService
 
     public function syncContact($user)
     {
-        if (!$this->hubspot) return;
+        if (!$this->hubspot) {
+            return;
+        }
 
         $properties = [
             'email' => $user->email,
@@ -79,7 +81,9 @@ class HubSpotService
 
     public function syncProduct($product)
     {
-        if (!$this->hubspot) return;
+        if (!$this->hubspot) {
+            return;
+        }
 
         $properties = [
             'name' => $product->name,
@@ -92,8 +96,8 @@ class HubSpotService
         $productInput->setProperties($properties);
 
         try {
-             // Search by SKU if available
-             if ($product->sku) {
+            // Search by SKU if available
+            if ($product->sku) {
                 $filter = new ProductFilter();
                 $filter->setOperator('EQ');
                 $filter->setPropertyName('hs_sku');
@@ -112,11 +116,11 @@ class HubSpotService
                     $this->hubspot->crm()->products()->basicApi()->update($productId, $productInput);
                     return $productId;
                 }
-             }
+            }
 
-             // Create if not found
-             $hubSpotProduct = $this->hubspot->crm()->products()->basicApi()->create($productInput);
-             return $hubSpotProduct->getId();
+            // Create if not found
+            $hubSpotProduct = $this->hubspot->crm()->products()->basicApi()->create($productInput);
+            return $hubSpotProduct->getId();
 
         } catch (\Exception $e) {
             Log::error('HubSpot Product Sync Error: ' . $e->getMessage());
@@ -125,7 +129,9 @@ class HubSpotService
 
     public function syncDeal($order)
     {
-        if (!$this->hubspot) return;
+        if (!$this->hubspot) {
+            return;
+        }
 
         // 1. Sync Contact
         $contactId = $this->syncContact($order->user);
@@ -184,24 +190,24 @@ class HubSpotService
             }
 
             // 4. Create Line Items and Associate with Deal
-            // Note: Handling line item updates is complex (deleting old ones vs updating). 
-            // For simplicity, we assume new deals or we append. 
+            // Note: Handling line item updates is complex (deleting old ones vs updating).
+            // For simplicity, we assume new deals or we append.
             // A full sync might require clearing old line items first if updating.
             // Here we only add if it's a new deal or we accept duplicates for now to avoid complexity.
             if ($searchResults->getTotal() == 0) {
                 foreach ($order->items as $item) {
                     $productId = $this->syncProduct($item->product); // Ensure product exists
-                    
+
                     if ($productId) {
                         $lineItemProperties = [
                             'quantity' => $item->quantity,
                             'price' => $item->price,
                             'name' => $item->product->name,
                         ];
-                        
+
                         $lineItemInput = new LineItemInput();
                         $lineItemInput->setProperties($lineItemProperties);
-                        
+
                         $lineItem = $this->hubspot->crm()->lineItems()->basicApi()->create($lineItemInput);
                         $lineItemId = $lineItem->getId();
 
@@ -217,7 +223,7 @@ class HubSpotService
                                 ]
                             ]
                         );
-                        
+
                         // Associate Line Item with Product
                         $this->hubspot->crm()->lineItems()->associationsApi()->create(
                             $lineItemId,

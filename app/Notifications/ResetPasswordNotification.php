@@ -41,7 +41,7 @@ class ResetPasswordNotification extends Notification
             $url .= '&redirectTo=' . urlencode($this->redirectTo);
         }
 
-        return (new MailMessage)
+        return (new MailMessage())
             ->subject('Reset Password Notification')
             ->line('You are receiving this email because we received a password reset request for your account.')
             ->action('Reset Password', $url)

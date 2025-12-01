@@ -26,4 +26,3 @@ class InvoiceCreated extends Mailable
             ]);
     }
 }
-

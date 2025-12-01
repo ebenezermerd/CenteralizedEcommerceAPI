@@ -76,7 +76,7 @@ class ProductRequest extends FormRequest
                     if ($validator->fails()) {
                         $fail($validator->errors()->first());
                     }
-                } else if (is_string($value)) {
+                } elseif (is_string($value)) {
                     // Validate URL format if it's a string
                     if (!filter_var($value, FILTER_VALIDATE_URL)) {
                         $fail('Cover image URL must be a valid URL');
@@ -109,7 +109,7 @@ class ProductRequest extends FormRequest
                             'size' => $value->getSize()
                         ]);
                     }
-                } else if (is_string($value)) {
+                } elseif (is_string($value)) {
                     if (!filter_var($value, FILTER_VALIDATffE_URL)) {
                         \Log::error("Image URL validation failed: Invalid URL format");
                         $fail('Image URL must be a valid URL');
@@ -225,7 +225,7 @@ class ProductRequest extends FormRequest
         }
 
         // Handle cover URL and images consistently
-        $processImageUrl = function($value) {
+        $processImageUrl = function ($value) {
             if (is_file($value)) {
                 return $value->store('products/covers', 'public');
             }
@@ -241,11 +241,9 @@ class ProductRequest extends FormRequest
                 if (is_file($value)) {
                     $path = $value->store('products/images', 'public');
                     $processedImages[] = $path;
-                }
-                else if (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
+                } elseif (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
                     $processedImages[] = $value;
-                }
-                else {
+                } else {
                     // Log the error and return a default image
                     \Log::error('Invalid image provided', ['image' => $value]);
                     $processedImages[] = 'products/default-image.png';
@@ -254,12 +252,12 @@ class ProductRequest extends FormRequest
             return $processedImages;
         };
 
-       // Override only the 'images' key
+        // Override only the 'images' key
 
-       $images = $this->has('images') ? $processImagesPath($this->images) : null;
+        $images = $this->has('images') ? $processImagesPath($this->images) : null;
 
-       $saleLabel = is_string($this->saleLabel) ? json_decode($this->saleLabel, true) : ($this->saleLabel ?? ['enabled' => false]);
-       $newLabel = is_string($this->newLabel) ? json_decode($this->newLabel, true) : ($this->newLabel ?? ['enabled' => false]);
+        $saleLabel = is_string($this->saleLabel) ? json_decode($this->saleLabel, true) : ($this->saleLabel ?? ['enabled' => false]);
+        $newLabel = is_string($this->newLabel) ? json_decode($this->newLabel, true) : ($this->newLabel ?? ['enabled' => false]);
 
 
         $mappedData = $this->mapToDatabase([

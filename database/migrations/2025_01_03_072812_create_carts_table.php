@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class () extends Migration {
     /**
      * Run the migrations.
      */
@@ -34,7 +33,7 @@ return new class extends Migration
 
     public function calculateTotals()
     {
-        $this->subtotal = $this->items->sum(fn($item) => $item->subtotal);
+        $this->subtotal = $this->items->sum(fn ($item) => $item->subtotal);
         $this->tax = $this->subtotal * 0.1; // Example tax calculation
         $this->total = $this->subtotal + $this->tax - $this->discount + $this->shipping;
         $this->save();

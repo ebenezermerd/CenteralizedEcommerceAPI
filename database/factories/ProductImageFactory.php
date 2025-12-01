@@ -12,16 +12,16 @@ class ProductImageFactory extends Factory
 
     public function definition(): array
     {
-         // Get all image files from the products directory
-         $imageFiles = Storage::disk('public')->files('products');
+        // Get all image files from the products directory
+        $imageFiles = Storage::disk('public')->files('products');
 
-         // Randomly select an image file
-         $imagePath = $this->faker->randomElement($imageFiles);
+        // Randomly select an image file
+        $imagePath = $this->faker->randomElement($imageFiles);
 
-         return [
-             'image_path' => $imagePath,
-             'is_primary' => false
-         ];
+        return [
+            'image_path' => $imagePath,
+            'is_primary' => false
+        ];
     }
 
     public function primary()
